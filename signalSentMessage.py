@@ -39,13 +39,13 @@ class SentMessage(Message):
                     fromDict: Optional[dict] = None,
                     rawMessage: Optional[dict] = None,
                     recipient: Optional[Contact | Group] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None,
+                    # timestamp: Optional[Timestamp] = None,
+                    # isDelivered: bool = False,
+                    # timeDelivered: Optional[Timestamp] = None,
+                    # isRead: bool = False,
+                    # timeRead: Optional[Timestamp] = None,
+                    # isViewed: bool = False,
+                    # timeViewed: Optional[Timestamp] = None,
                     body: Optional[str] = None,
                     attachments: Optional[Iterable[Attachment] | Attachment] = None,
                     mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
@@ -201,8 +201,7 @@ class SentMessage(Message):
 # Continue init:
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict, rawMessage,
-                            contacts.getSelf(), recipient, thisDevice, timestamp, Message.TYPE_SENT_MESSAGE, isDelivered,
-                            timeDelivered, isRead, timeRead, isViewed, timeViewed)
+                            contacts.getSelf(), recipient, thisDevice, None, Message.TYPE_SENT_MESSAGE)
         return
 ##########################
 # Init:
@@ -372,7 +371,7 @@ class SentMessage(Message):
 
     def getQuote(self) -> Quote:
         quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                        timestamp=self.timestamp, author=self._contacts.getSelf(), mentions=self.mentions, 
+                        timestamp=self.timestamp, author=self.sender, mentions=self.mentions, 
                         conversation=self.recipient)
         return quote
     

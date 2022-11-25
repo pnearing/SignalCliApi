@@ -31,21 +31,21 @@ class Reaction(Message):
                     thisDevice: Device,
                     fromDict: Optional[dict] = None,
                     rawMessage: Optional[dict] = None,
-                    sender: Optional[Contact] = None,
+                    # sender: Optional[Contact] = None,
                     recipient: Optional[Contact | Group] = None,
-                    device: Optional[Device] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None,
+                    # device: Optional[Device] = None,
+                    # timestamp: Optional[Timestamp] = None,
+                    # isDelivered: bool = False,
+                    # timeDelivered: Optional[Timestamp] = None,
+                    # isRead: bool = False,
+                    # timeRead: Optional[Timestamp] = None,
+                    # isViewed: bool = False,
+                    # timeViewed: Optional[Timestamp] = None,
                     emoji: Optional[str] = None,
                     targetAuthor: Optional[Contact] = None,
                     targetTimestamp: Optional[Timestamp] = None,
                     isRemove: bool = False,
-                    isChange: bool = False,
+                    # isChange: bool = False,
                     previousEmoji: Optional[str] = None,
                 ) -> None:
     # TODO: Argument checks:
@@ -55,12 +55,12 @@ class Reaction(Message):
         self.targetAuthor: Contact = targetAuthor
         self.targetTimestamp: Timestamp = targetTimestamp
         self.isRemove: bool = isRemove
-        self.isChange: bool = isChange
+        self.isChange: bool = False
         self.previousEmoji: str = previousEmoji
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, sender, recipient, device, timestamp, Message.TYPE_REACTION_MESSAGE, isDelivered,
-                            timeDelivered, isRead, timeRead, isViewed, timeViewed)
+                            rawMessage, contacts.getSelf(), recipient, self._thisDevice, None,
+                            Message.TYPE_REACTION_MESSAGE)#, isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
 
     # Set body:
         self.__updateBody__()

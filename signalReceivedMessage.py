@@ -251,9 +251,9 @@ class ReceivedMessage(Message):
     # Set mentions:
         receivedMessageDict['mentions'] = self.mentions.__toDict__()
     # Set reactions:
-        receivedMessageDict['reactions'] = None
-        if (self.reactions != None):
-            receivedMessageDict['reactions'] = self.reactions.__toDict__()
+        # receivedMessageDict['reactions'] = None
+        # if (self.reactions != None):
+        receivedMessageDict['reactions'] = self.reactions.__toDict__()
     # Set sticker:
         receivedMessageDict['sticker'] = None
         if (self.sticker != None):
@@ -293,11 +293,11 @@ class ReceivedMessage(Message):
     # Load mentions:
         self.mentions = Mentions(contacts=self._contacts, fromDict=fromDict['mentions'])
     # Load reactions:
-        self.reactions = None
-        if (fromDict['reactions'] != None):
-            self.reactions = Reactions(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                        fromDict=fromDict['reactions'])
+        # self.reactions = None
+        # if (fromDict['reactions'] != None):
+        self.reactions = Reactions(commandSocket=self._commandSocket, accountId=self._accountId,
+                                    contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                    fromDict=fromDict['reactions'])
     # Load sticker:
         self.sticker = None
         if (fromDict['sticker'] != None):
@@ -369,8 +369,10 @@ class ReceivedMessage(Message):
         return when
 
     def __setExpiry__(self, timeOpened:Timestamp):
-        expiryDateTime = timeOpened.datetime + self.expiration
-        self.expirationTimestamp = Timestamp(dateTime=expiryDateTime)
+        if (self.expiration != None):
+            expiryDateTime = timeOpened.datetime + self.expiration
+            self.expirationTimestamp = Timestamp(dateTime=expiryDateTime)
+        return
 
 #####################
 # Methods:
@@ -383,8 +385,7 @@ class ReceivedMessage(Message):
             when = self.__sendReceipt__('read')
         else:
             when = Timestamp(now=True)
-        if (self.expiration != None):
-            self.__setExpiry__(when)
+        self.__setExpiry__(when)
         return super().markRead(when)
 
     def markViewed(self, sendReceipt:bool=True) -> None:
@@ -392,8 +393,7 @@ class ReceivedMessage(Message):
             when = self.__sendReceipt__('viewed')
         else:
             when = Timestamp(now=True)
-        if (self.expiration != None):
-            self.__setExpiry__(when)
+        self.__setExpiry__(when)
         return super().markViewed(when)
     
     def getQuote(self) -> Quote:
@@ -412,3 +412,32 @@ class ReceivedMessage(Message):
 
     def parseMentions(self) -> str:
         return self.mentions.__parseMentions__(self.body)
+    
+    def react(self, emoji:str) -> tuple[bool, Reaction | str]:
+    # Argument check:
+        if (isinstance(emoji, str) == False):
+            __typeError__('emoji', "str, len = 1", emoji)
+        if (len(emoji) != 1):
+            errorMessage = "emoji must be str of len 1"
+            raise ValueError(errorMessage)
+    # Create reaction
+        if (self.recipientType == 'contact'):
+            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                thisDevice=self._thisDevice, emoji=emoji, targetAuthor=self.sender,
+                                targetTimestamp=self.timestamp)
+        elif (self.recipientType == 'group'):
+            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices, 
+                                thisDevice=self._thisDevice, emoji=emoji, targetAuthor=self.sender,
+                                targetTimestamp=self.timestamp)
+        else:
+            errorMessage = "Invalid recipient type."
+            return (False, errorMessage)
+    # Send reaction:
+        sent, message = reaction.send()
+        if (sent == False):
+            return (False, message)
+    # Parse reaction:
+        self.reactions.__parse__(reaction)
+        return (True, reaction)
