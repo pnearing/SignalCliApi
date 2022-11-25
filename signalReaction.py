@@ -46,7 +46,7 @@ class Reaction(Message):
                     targetTimestamp: Optional[Timestamp] = None,
                     isRemove: bool = False,
                     # isChange: bool = False,
-                    previousEmoji: Optional[str] = None,
+                    # previousEmoji: Optional[str] = None,
                 ) -> None:
     # TODO: Argument checks:
 
@@ -56,10 +56,10 @@ class Reaction(Message):
         self.targetTimestamp: Timestamp = targetTimestamp
         self.isRemove: bool = isRemove
         self.isChange: bool = False
-        self.previousEmoji: str = previousEmoji
+        self.previousEmoji: Optional[str] = None
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, contacts.getSelf(), recipient, self._thisDevice, None,
+                            rawMessage, contacts.getSelf(), recipient, thisDevice, None,
                             Message.TYPE_REACTION_MESSAGE)#, isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
 
     # Set body:

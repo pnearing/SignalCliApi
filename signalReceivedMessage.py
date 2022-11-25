@@ -193,8 +193,8 @@ class ReceivedMessage(Message):
 ######################
     def __fromRawMessage__(self, rawMessage: dict) -> None:
         super().__fromRawMessage__(rawMessage)
-        print("RecievedMessage.__fromRawMessage__")
-        print(rawMessage)
+        # print("RecievedMessage.__fromRawMessage__")
+        # print(rawMessage)
         dataMessage: dict[str, object] = rawMessage['dataMessage']
     # Parse body:
         self.body = dataMessage['message']
@@ -202,7 +202,7 @@ class ReceivedMessage(Message):
         if (dataMessage['expiresInSeconds'] == 0):
             self.expiration = None
         else:
-            self.expiration = timedelta(0,dataMessage["expiresInSeconds"],0,0,0,0,0)
+            self.expiration = timedelta(seconds=dataMessage["expiresInSeconds"])
     # Parse attachments:
         if ('attachments' in dataMessage.keys()):
             print("DEBUG: %s: Started attachment decoding." % __name__)
@@ -424,13 +424,13 @@ class ReceivedMessage(Message):
         if (self.recipientType == 'contact'):
             reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, emoji=emoji, targetAuthor=self.sender,
+                                thisDevice=self._thisDevice, recipient=self.sender, emoji=emoji, targetAuthor=self.sender,
                                 targetTimestamp=self.timestamp)
         elif (self.recipientType == 'group'):
             reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices, 
-                                thisDevice=self._thisDevice, emoji=emoji, targetAuthor=self.sender,
-                                targetTimestamp=self.timestamp)
+                                thisDevice=self._thisDevice, recipient=self.recipient, emoji=emoji,
+                                targetAuthor=self.sender, targetTimestamp=self.timestamp)
         else:
             errorMessage = "Invalid recipient type."
             return (False, errorMessage)

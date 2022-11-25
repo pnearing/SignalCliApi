@@ -136,7 +136,7 @@ class Message(object):
 # Init:
 #######################
     def __fromRawMessage__(self, rawMessage:dict) -> None:
-        print("Message.__fromRawMessage__")
+        # print("Message.__fromRawMessage__")
     # Parse Sender
         added, self.sender = self._contacts.__getOrAdd__(rawMessage['sourceName'], rawMessage['source'])
         if (added == True):
