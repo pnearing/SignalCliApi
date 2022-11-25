@@ -39,7 +39,7 @@ class SentMessage(Message):
                     fromDict: Optional[dict] = None,
                     rawMessage: Optional[dict] = None,
                     recipient: Optional[Contact | Group] = None,
-                    # timestamp: Optional[Timestamp] = None,
+                    timestamp: Optional[Timestamp] = None,
                     # isDelivered: bool = False,
                     # timeDelivered: Optional[Timestamp] = None,
                     # isRead: bool = False,
@@ -201,7 +201,7 @@ class SentMessage(Message):
 # Continue init:
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict, rawMessage,
-                            contacts.getSelf(), recipient, thisDevice, None, Message.TYPE_SENT_MESSAGE)
+                            contacts.getSelf(), recipient, thisDevice, timestamp, Message.TYPE_SENT_MESSAGE)
         return
 ##########################
 # Init:
@@ -209,7 +209,8 @@ class SentMessage(Message):
     def __fromRawMessage__(self, rawMessage: dict) -> None:
         super().__fromRawMessage__(rawMessage)
         print("SentMessage.__fromRawMessage__")
-
+        print(rawMessage)
+        return
 ###########################
 # To / From Dict:
 ###########################
@@ -356,6 +357,12 @@ class SentMessage(Message):
         else:
             errorMessage = "FATAL: Invalid receipt type, cannot parse. SentMessage.__parseReceipt__"
             raise RuntimeError(errorMessage)
+        return
+    
+    def __setExpiry__(self, timeOpened:Timestamp) -> None:
+        if (self.expiration != None):
+            expiryDateTime = timeOpened.datetime + self.expiration
+            self.expirationTimestamp = Timestamp(dateTime=expiryDateTime)
         return
 ###########################
 # Methods:
