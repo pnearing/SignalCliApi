@@ -416,9 +416,9 @@ class ReceivedMessage(Message):
     def react(self, emoji:str) -> tuple[bool, Reaction | str]:
     # Argument check:
         if (isinstance(emoji, str) == False):
-            __typeError__('emoji', "str, len = 1", emoji)
-        if (len(emoji) != 1):
-            errorMessage = "emoji must be str of len 1"
+            __typeError__('emoji', "str, len = 1|2", emoji)
+        if (len(emoji) != 1 and len(emoji) != 2):
+            errorMessage = "emoji must be str of len 1|2"
             raise ValueError(errorMessage)
     # Create reaction
         if (self.recipientType == 'contact'):
