@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 
+global CAN_PREVIEW
+CAN_PREVIEW: bool = False
+
 from typing import Optional, Iterable
-from linkpreview import link_preview
+try:
+    from linkpreview import link_preview
+    CAN_PREVIEW = True
+except ModuleNotFoundError:
+    pass
+
 import urllib.request
 import hashlib
 import os
@@ -71,7 +79,8 @@ class Preview(object):
             if (self.url == None):
                 errorMessage = "If generatePreview is True, url must be defined."
                 raise RuntimeError(errorMessage)
-            self.__generatePreview__()
+            if (CAN_PREVIEW == True):
+                self.__generatePreview__()
         return
 
 ####################
