@@ -136,9 +136,14 @@ class Message(object):
 # Init:
 #######################
     def __fromRawMessage__(self, rawMessage:dict) -> None:
-        # print("Message.__fromRawMessage__")
+        print("Message.__fromRawMessage__")
+        print(rawMessage)
     # Parse Sender
-        added, self.sender = self._contacts.__getOrAdd__(rawMessage['sourceName'], rawMessage['source'])
+        added, self.sender = self._contacts.__getOrAdd__(
+                                                            name=rawMessage['sourceName'],
+                                                            number=rawMessage['sourceNumber'],
+                                                            uuid=rawMessage['sourceUuid']
+                                                        )
         if (added == True):
             self._contacts.__save__()
     # Parse recipient:

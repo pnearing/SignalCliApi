@@ -131,6 +131,8 @@ class ReceiveThread(threading.Thread):
                                             thisDevice=self._account.device, rawMessage=envelopeDict
                                         )
                     # Parse reaction and call the reaction callback:
+                        if (DEBUG == True):
+                            print("Parsing Reaction...", file=sys.stderr)
                         self._account.messages.__parseReaction__(message)
                         # self._account.messages.append(message)
                         if (self._ractMsgCb != None): self._ractMsgCb(self._account, message)
@@ -151,6 +153,8 @@ class ReceiveThread(threading.Thread):
                                                     groups=self._account.groups, devices=self._account.devices,
                                                     thisDevice=self._account.device, rawMessage=envelopeDict
                                                 )
+                            if (DEBUG == True):
+                                print("Parsing group update.", file=sys.stderr)
                             message.recipient.__sync__()
                             self._account.messages.append(message)
                             if (self._syncMsgCb != None): self._syncMsgCb(self._account, message)
@@ -178,6 +182,8 @@ class ReceiveThread(threading.Thread):
                                         thisDevice=self._account.device, rawMessage=envelopeDict
                                     )
                 # Parse receipt:
+                    if (DEBUG == True):
+                        print("Parsing receipt...", file=sys.stderr)
                     self._account.messages.__parseReceipt__(message)
                 # Call receipt callback:
                     if (self._rcptMsgCb != None): self._rcptMsgCb(self._account, message)
@@ -197,6 +203,8 @@ class ReceiveThread(threading.Thread):
                                         rawMessage=envelopeDict
                                     )
                 # Parse the sync message based on sync type:
+                    if (DEBUG == True):
+                        print("Parsing sync message...", file=sys.stderr)
                     if (message.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC or 
                                                                 message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
                         self._account.messages.__parseSyncMessage__(message)
@@ -219,6 +227,9 @@ class ReceiveThread(threading.Thread):
                                             groups=self._account.groups, devices=self._account.devices,
                                             thisDevice=self._account.devices.getAccountDevice(), rawMessage=envelopeDict
                                         )
+                # Parse typing message:
+                    if (DEBUG == True):
+                        print("DEBUG: parsing typing message...", file=sys.stderr)
                     if (message.action == "STARTED"):
                         message.sender.isTyping = True
                     elif (message.action == "STOPPED"):
@@ -239,9 +250,10 @@ class ReceiveThread(threading.Thread):
             #### Unrecognized message ####
                 else:
                     if (DEBUG == True):
-                        errorMessage = "Unrecognized envelope, perhaps a payment message."
+                        errorMessage = "DEBUG: Unrecognized envelope, perhaps a payment message."
                         print(errorMessage, file=sys.stderr)
-                        print(envelopeDict.keys(), file=sys.stderr)
+                        print("DEBUG: ", envelopeDict.keys(), file=sys.stderr)
+                        print("DEBUG: ", envelopeDict, file=sys.stderr)
                         continue
                 # if (message != None):
                 #     self._account.messages.append(message)

@@ -54,7 +54,7 @@ class SignalCli(object):
                     __typeError__("serverAddress[1]", "int", serverAddress[1])
             elif (isinstance(serverAddress, str) == True):
                 if (os.path.exists(serverAddress) == True and startSignal == True):
-                    errorMessage = "socket path '%s' already exists. Perhaps signal is already running."
+                    errorMessage = "socket path '%s' already exists. Perhaps signal is already running." % serverAddress
                     raise FileExistsError(errorMessage)
     # Check log file path:
         if (logFilePath != None):
@@ -89,7 +89,7 @@ class SignalCli(object):
     # Check to see if we're starting signal, if the socket exists, throw an error.
         if (isinstance(self._serverAddress, str) == True and startSignal == True):
             if (os.path.exists(self._serverAddress) == True):
-                errorMessage = "socket path '%s' already exists. Perhaps signal is already running."
+                errorMessage = "socket path '%s' already exists. Perhaps signal is already running." % self._serverAddress
                 raise FileExistsError(errorMessage)
 
     # set var to hold main signal process

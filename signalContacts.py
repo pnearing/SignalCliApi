@@ -196,6 +196,48 @@ class Contacts(object):
             errorMessage = "Contacts can only parse messages of type: SyncMessage.TYPE_BLOCKED_SYNC."
             raise TypeError(errorMessage)
         return
+
+    def __getOrAdd__(self, name:str, number:Optional[str]=None, uuid:Optional[str] = None, id:Optional[str] = None) -> tuple[bool, Contact]:
+    # Argument check
+        if (number == None and uuid == None and id == None):
+            RuntimeError("Either number or uuid, or id must be defined.")
+    # Check id type:
+        if (id != None):
+            numberMatch = phoneNumberRegex.match(id)
+            uuidMatch = uuidRegex.match(id)
+            if (numberMatch == None and uuidMatch == None):
+                errorMessage = "id must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
+                raise ValueError(errorMessage)
+            elif (numberMatch != None):
+                number = id
+                uuid = None
+            elif( uuidMatch != None):
+                number = None
+                uuid = id
+    # Search for contact:
+        contact = None
+        for contact in self._contacts:
+            if (contact.number == number or contact.uuid == uuid):
+                contact = contact
+            # Merge contact if more info found:
+                if (contact.number == None and number !=None):
+                    contact.number = number
+                    self.__save__()
+                if (contact.uuid == None and uuid != None):
+                    contact.uuid = uuid
+                    self.__save__()
+    # If contact found:
+        if (contact != None):
+            return (False, contact)
+    # Set id:
+        if (number != None):
+            id = number
+        else:
+            id = uuid
+    # add to signal:
+        (addedToSignal, contact) = self.add(name, id)
+        return (True, contact)
+
 ##################################
 # Getters:
 ##################################
@@ -285,13 +327,3 @@ class Contacts(object):
         self.__save__()
         newContact = self.getById(id)
         return(True, newContact)
-
-#################################
-# Helpers:
-################################
-    def __getOrAdd__(self, name:str, id:str) -> tuple[bool, Contact]:
-        contact = self.getById(id)
-        if (contact != None):
-            return (False, contact)
-        (addedToSignal, contact) = self.add(name, id)
-        return (True, contact)

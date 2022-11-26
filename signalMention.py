@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Any
+from typing import TypeVar, Optional, Any
 from signalContacts import Contacts
 from signalContact import Contact
+
+Self = TypeVar("Self", bound="Mention")
 
 class Mention(object):
     def __init__(self,
@@ -32,10 +34,12 @@ class Mention(object):
 ########################
     def __fromRawMention__(self, rawMention:dict) -> None:
         print(rawMention)
-        if (rawMention['number'] != None):
-            added, self.contact = self._contacts.__getOrAdd__(rawMention['name'], rawMention['number'])
-        else:
-            added, self.contact = self._contacts.__getOrAdd__(rawMention['name'], rawMention['uuid'])
+        added, self.contact = self._contacts.__getOrAdd__(
+                                                            name=rawMention['name'],
+                                                            number=rawMention['number'],
+                                                            uuid=rawMention['uuid']
+                                                        )
+
         self.start = rawMention['start']
         self.length = rawMention['length']
         return
@@ -45,6 +49,14 @@ class Mention(object):
     def __str__(self) -> str:
         mentionStr = "%i:%i:%s" % (self.start, self.length, self.contact.getId())
         return mentionStr
+    
+    def __eq__(self, __o: Self) -> bool:
+        if (isinstance(__o, Mention) == True):
+            if (self.start != __o.start): return False
+            elif (self.length != __o.length): return False
+            elif (self.contact != __o.contact): return False
+            else: return True
+        return False
 ######################
 # To / From Dict:
 ######################
@@ -57,7 +69,7 @@ class Mention(object):
         return mentionDict
     
     def __fromDict__(self, fromDict:dict) -> None:
-        added, self.contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", fromDict['contactId'])
+        added, self.contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['contactId'])
         self.start = fromDict['start']
         self.length = fromDict['length']
         return

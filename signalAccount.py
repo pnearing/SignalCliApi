@@ -42,7 +42,7 @@ class Account(object):
     # Set internal Vars:
         self._syncSocket: socket.socket = syncSocket
         self._commandSocket: socket.socket = commandSocket
-        self._configPath: str = configPath
+        self.configPath: str = configPath
         self._stickerPacks: StickerPacks = stickerPacks
         self._accountPath: str = os.path.join(configPath, 'data', signalAccountPath +'.d')
         self._accountFilePath: str = os.path.join(configPath, 'data', signalAccountPath)
@@ -68,18 +68,18 @@ class Account(object):
         # Set this device:
             self.device = self.devices.getAccountDevice()
         # Load contacts from signal:
-            self.contacts = Contacts(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self.number,
+            self.contacts = Contacts(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
                                         accountPath=self._accountPath, doLoad=True, doSync=True)
         # Load groups from signal:
-            self.groups = Groups(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self.number,
+            self.groups = Groups(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
                                     accountContacts=self.contacts, doSync= True)
         # Load messages from file:
-            self.messages = Messages(commandSocket=self._commandSocket, configPath=self._configPath,
+            self.messages = Messages(commandSocket=self._commandSocket, configPath=self.configPath,
                                         accountId=self.number, accountPath=self._accountPath, contacts=self.contacts,
                                         groups=self.groups, devices=self.devices, thisDevice=self.devices.getAccountDevice(),
                                         stickerPacks=self._stickerPacks, doLoad=True)
         # Load profile from file and merge self contact.
-            self.profile = Profile(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self.number,
+            self.profile = Profile(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
                                     contactId = self.number, accountPath=self._accountPath, doLoad=True,
                                     isAccountProfile=True)
             selfContact = self.contacts.getSelf()

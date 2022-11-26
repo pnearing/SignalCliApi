@@ -71,19 +71,14 @@ class Reaction(Message):
 ###############################
     def __fromRawMessage__(self, rawMessage:dict) -> None:
         super().__fromRawMessage__(rawMessage)
-        added, self.sender = self._contacts.__getOrAdd__(rawMessage['sourceName'], rawMessage['source'])
-        if ('groupInfo' in rawMessage['dataMessage'].keys()):
-            added, group = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", rawMessage['dataMessage']['groupInfo']['groupId'])
-            self.recipient = group
-            self.recipientType = 'group'
-        else:
-            self.recipient = self._contacts.getSelf()
-            self.recipientType = 'contact'
-        added, self.device = self.sender.devices.__getOrAdd__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
-        self.timestamp = Timestamp(timestamp=rawMessage['timestamp'])
         reactionDict:dict = rawMessage['dataMessage']['reaction']
+        # print(reactionDict)
         self.emoji = reactionDict['emoji']
-        added, self.targetAuthor = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", reactionDict['targetAuthor'])
+        added, self.targetAuthor = self._contacts.__getOrAdd__(
+                                                                name="<UNKNOWN-CONTACT>",
+                                                                number=reactionDict['targetAuthorNumber'],
+                                                                uuid=reactionDict['targetAuthorUuid'],
+                                                            )
         self.targetTimestamp = Timestamp(timestamp=reactionDict['targetSentTimestamp'])
         self.isRemove = reactionDict['isRemove']
         return
@@ -119,7 +114,7 @@ class Reaction(Message):
         self.emoji = fromDict['emoji']
     # Parse target author:
         if (fromDict['targetAuthorId'] != None):
-            added, self.targetAuthor = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", fromDict['targetAuthorId'])
+            added, self.targetAuthor = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['targetAuthorId'])
         else:
             self.targetAuthor = None
     # Parse target timestamp:
@@ -160,7 +155,7 @@ class Reaction(Message):
         responseStr = __socketReceive__(self._commandSocket)
     # Parse response:
         responseObj:dict[str, object] = json.loads(responseStr)
-        print (responseObj)
+        # print (responseObj)
     # Check for error:
         if ('error' in responseObj.keys()):
             if (DEBUG == True):

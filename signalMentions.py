@@ -119,7 +119,14 @@ class Mentions(object):
     
     def getByLength(self, length:int) -> list[Mention]:
         return [mention for mention in self._mentions if mention.length == length]
-
+#######################################
+# Tests:
+#######################################
+    def contactMentioned(self, contact:Contact) -> bool:
+        mentions = [mention for mention in self._mentions if mention.contact == contact]
+        if (len(mentions) > 0):
+            return True
+        return False
 
 #######################################
 # Methods:
