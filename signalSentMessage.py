@@ -384,3 +384,32 @@ class SentMessage(Message):
     
     def parseMentions(self) -> str:
         return self.mentions.__parseMentions__(self.body)
+    
+    def react(self, emoji:str) -> tuple[bool, Reaction | str]:
+    # Argument check:
+        if (isinstance(emoji, str) == False):
+            __typeError__('emoji', "str, len = 1", emoji)
+        if (len(emoji) != 1):
+            errorMessage = "emoji must be str of len 1"
+            raise ValueError(errorMessage)
+    # Create reaction
+        if (self.recipientType == 'contact'):
+            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                thisDevice=self._thisDevice, recipient=self.sender, emoji=emoji, targetAuthor=self.sender,
+                                targetTimestamp=self.timestamp)
+        elif (self.recipientType == 'group'):
+            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices, 
+                                thisDevice=self._thisDevice, recipient=self.recipient, emoji=emoji,
+                                targetAuthor=self.sender, targetTimestamp=self.timestamp)
+        else:
+            errorMessage = "Invalid recipient type."
+            return (False, errorMessage)
+    # Send reaction:
+        sent, message = reaction.send()
+        if (sent == False):
+            return (False, message)
+    # Parse reaction:
+        self.reactions.__parse__(reaction)
+        return (True, reaction)
