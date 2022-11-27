@@ -14,6 +14,7 @@ from signalReaction import Reaction
 from signalReceipt import Receipt
 from signalReceivedMessage import ReceivedMessage
 from signalSticker import StickerPacks
+from signalStoryMessage import StoryMessage
 from signalSyncMessage import SyncMessage
 from signalTypingMessage import TypingMessage
 from signalTimestamp import Timestamp
@@ -241,7 +242,14 @@ class ReceiveThread(threading.Thread):
                     if (self._typeMsgCb != None): self._typeMsgCb(self._account, message)
             #### Story Message ####
                 elif ('storyMessage' in envelopeDict.keys()):
-                    message = None
+                    message = StoryMessage(
+                                            commandSocket=self._commandSocket, accountId=self._account.number,
+                                            contacts=self._account.contacts, groups=self._account.groups,
+                                            devices=self._account.devices, thisDevice=self._account.device,
+                                            rawMessage=envelopeDict
+                                        )
+                    # print("DEBUG: ", envelopeDict)
+                    self._account.messages.append(message)
                     if (self._stryMsgCb != None): self._stryMsgCb(self._account, message)
             #### Call message ####
                 elif ('callMessage' in envelopeDict.keys()):

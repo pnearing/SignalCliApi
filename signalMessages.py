@@ -25,6 +25,7 @@ from signalReceipt import Receipt
 from signalReceivedMessage import ReceivedMessage
 from signalSentMessage import SentMessage
 from signalSticker import Sticker, StickerPacks
+from signalStoryMessage import StoryMessage
 from signalSyncMessage import SyncMessage
 from signalTimestamp import Timestamp
 from signalTypingMessage import TypingMessage
@@ -61,6 +62,8 @@ class Messages(object):
         self.messages : list[SentMessage|ReceivedMessage] = []
         self.sync: list[GroupUpdate|SyncMessage]= []
         self.typing: list[TypingMessage] = []
+        self.story: list[StoryMessage] = []
+        # self.calls: list[]
         self._sending: bool = False
     # Do load:
         if (doLoad == True):
@@ -81,6 +84,7 @@ class Messages(object):
             "messages": [],
             "syncMessages": [],
             "typingMessages": [],
+            "storyMessages": [],
         }
     # Store messages: SentMessage | ReceivedMessage
         for message in self.messages:
@@ -91,6 +95,9 @@ class Messages(object):
     # Store typing messages: TypingMessage
         for message in self.typing:
             messagesDict['typingMessages'].append(message.__toDict__())
+    # Store story messages: StoryMessage
+        for message in self.story:
+            messagesDict['storyMessages'].append(message.__toDict__())
         return messagesDict
     
     def __fromDict__(self, fromDict:dict) -> None:
@@ -131,6 +138,14 @@ class Messages(object):
             message = TypingMessage(commandSocket=self._commandSocket, accountId=self._accountId,
                                         configPath=self._configPath, contacts=self._contacts, groups=self._groups,
                                         devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
+            self.typing.append(message)
+    # Load Story Messages:
+        self.story = []
+        for messageDict in fromDict['storyMessages']:
+            message = StoryMessage(commandSocket=self._commandSocket, accountId=self._accountId,
+                                    configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+                                    devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
+            self.story.append(message)
         return
 
 #################################
