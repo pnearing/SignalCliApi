@@ -284,6 +284,8 @@ class Message(object):
     def markDelivered(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
             __typeError__('when', 'Timestamp', when)
+        if (self.isDelivered == True):
+            return
         self.isDelivered = True
         self.timeDelivered = when
         return
@@ -291,6 +293,8 @@ class Message(object):
     def markRead(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
             __typeError__('when', 'Timestamp', when)
+        if (self.isRead == True):
+            return
         self.isRead = True
         self.timeRead = when
         return
@@ -298,6 +302,8 @@ class Message(object):
     def markViewed(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
             __typeError__('when', 'Timestamp', when)
+        if (self.isViewed == True):
+            return
         self.isViewed = True
         self.timeViewed = when
         return
