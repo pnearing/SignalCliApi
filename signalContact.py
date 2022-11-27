@@ -5,7 +5,7 @@ import socket
 import json
 import sys
 
-from signalCommon import __socketReceive__, __socketSend__
+from signalCommon import __typeError__, __socketReceive__, __socketSend__
 from signalProfile import Profile
 from signalTimestamp import Timestamp
 from signalDevices import Devices
@@ -244,6 +244,8 @@ class Contact(object):
 # Methods:
 ############################
     def seen(self, timeSeen:Timestamp) -> None:
+        if (isinstance(timeSeen, Timestamp) == False):
+            __typeError__('timeSeen', 'Timestamp', timeSeen)
         if (self.lastSeen != None):
             if (self.lastSeen < timeSeen):
                 self.lastSeen = timeSeen
