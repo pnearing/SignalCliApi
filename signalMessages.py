@@ -227,13 +227,19 @@ class Messages(object):
                 if (message.timestamp == timestamp):
                     if (message.isRead == False):
                         if (isinstance(message, ReceivedMessage) == True):
-                            message.markRead(syncMessage.timestamp, sendReceipt=False)
+                            message.markRead(when=syncMessage.timestamp, sendReceipt=False)
                         else:
-                            message.markRead(syncMessage.timestamp)
+                            message.markRead(when=syncMessage.timestamp)
+        self.__save__()
         return
     
     def __parseSentMessageSync__(self, syncMessage:SyncMessage) -> None:
-        #TODO: Create sent message:
+        message = SentMessage(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                thisDevice=self._thisDevice, stickerPacks=self._stickerPacks,
+                                rawMessage=syncMessage.rawSentMessage)
+        self.messages.append(message)
+        self.__save__()
         return
     
     def __parseSyncMessage__(self, syncMessage:SyncMessage) -> None:
