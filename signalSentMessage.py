@@ -210,6 +210,27 @@ class SentMessage(Message):
         # super().__fromRawMessage__(rawMessage)
         print("SentMessage.__fromRawMessage__")
         print(rawMessage)
+# sentMessage': {
+#   'destination': '+14164591597',
+#   'destinationNumber': '+14164591597',
+#   'destinationUuid': '4ab4a53b-976f-42f5-a3af-fa0ec60943eb',
+#   'timestamp': 1669384809269,
+#   'message': 'Cool, 1102 Hawthorne Rd, Beachburg, On',
+#   'expiresInSeconds': 0,
+#   'viewOnce': False}}}
+
+# 'sentMessage': {
+#   'destination': None,
+#   'destinationNumber': None,
+#   'destinationUuid': None,
+#   'timestamp': 1669395970071,
+#   'message': '{"method": "listContacts"}',
+#   'expiresInSeconds': 0,
+#   'viewOnce': False,
+#   'groupInfo': {
+#       'groupId': 'ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs=',
+#       'type': 'DELIVER'
+# }}}}
 
         return
 ###########################

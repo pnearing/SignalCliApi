@@ -60,7 +60,7 @@ class Messages(object):
         self._filePath: str = os.path.join(accountPath, "messages.json")
 # Set external properties:
         self.messages : list[SentMessage|ReceivedMessage] = []
-        self.sync: list[GroupUpdate|SyncMessage]= []
+        self.sync: list[GroupUpdate|SyncMessage] = []
         self.typing: list[TypingMessage] = []
         self.story: list[StoryMessage] = []
         # self.calls: list[]
@@ -91,6 +91,7 @@ class Messages(object):
             messagesDict["messages"].append(message.__toDict__())
     # Store sync messages: (sync and group update)
         for message in self.sync:
+            if (message == None): raise RuntimeError("WTF")
             messagesDict['syncMessages'].append(message.__toDict__())
     # Store typing messages: TypingMessage
         for message in self.typing:
@@ -127,7 +128,10 @@ class Messages(object):
                                         configPath=self._configPath, contacts=self._contacts, groups=self._groups,
                                         devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
             elif (messageDict['messageType'] == Message.TYPE_SYNC_MESSAGE):
-                message = None #TODO: Sync messges
+                message = SyncMessage(commandSocket=self._commandSocket, accountId=self._accountId,
+                                        configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+                                        devices=self._devices, thisDevice=self._thisDevice,
+                                        stickerPacks=self._stickerPacks,fromDict=messageDict)
             else:
                 errorMessage = "FATAL: Invalid message type in for sync messages in Messges.__fromDict__"
                 raise RuntimeError(errorMessage)
@@ -230,7 +234,6 @@ class Messages(object):
                             message.markRead(when=syncMessage.timestamp, sendReceipt=False)
                         else:
                             message.markRead(when=syncMessage.timestamp)
-        self.__save__()
         return
     
     def __parseSentMessageSync__(self, syncMessage:SyncMessage) -> None:
@@ -238,8 +241,7 @@ class Messages(object):
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
                                 thisDevice=self._thisDevice, stickerPacks=self._stickerPacks,
                                 rawMessage=syncMessage.rawSentMessage)
-        self.messages.append(message)
-        self.__save__()
+        self.append(message)
         return
     
     def __parseSyncMessage__(self, syncMessage:SyncMessage) -> None:
@@ -337,6 +339,7 @@ class Messages(object):
         if (message == None):
             if (DEBUG == True):
                 print("ATTEMPTING TO APPEND NONE TYPE to messages", file=sys.stderr)
+            raise RuntimeError()
             return
         if (isinstance(message, SentMessage) == True or isinstance(message, ReceivedMessage) == True):
             self.messages.append(message)
@@ -344,6 +347,7 @@ class Messages(object):
             self.sync.append(message)
         elif (isinstance(message, TypingMessage) == True):
             self.typing.append(message)
+        
         self.__save__()
         return
     

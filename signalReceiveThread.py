@@ -192,7 +192,7 @@ class ReceiveThread(threading.Thread):
                 elif ('syncMessage' in envelopeDict.keys()):
                     if (envelopeDict['syncMessage'] == {}):
                         if (DEBUG == True):
-                            infoMessage = "INFO: Got empty sync message, doing nothing."
+                            infoMessage = "INFO: Got empty sync message, skipping."
                             print(infoMessage, file=sys.stderr)
                             continue
                     print(envelopeDict)
@@ -208,15 +208,33 @@ class ReceiveThread(threading.Thread):
                         print("Parsing sync message...", file=sys.stderr)
                     if (message.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC or 
                                                                 message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
+                        if (DEBUG == True):
+                            print("Read messages.", file=sys.stderr)
                         self._account.messages.__parseSyncMessage__(message)
                     elif (message.syncType == SyncMessage.TYPE_CONTACT_SYNC):
+                        if (DEBUG == True):
+                            print("Contact sync", file=sys.stderr)
                         self._account.contacts.__sync__()
                     elif (message.syncType == SyncMessage.TYPE_GROUPS_SYNC):
+                        if (DEBUG == True):
+                            print("Group sync", file=sys.stderr)
                         self._account.groups.__sync__()
                     elif (message.syncType == SyncMessage.TYPE_BLOCKED_SYNC):
+                        if (DEBUG == True):
+                            print("Blocked sync", file=sys.stderr)
                         self._account.contacts.__parseSyncMessage__(message)
                         self._account.groups.__parseSyncMessage__(message)
+                    elif (message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
+                        if (DEBUG == True):
+                            print("Sent message sync", file=sys.stderr)
+                        self._account.messages.__parseSyncMessage__(message)
+                    else:
+                        print(envelopeDict, file=sys.stderr, flush=True)
+                        print(message.syncType, file=sys.stderr, flush=True)
+                        raise RuntimeError("Unhandled sync type")
                 # Append the message to messages:
+                    if (message == None):
+                        raise RuntimeError("Shouldn't be none")
                     self._account.messages.append(message)
                 # Call sync message callback:
                     if (self._syncMsgCb != None): self._syncMsgCb(self._account, message)
@@ -244,9 +262,9 @@ class ReceiveThread(threading.Thread):
                 elif ('storyMessage' in envelopeDict.keys()):
                     message = StoryMessage(
                                             commandSocket=self._commandSocket, accountId=self._account.number,
-                                            contacts=self._account.contacts, groups=self._account.groups,
-                                            devices=self._account.devices, thisDevice=self._account.device,
-                                            rawMessage=envelopeDict
+                                            configPath=self._configPath, contacts=self._account.contacts,
+                                            groups=self._account.groups, devices=self._account.devices,
+                                            thisDevice=self._account.device, rawMessage=envelopeDict
                                         )
                     # print("DEBUG: ", envelopeDict)
                     self._account.messages.append(message)
