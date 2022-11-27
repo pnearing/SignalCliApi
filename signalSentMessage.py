@@ -207,9 +207,10 @@ class SentMessage(Message):
 # Init:
 ##########################
     def __fromRawMessage__(self, rawMessage: dict) -> None:
-        super().__fromRawMessage__(rawMessage)
+        # super().__fromRawMessage__(rawMessage)
         print("SentMessage.__fromRawMessage__")
         print(rawMessage)
+
         return
 ###########################
 # To / From Dict:
@@ -367,13 +368,19 @@ class SentMessage(Message):
 ###########################
 # Methods:
 ###########################
-    def markDelivered(self, when: Timestamp) -> None:
+    def markDelivered(self, when: Optional[Timestamp]=None) -> None:
+        if (when == None):
+            when = Timestamp(now=True)
         return super().markDelivered(when)
     
-    def markRead(self, when: Timestamp) -> None:
+    def markRead(self, when: Optional[Timestamp]=None) -> None:
+        if (when == None):
+            when = Timestamp(now=True)
         return super().markRead(when)
     
-    def markViewed(self, when: Timestamp) -> None:
+    def markViewed(self, when: Optional[Timestamp]=None) -> None:
+        if (when == None):
+            when = Timestamp(now=True)
         return super().markViewed(when)
 
     def getQuote(self) -> Quote:

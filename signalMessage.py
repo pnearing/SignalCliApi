@@ -282,16 +282,22 @@ class Message(object):
 # Methods:
 ###############################
     def markDelivered(self, when: Timestamp) -> None:
+        if (isinstance(when, Timestamp) == False):
+            __typeError__('when', 'Timestamp', when)
         self.isDelivered = True
         self.timeDelivered = when
         return
 
     def markRead(self, when: Timestamp) -> None:
+        if (isinstance(when, Timestamp) == False):
+            __typeError__('when', 'Timestamp', when)
         self.isRead = True
         self.timeRead = when
         return
 
     def markViewed(self, when: Timestamp) -> None:
+        if (isinstance(when, Timestamp) == False):
+            __typeError__('when', 'Timestamp', when)
         self.isViewed = True
         self.timeViewed = when
         return
