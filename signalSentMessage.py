@@ -222,7 +222,11 @@ class SentMessage(Message):
     # Load body:
         self.body = rawSentMessage['message']
     # Load attachments:
-        # TODO: FIND A SENT MESSAGE WIT AN ATTACHMENT
+        self.attachments = None
+        if ('attachments' in rawSentMessage.keys()):
+            self.attachments = []
+            for rawAttachment in rawSentMessage['attachments']:
+                self.attachments.append( Attachment(configPath=self._configPath, rawAttachment=rawAttachment) )
     # Load sticker: 
         self.sticker = None
         if ('sticker' in rawSentMessage.keys()):
@@ -429,6 +433,8 @@ class SentMessage(Message):
         return quote
     
     def parseMentions(self) -> str:
+        if (self.mentions == None):
+            return self.body
         return self.mentions.__parseMentions__(self.body)
     
     def react(self, emoji:str) -> tuple[bool, Reaction | str]:
