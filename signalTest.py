@@ -22,7 +22,7 @@ def allMsgCb(account: Account, message:ReceivedMessage|Receipt|TypingMessage|Syn
 
 def receivedMsgCb(account:Account, message:ReceivedMessage):
     print("RECEIVED")
-    message.markRead()
+    # message.markRead()
     print(message)
     print("Received message FROM: %s AT: %s on DEVICE: %s" % (
                                                             message.sender.getDisplayName(),
@@ -42,8 +42,8 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
                 elif (attachment.thumbnail != None and attachment.thumbnail.exists == True):
                     displayName = "Thumbnail: %s" % attachment.thumbnail.localPath
                 print("Trying to display attachment: %s...\n    Success=" % displayName, end='', flush=True)
-                returnValue = attachment.display()
-                print(returnValue)
+                # returnValue = attachment.display()
+                # print(returnValue)
 
         quotedMessage = account.messages.getQuoted(message.quote)
         if (quotedMessage == None):
@@ -77,8 +77,8 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
             elif (attachment.thumbnail != None and attachment.thumbnail.exists == True):
                 displayName = "Thumbnail: %s" % attachment.thumbnail.localPath
             print("Trying to display attachment: %s...\n    Success=" % displayName, end='', flush=True)
-            returnValue = attachment.display()
-            print(returnValue)
+            # returnValue = attachment.display()
+            # print(returnValue)
 
     # message.react('😀')#👍👎
     # if (message.hasQuote == True):
@@ -137,8 +137,8 @@ if __name__ == '__main__':
     parser.add_argument("--doSendGroup", help="--doSendGroup, Send a test message to c&c group", action='store_true')
     args = parser.parse_args()
 
-    # signalConfigPath = '/home/streak/.local/share/signal-cli'
-    signalConfigPath = "/home/streak/signal-cli"
+    signalConfigPath = '/home/streak/.local/share/signal-cli'
+    # signalConfigPath = "/home/streak/signal-cli"
     # signalConfigPath = None
     logFilePath = '/home/streak/signal-cli/output.log'
     previewUrl = 'https://thepostmillennial.com/balenciaga-tries-to-walk-back-ads-promoting-child-exploitation-by-suing-ad-creator'
@@ -233,13 +233,12 @@ if __name__ == '__main__':
 
     # stickerPack = signal.stickers.getByName("Josh Saunders")
     # sticker = stickerPack[0]
-    # recipient = account.contacts.getById("+16138883937")
     # account.messages.sendMessage(recipients=[recipient], sticker=sticker)
     if (args.doSendGroup == True):
         marshJpg = '/home/streak/Pictures/marshmallow.jpg'
         groupId = "ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs="
         group = account.groups.getById(groupId)
-        messageText = "This is a test.\n@<+16138883937>Please ignore.\n@<53bfafdc-9b22-4559-a7a6-1c8029f599d7>Also ignore."
+        messageText = "This is a test.\n@<+16134548055>Please ignore.\n@<53bfafdc-9b22-4559-a7a6-1c8029f599d7>Also ignore."
 
         mentions = Mentions(contacts=account.contacts)
         mentions.createFromBody(messageText)
