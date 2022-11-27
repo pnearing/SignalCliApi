@@ -40,12 +40,6 @@ class SentMessage(Message):
                     rawMessage: Optional[dict] = None,
                     recipient: Optional[Contact | Group] = None,
                     timestamp: Optional[Timestamp] = None,
-                    # isDelivered: bool = False,
-                    # timeDelivered: Optional[Timestamp] = None,
-                    # isRead: bool = False,
-                    # timeRead: Optional[Timestamp] = None,
-                    # isViewed: bool = False,
-                    # timeViewed: Optional[Timestamp] = None,
                     body: Optional[str] = None,
                     attachments: Optional[Iterable[Attachment] | Attachment] = None,
                     mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
@@ -210,28 +204,52 @@ class SentMessage(Message):
         # super().__fromRawMessage__(rawMessage)
         print("SentMessage.__fromRawMessage__")
         print(rawMessage)
-# sentMessage': {
-#   'destination': '+14164591597',
-#   'destinationNumber': '+14164591597',
-#   'destinationUuid': '4ab4a53b-976f-42f5-a3af-fa0ec60943eb',
-#   'timestamp': 1669384809269,
-#   'message': 'Cool, 1102 Hawthorne Rd, Beachburg, On',
-#   'expiresInSeconds': 0,
-#   'viewOnce': False}}}
-
-# 'sentMessage': {
-#   'destination': None,
-#   'destinationNumber': None,
-#   'destinationUuid': None,
-#   'timestamp': 1669395970071,
-#   'message': '{"method": "listContacts"}',
-#   'expiresInSeconds': 0,
-#   'viewOnce': False,
-#   'groupInfo': {
-#       'groupId': 'ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs=',
-#       'type': 'DELIVER'
-# }}}}
-
+        rawSentMessage: dict[str, object] = rawMessage['syncMessage']['sentMessage']
+    # Load recipient and recipient type:
+        if (rawSentMessage['destination'] != None):
+            self.recipientType = 'contact'
+            added, self.recipient = self._contacts.__getOrAdd__(name="<UNKNOWN-CONTACT>",
+                                                                number=rawSentMessage['destinationNumber'],
+                                                                uuid=rawSentMessage['destinationUuid'])
+        elif ('groupInfo' in rawSentMessage.keys()):
+            self.recipientType = 'group'
+            added, self.recipient = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", rawSentMessage['groupInfo']['groupId'])
+    # Load timestamp:
+        self.timestamp = Timestamp(timestamp=rawSentMessage['timestamp'])
+    # Load Device:
+        added, self.device = self._devices.__getOrAdd__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
+    
+    # Load body:
+        self.body = rawSentMessage['message']
+    # Load attachments:
+        # TODO: FIND A SENT MESSAGE WIT AN ATTACHMENT
+    # Load sticker: 
+        self.sticker = None
+        if ('sticker' in rawSentMessage.keys()):
+            self.sticker = self._stickerPacks.getSticker( packId=rawSentMessage['sticker']['packId'],
+                                                            stickerId=rawSentMessage['sticker']['stickerId'])
+    # Load mentions:
+        self.mentions = None
+        if ('mentions' in rawSentMessage.keys()):
+            self.mentions = Mentions(contacts=self._contacts, rawMentions=rawSentMessage['mentions'])
+    # Load quote:
+        self.quote = None
+        if ('quote' in rawSentMessage.keys()):
+            self.quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+                                rawQuote=rawSentMessage['quote'])
+    # Load expiry:
+        if (rawSentMessage['expiresInSeconds'] == 0):
+            self.expiration = None
+            self.expirationTimestamp = None
+            self.isExpired = False
+        else:
+            self.expiration = timedelta(seconds=rawSentMessage['expiresInSeconds'])
+            self.expirationTimestamp = None
+            self.isExpired = False
+    # Load preview:
+        self.preview = None
+        if ('preview' in rawSentMessage.keys()):
+            self.preview = Preview(configPath=self._configPath, rawPreview=rawSentMessage['preview'])
         return
 ###########################
 # To / From Dict:
