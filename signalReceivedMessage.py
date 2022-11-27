@@ -380,18 +380,18 @@ class ReceivedMessage(Message):
     def markDelivered(self, when:Timestamp) -> None:
         return super().markDelivered(when)
     
-    def markRead(self, sendReceipt:bool=True) -> None:
+    def markRead(self, when:Timestamp=None, sendReceipt:bool=True) -> None:
         if (sendReceipt == True):
             when = self.__sendReceipt__('read')
-        else:
+        elif (when == None):
             when = Timestamp(now=True)
         self.__setExpiry__(when)
         return super().markRead(when)
 
-    def markViewed(self, sendReceipt:bool=True) -> None:
+    def markViewed(self, when:Timestamp=None, sendReceipt:bool=True) -> None:
         if (sendReceipt == True):
             when = self.__sendReceipt__('viewed')
-        else:
+        elif (when == None):
             when = Timestamp(now=True)
         self.__setExpiry__(when)
         return super().markViewed(when)
