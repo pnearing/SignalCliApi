@@ -254,6 +254,15 @@ class SentMessage(Message):
         self.preview = None
         if ('preview' in rawSentMessage.keys()):
             self.preview = Preview(configPath=self._configPath, rawPreview=rawSentMessage['preview'])
+    # Set sent
+        self.isSent = True
+    # Set sent to, If group, assume sent to all current members.
+        self.sentTo = []
+        if (self.recipientType == 'group'):
+            for contact in self.recipient.members:
+                self.sentTo.append(contact)
+        elif (self.recipientType == 'contact'):
+            self.sentTo = [ self.recipient ]
         return
 ###########################
 # To / From Dict:
