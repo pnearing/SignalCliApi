@@ -2,15 +2,15 @@
 
 from typing import Optional, Iterable
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalGroup import Group
-from signalGroups import Groups
-from signalMention import Mention
-from signalMentions import Mentions
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMention import Mention
+from .signalMentions import Mentions
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG: bool = True
@@ -38,9 +38,9 @@ class Quote(object):
     # Check groups:
         if (isinstance(groups, Groups) == False):
             __typeError__("groups", "Groups", groups)
-    # Check fromDict:
+    # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == None):
-            __typeError__("fromDict", "dict[str, object]", fromDict)
+            __typeError__("from_dict", "dict[str, object]", fromDict)
     # Check rawQuote:
         if (rawQuote != None and isinstance(rawQuote, dict) == False):
             __typeError__("rawQuote", "dict[str, object]", rawQuote)

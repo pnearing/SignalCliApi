@@ -5,10 +5,10 @@ import socket
 import json
 import sys
 
-from signalCommon import __socketReceive__, __socketSend__
-from signalContacts import Contacts
-from signalContact import Contact
-from signalTimestamp import Timestamp
+from .signalCommon import __socketReceive__, __socketSend__
+from .signalContacts import Contacts
+from .signalContact import Contact
+from .signalTimestamp import Timestamp
 global DEBUG
 DEBUG: bool = True
 
@@ -63,13 +63,13 @@ class Group(object):
         self.permissionEditDetails: str = permissionEditDetails
         self.permissionSendMessage: str = permissionSendMessage
         # self.lastSeen: Optional[Timestamp] = lastSeen
-    # Parse fromDict:
+    # Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
     # Parse rawGroup:
         elif (rawGroup != None):
             self.__fromRawGroup__(rawGroup)
-    # Group object was created without rawGroup or fromDict, see if we can get details from signal:
+    # Group object was created without rawGroup or from_dict, see if we can get details from signal:
         else:
             if (self.id != None):
                 self._isValid = self.__sync__()

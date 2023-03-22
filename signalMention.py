@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 from typing import TypeVar, Optional, Any
-from signalContacts import Contacts
-from signalContact import Contact
+from .signalContacts import Contacts
+from .signalContact import Contact
 
 Self = TypeVar("Self", bound="Mention")
 

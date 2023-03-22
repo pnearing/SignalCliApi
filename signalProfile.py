@@ -6,8 +6,8 @@ import json
 import sys
 import socket
 
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalTimestamp import Timestamp
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG:bool = True

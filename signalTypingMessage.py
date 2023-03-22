@@ -4,19 +4,19 @@ from typing import Optional, Iterable
 import sys
 import socket
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMention import Mention
-from signalMessage import Message
-from signalReaction import Reaction
-from signalSticker import Sticker
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMention import Mention
+from .signalMessage import Message
+from .signalReaction import Reaction
+from .signalSticker import Sticker
+from .signalTimestamp import Timestamp
 
 class TypingMessage(Message):
     def __init__(self,
@@ -88,11 +88,11 @@ class TypingMessage(Message):
         if (self.sender != None and self.action != None and self.timeChanged != None ):
             if (self.recipient !=None and self.recipientType != None):
                 if (self.recipientType == 'contact'):
-                    self.body = "At %s, %s %s typing." % ( self.timeChanged.getDisplayTime(), self.sender.getDisplayName(),
-                                                            self.action.lower())
+                    self.body = "At %s, %s %s typing." % (self.timeChanged.get_display_time(), self.sender.getDisplayName(),
+                                                          self.action.lower())
                 elif (self.recipientType == 'group'):
-                    self.body = "At %s, %s %s typing in group %s." %( self.timeChanged.getDisplayTime(), self.sender.getDisplayName(),
-                                                                        self.action.lower(), self.recipient.getDisplayName())
+                    self.body = "At %s, %s %s typing in group %s." %(self.timeChanged.get_display_time(), self.sender.getDisplayName(),
+                                                                     self.action.lower(), self.recipient.getDisplayName())
                 else:
                     raise ValueError("invalid recipientType: %s" % self.recipientType)
         else:

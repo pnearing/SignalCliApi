@@ -6,29 +6,29 @@ import os
 import socket
 import json
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalGroupUpdate import GroupUpdate
-from signalMention import Mention
-from signalMentions import Mentions
-from signalMessage import Message
-from signalPreview import Preview
-from signalQuote import Quote
-from signalReaction import Reaction
-from signalReceipt import Receipt
-from signalReceivedMessage import ReceivedMessage
-from signalSentMessage import SentMessage
-from signalSticker import Sticker, StickerPacks
-from signalStoryMessage import StoryMessage
-from signalSyncMessage import SyncMessage
-from signalTimestamp import Timestamp
-from signalTypingMessage import TypingMessage
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalGroupUpdate import GroupUpdate
+from .signalMention import Mention
+from .signalMentions import Mentions
+from .signalMessage import Message
+from .signalPreview import Preview
+from .signalQuote import Quote
+from .signalReaction import Reaction
+from .signalReceipt import Receipt
+from .signalReceivedMessage import ReceivedMessage
+from .signalSentMessage import SentMessage
+from .signalSticker import Sticker, StickerPacks
+from .signalStoryMessage import StoryMessage
+from .signalSyncMessage import SyncMessage
+from .signalTimestamp import Timestamp
+from .signalTypingMessage import TypingMessage
 
 global DEBUG
 DEBUG: bool = True
@@ -117,7 +117,7 @@ class Messages(object):
                                             devices=self._devices, thisDevice=self._thisDevice,
                                             stickerPacks=self._stickerPacks, fromDict=messageDict)
             else:   
-                errorMessage = "FATAL: Invalid message type in messages fromDict: %s" % fromDict['messageType']
+                errorMessage = "FATAL: Invalid message type in messages from_dict: %s" % fromDict['messageType']
                 raise RuntimeError(errorMessage)
             self.messages.append(message)
     # Load sync messages: GroupUpdate | SyncMessage

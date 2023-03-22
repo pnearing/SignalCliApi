@@ -3,15 +3,15 @@
 from typing import Optional, Iterable
 import socket
 
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMessage import Message
-from signalTimestamp import Timestamp
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMessage import Message
+from .signalTimestamp import Timestamp
 
 class Receipt(Message):
     TYPE_DELIVERY: int = 1
@@ -138,7 +138,7 @@ class Receipt(Message):
 # Helpers:
 #########################
     def __updateBody__(self) -> None:
-        timestampStrs = [timestamp.getDisplayTime() for timestamp in self.timestamps]
+        timestampStrs = [timestamp.get_display_time() for timestamp in self.timestamps]
         timestampsStr = ', '.join(timestampStrs)
         if (self.receiptType == self.TYPE_DELIVERY):
             self.body = "The messages: %s have been delivered to: %s 's device: %s" % ( 

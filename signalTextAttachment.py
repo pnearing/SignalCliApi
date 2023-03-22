@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from signalCommon import __typeError__
+from .signalCommon import __typeError__
 
 class TextAttachment(object):
     def __init__(self,

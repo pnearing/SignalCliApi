@@ -5,24 +5,24 @@ import socket
 from datetime import timedelta
 import json
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalContacts import Contacts
-from signalContact import Contact
-from signalDevices import Devices
-from signalDevice import Device
-from signalGroups import Groups
-from signalGroup import Group
-from signalMention import Mention
-from signalMentions import Mentions
-from signalMessage import Message
-from signalPreview import Preview
-from signalQuote import Quote
-from signalReaction import Reaction
-from signalReactions import Reactions
-from signalReceipt import Receipt
-from signalSticker import Sticker, StickerPacks
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalContacts import Contacts
+from .signalContact import Contact
+from .signalDevices import Devices
+from .signalDevice import Device
+from .signalGroups import Groups
+from .signalGroup import Group
+from .signalMention import Mention
+from .signalMentions import Mentions
+from .signalMessage import Message
+from .signalPreview import Preview
+from .signalQuote import Quote
+from .signalReaction import Reaction
+from .signalReactions import Reactions
+from .signalReceipt import Receipt
+from .signalSticker import Sticker, StickerPacks
+from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="SentMessage")
 

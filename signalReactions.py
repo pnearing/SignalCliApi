@@ -3,14 +3,14 @@
 from typing import Optional, Iterable, Iterator
 import socket
 
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalReaction import Reaction
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalReaction import Reaction
 
 class Reactions(object):
     def __init__(self,
@@ -37,7 +37,7 @@ class Reactions(object):
         if (isinstance(thisDevice, Device) == False):
             __typeError__("thisDevice", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("fromDict", "dict", fromDict)
+            __typeError__("from_dict", "dict", fromDict)
     # Set internal vars:
         self._commandSocket: socket.socket = commandSocket
         self._accountId: str = accountId

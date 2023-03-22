@@ -4,7 +4,7 @@ from typing import Optional
 import os
 from subprocess import check_call, CalledProcessError
 
-from signalCommon import __typeError__, findXdgOpen
+from .signalCommon import __typeError__, findXdgOpen
 
 class Thumbnail(object):
     def __init__(self,
@@ -28,7 +28,7 @@ class Thumbnail(object):
         if (localPath != None):
             self.exists = os.path.exists(localPath)
         self.size: int = size
-    # Parse fromDict:
+    # Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
     # Parse raw thumbnail:

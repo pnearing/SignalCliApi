@@ -11,12 +11,12 @@ from time import sleep
 import json
 import re
 
-from signalAccount import Account
-from signalAccounts import Accounts
-from signalCommon import __typeError__, findSignal, findQrencode, parseSignalReturnCode, __socketCreate__, __socketConnect__, __socketClose__, __socketReceive__, __socketSend__, phoneNumberRegex
-from signalMessage import Message
-from signalReceiveThread import ReceiveThread
-from signalSticker import StickerPacks
+from .signalAccount import Account
+from .signalAccounts import Accounts
+from .signalCommon import __typeError__, findSignal, findQrencode, parseSignalReturnCode, __socketCreate__, __socketConnect__, __socketClose__, __socketReceive__, __socketSend__, phoneNumberRegex
+from .signalMessage import Message
+from .signalReceiveThread import ReceiveThread
+from .signalSticker import StickerPacks
 global DEBUG
 DEBUG:bool = True
 

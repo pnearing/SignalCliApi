@@ -5,9 +5,9 @@ import os
 import json
 import socket
 
-from signalCommon import phoneNumberRegex, uuidRegex
-from signalAccount import Account
-from signalSticker import StickerPacks
+from .signalCommon import phoneNumberRegex, uuidRegex
+from .signalAccount import Account
+from .signalSticker import StickerPacks
 
 global DEBUG
 DEBUG = True

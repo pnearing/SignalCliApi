@@ -16,8 +16,8 @@ import os
 import shutil
 import sys
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__
 
 global DEBUG
 DEBUG: bool = True
@@ -36,9 +36,9 @@ class Preview(object):
     # Check configPath:
         if (isinstance(configPath, str) == False):
             __typeError__("configPath", "str", configPath)
-    # Check fromDict:
+    # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("fromDict", "dict", fromDict)
+            __typeError__("from_dict", "dict", fromDict)
     # Check rawPreview:
         if (rawPreview != None and isinstance(rawPreview, dict) == False):
             __typeError__("rawPreview", "dict", rawPreview)
@@ -68,7 +68,7 @@ class Preview(object):
             self.image = image
         elif(isinstance(image, str) == True):
             self.image = Attachment(configPath=configPath, localPath=image)
-# Parse fromDict:
+# Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
 # Parse raw preview:

@@ -3,7 +3,7 @@
 from typing import TypeVar, Optional
 import socket
 
-from signalTimestamp import Timestamp
+from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="Device")
 

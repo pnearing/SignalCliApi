@@ -2,10 +2,10 @@
 from typing import Optional, Iterable, Iterator
 import re
 
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalMention import Mention
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalMention import Mention
 
 class Mentions(object):
     def __init__(self,
@@ -17,9 +17,9 @@ class Mentions(object):
     # Argument check contacts:
         if (isinstance(contacts, Contacts) == False):
             __typeError__("contacts", "Contacts", contacts)
-    # Argument check fromDict:
+    # Argument check from_dict:
         if (fromDict != None and isinstance(fromDict,dict) == False):
-            __typeError__("fromDict", "dict", fromDict)
+            __typeError__("from_dict", "dict", fromDict)
     # Argument check rawMentions:
         if (rawMentions != None):
             if (isinstance(rawMentions, list) == False):

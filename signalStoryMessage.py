@@ -3,18 +3,18 @@
 from typing import Optional
 import socket
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups 
-from signalMessage import Message
-from signalPreview import Preview
-from signalTextAttachment import TextAttachment
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMessage import Message
+from .signalPreview import Preview
+from .signalTextAttachment import TextAttachment
+from .signalTimestamp import Timestamp
 
 class StoryMessage(Message):
     def __init__(self,

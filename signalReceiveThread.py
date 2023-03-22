@@ -6,18 +6,18 @@ import socket
 import threading
 import json
 
-from signalAccount import Account
-from signalCommon import __socketCreate__, __socketConnect__, __socketClose__, __socketReceive__, __socketSend__
-from signalGroupUpdate import GroupUpdate
-from signalMessage import Message
-from signalReaction import Reaction
-from signalReceipt import Receipt
-from signalReceivedMessage import ReceivedMessage
-from signalSticker import StickerPacks
-from signalStoryMessage import StoryMessage
-from signalSyncMessage import SyncMessage
-from signalTypingMessage import TypingMessage
-from signalTimestamp import Timestamp
+from .signalAccount import Account
+from .signalCommon import __socketCreate__, __socketConnect__, __socketClose__, __socketReceive__, __socketSend__
+from .signalGroupUpdate import GroupUpdate
+from .signalMessage import Message
+from .signalReaction import Reaction
+from .signalReceipt import Receipt
+from .signalReceivedMessage import ReceivedMessage
+from .signalSticker import StickerPacks
+from .signalStoryMessage import StoryMessage
+from .signalSyncMessage import SyncMessage
+from .signalTypingMessage import TypingMessage
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG: bool = True

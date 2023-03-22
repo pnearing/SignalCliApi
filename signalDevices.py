@@ -4,9 +4,9 @@ from typing import Optional
 import json
 import socket
 
-from signalCommon import __socketReceive__, __socketSend__
-from signalDevice import Device
-from signalTimestamp import Timestamp
+from .signalCommon import __socketReceive__, __socketSend__
+from .signalDevice import Device
+from .signalTimestamp import Timestamp
 
 class Devices(object):
     def __init__(self,

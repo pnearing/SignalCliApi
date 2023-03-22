@@ -4,9 +4,9 @@ from typing import Optional, Iterator
 import socket
 import json
 
-from signalCommon import __socketReceive__, __socketSend__
-from signalGroup import Group
-from signalContacts import Contacts
+from .signalCommon import __socketReceive__, __socketSend__
+from .signalGroup import Group
+from .signalContacts import Contacts
 # from signalSyncMessage import SyncMessage
 
 global DEBUG

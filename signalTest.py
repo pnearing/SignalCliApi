@@ -26,10 +26,10 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
     print(message)
     print("Received message FROM: %s AT: %s on DEVICE: %s" % (
                                                             message.sender.getDisplayName(),
-                                                            message.timestamp.getDisplayTime(),
+                                                            message.timestamp.get_display_time(),
                                                             message.device.getDisplayName(),
                                                     ))
-    if (message.recipientType == 'group'):
+    if message.recipientType == 'group':
         print("In GROUP: %s" % message.recipient.getDisplayName())
     if (message.quote != None):
         if (message.quote.attachments != None):
@@ -51,11 +51,11 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
         else:
             if (isinstance(quotedMessage, ReceivedMessage) == True):
                 print("Quoting received message FROM:%s AT: %s" % (quotedMessage.sender.getDisplayName(),
-                                                                    quotedMessage.timestamp.getDisplayTime()))
+                                                                    quotedMessage.timestamp.get_display_time()))
                 if (quotedMessage.recipientType == 'group'):
                     print("in GROUP: %s" % quotedMessage.recipient.getDisplayName())
             elif (isinstance(quotedMessage, SentMessage) == True):
-                print("Quoting message sent AT: %s" % quotedMessage.timestamp.getDisplayTime())
+                print("Quoting message sent AT: %s" % quotedMessage.timestamp.get_display_time())
                 if (quotedMessage.recipientType == 'group'):
                     print("In GROUP: %s" % quotedMessage.recipient.getDisplayName())
         quotedText = message.quote.parseMentions()

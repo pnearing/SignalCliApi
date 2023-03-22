@@ -5,23 +5,23 @@ import json
 import sys
 from datetime import timedelta
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMention import Mention
-from signalMentions import Mentions
-from signalMessage import Message
-from signalPreview import Preview
-from signalQuote import Quote
-from signalReaction import Reaction
-from signalReactions import Reactions
-from signalSticker import Sticker, StickerPacks
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMention import Mention
+from .signalMentions import Mentions
+from .signalMessage import Message
+from .signalPreview import Preview
+from .signalQuote import Quote
+from .signalReaction import Reaction
+from .signalReactions import Reactions
+from .signalSticker import Sticker, StickerPacks
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG: bool = True
@@ -294,7 +294,7 @@ class ReceivedMessage(Message):
         self.mentions = Mentions(contacts=self._contacts, fromDict=fromDict['mentions'])
     # Load reactions:
         # self.reactions = None
-        # if (fromDict['reactions'] != None):
+        # if (from_dict['reactions'] != None):
         self.reactions = Reactions(commandSocket=self._commandSocket, accountId=self._accountId,
                                     contacts=self._contacts, groups=self._groups, devices=self._devices,
                                     fromDict=fromDict['reactions'])

@@ -2,14 +2,14 @@
 from typing import Optional
 import socket
 
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMessage import Message
-from signalTimestamp import Timestamp
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMessage import Message
+from .signalTimestamp import Timestamp
 
 class GroupUpdate(Message):
     def __init__(self,
@@ -46,7 +46,7 @@ class GroupUpdate(Message):
     def __updateBody__(self) -> None:
         if (self.sender != None and self.recipient != None):
             self.body = "At %s, %s updated the group %s." % (
-                                                            self.timestamp.getDisplayTime(),
+                                                            self.timestamp.get_display_time(),
                                                             self.sender.getDisplayName(),
                                                             self.recipient.getDisplayName()
                                                         )

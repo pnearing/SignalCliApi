@@ -5,10 +5,10 @@ import socket
 import json
 import sys
 
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalProfile import Profile
-from signalTimestamp import Timestamp
-from signalDevices import Devices
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalProfile import Profile
+from .signalTimestamp import Timestamp
+from .signalDevices import Devices
 
 Self = TypeVar("Self", bound="Contact")
 

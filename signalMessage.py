@@ -5,15 +5,15 @@ import socket
 import json
 import sys
 
-from signalAttachment import Attachment
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalContacts import Contacts
-from signalContact import Contact
-from signalDevices import Devices
-from signalDevice import Device
-from signalGroups import Groups
-from signalGroup import Group
-from signalTimestamp import Timestamp
+from .signalAttachment import Attachment
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalContacts import Contacts
+from .signalContact import Contact
+from .signalDevices import Devices
+from .signalDevice import Device
+from .signalGroups import Groups
+from .signalGroup import Group
+from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="Message")
 
@@ -69,7 +69,7 @@ class Message(object):
         if (isinstance(thisDevice, Device) == False):
             __typeError__("thisDevice", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("fromDict", "dict", fromDict)
+            __typeError__("from_dict", "dict", fromDict)
         if (rawMessage != None and isinstance(rawMessage, dict) == False):
             __typeError__("rawMessage", "dict", rawMessage)
         if (sender != None and isinstance(sender, Contact) == False):
@@ -249,7 +249,7 @@ class Message(object):
             elif (self.recipientType == 'group'):
                 added, self.recipient = self._groups.__getOrAdd__(name="<UNKNOWN-GROUP>", id=fromDict['recipient'])
             else:
-                raise ValueError("invalid recipient type in fromDict: %s" % self.recipientType)
+                raise ValueError("invalid recipient type in from_dict: %s" % self.recipientType)
     # Parse device:
 
         added, self.device = self.sender.devices.__getOrAdd__("<UNKNOWN-DEVICE>", fromDict['device'])

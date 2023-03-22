@@ -28,7 +28,7 @@ class Sticker(object):
         self.emoji: str = emoji
         self.filePath: str = filePath
         self.contentType: str = contentType
-    # Parse fromDict:
+    # Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
     # Parse from manifest file:
@@ -102,7 +102,7 @@ class StickerPack(object):
         self.author: str = author
         self.cover: Sticker = cover
         self.stickers: list[Sticker] = stickers
-    # Parse fromDict:
+    # Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
     # Parse from Manifest:

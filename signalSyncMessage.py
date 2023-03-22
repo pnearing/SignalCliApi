@@ -4,15 +4,15 @@ from typing import Optional
 import socket
 import sys
 
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMessage import Message
-from signalSticker import StickerPacks
-from signalTimestamp import Timestamp
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMessage import Message
+from .signalSticker import StickerPacks
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG: bool = True

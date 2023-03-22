@@ -6,14 +6,14 @@ import json
 import sys
 import socket
 
-from signalCommon import __socketReceive__, __socketSend__
-from signalDevice import Device
-from signalDevices import Devices
-from signalContacts import Contacts
-from signalGroups import Groups
-from signalMessages import Messages
-from signalProfile import Profile
-from signalSticker import StickerPacks
+from .signalCommon import __socketReceive__, __socketSend__
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalContacts import Contacts
+from .signalGroups import Groups
+from .signalMessages import Messages
+from .signalProfile import Profile
+from .signalSticker import StickerPacks
 
 global DEBUG
 DEBUG: bool = True

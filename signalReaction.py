@@ -5,15 +5,15 @@ import socket
 import json
 import sys
 
-from signalCommon import __typeError__, __socketReceive__, __socketSend__
-from signalContact import Contact
-from signalContacts import Contacts
-from signalDevice import Device
-from signalDevices import Devices
-from signalGroup import Group
-from signalGroups import Groups
-from signalMessage import Message
-from signalTimestamp import Timestamp
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalContact import Contact
+from .signalContacts import Contacts
+from .signalDevice import Device
+from .signalDevices import Devices
+from .signalGroup import Group
+from .signalGroups import Groups
+from .signalMessage import Message
+from .signalTimestamp import Timestamp
 
 global DEBUG
 DEBUG: bool = True

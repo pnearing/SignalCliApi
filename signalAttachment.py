@@ -5,8 +5,8 @@ import mimetypes
 import os
 from subprocess import check_call, CalledProcessError
 
-from signalCommon import __typeError__, findXdgOpen
-from signalThumbnail import Thumbnail
+from .signalCommon import __typeError__, findXdgOpen
+from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
 
@@ -24,9 +24,9 @@ class Attachment(object):
     # Check configPath:
         if (isinstance(configPath, str) == False):
             __typeError__("configPath", "str", configPath)
-    # Check fromDict:
+    # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("fromDict", "dict[str, object]", fromDict)
+            __typeError__("from_dict", "dict[str, object]", fromDict)
     # Check raw Attachment:
         if (rawAttachment != None and isinstance(rawAttachment, dict) == False):
             __typeError__("rawAttachment", "dict[str, object]", rawAttachment)

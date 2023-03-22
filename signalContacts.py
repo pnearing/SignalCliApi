@@ -6,8 +6,8 @@ import os
 import json
 import socket
 
-from signalCommon import __typeError__, __socketReceive__, __socketSend__, phoneNumberRegex, uuidRegex, NUMBER_FORMAT_STR, UUID_FORMAT_STR
-from signalContact import Contact
+from .signalCommon import __typeError__, __socketReceive__, __socketSend__, phoneNumberRegex, uuidRegex, NUMBER_FORMAT_STR, UUID_FORMAT_STR
+from .signalContact import Contact
 # from signalSyncMessage import SyncMessage
 
 global DEBUG
