@@ -9,104 +9,107 @@ from .signalCommon import phoneNumberRegex, uuidRegex
 from .signalAccount import Account
 from .signalSticker import StickerPacks
 
-global DEBUG
-DEBUG = True
+DEBUG: bool = False
+ACCOUNTS: list[Account] = []
 
-global ACCOUNTS
-ACCOUNTS:list[Account] = []
 
 class Accounts(object):
-    supportedAccountsVersion:int = 2
+    supported_accounts_version: int = 2
+
     def __init__(self,
-                    syncSocket: socket.socket,
-                    commandSocket: socket.socket,
-                    configPath: str,
-                    stickerPacks: StickerPacks,
-                    doLoad:bool = False,
-                ) -> None:
-    # TODO: Argument checks:
-    # Set internal vars:
-        self._syncSocket: socket.socket = syncSocket
-        self._commandSocket: socket.socket = commandSocket
-        self._configPath: str = configPath
-        self._stickerPacks: StickerPacks = stickerPacks
-        self._accountsFilePath: str =  os.path.join(configPath, 'data', 'accounts.json')
-        if (doLoad == True):
-            self.__doLoad__()
+                 sync_socket: socket.socket,
+                 command_socket: socket.socket,
+                 config_path: str,
+                 sticker_packs: StickerPacks,
+                 do_load: bool = False,
+                 ) -> None:
+        # TODO: Argument checks:
+        # Set internal vars:
+        self._sync_socket: socket.socket = sync_socket
+        self._command_socket: socket.socket = command_socket
+        self._config_path: str = config_path
+        self._sticker_packs: StickerPacks = sticker_packs
+        self._accounts_file_path: str = os.path.join(config_path, 'data', 'accounts.json')
+        if do_load:
+            self.__do_load__()
         return
 
-    def __loadAccountsFile__(self) -> dict:
-    # Try to open the accounts file:
+    def __load_accounts_file__(self) -> dict:
+        # Try to open the accounts file:
         try:
-            fileHandle = open(self._accountsFilePath, 'r')
-        except Exception as e:
-            errorMessage = "FATAL: Failed to open '%s' for reading: %s" %(self._accountsFilePath, str(e.args))
-            raise RuntimeError(errorMessage)
-    # Try to load the json from the file:
+            file_handle = open(self._accounts_file_path, 'r')
+        except Exception as err:
+            error_message = "FATAL: Failed to open '%s' for reading: %s" % (self._accounts_file_path, str(err.args))
+            raise RuntimeError(error_message)
+        # Try to load the json from the file:
         try:
-            responseObj:dict = json.loads(fileHandle.read())
-        except json.JSONDecodeError as e:
-            errorMessage = "FATAL: Failed to load json from file '%s': %s" % (self._accountsFilePath, e.msg)
-            raise RuntimeError(errorMessage)
-        fileHandle.close()
-    # Version check accounts file:
-        if (responseObj['version'] != self.supportedAccountsVersion):
-            errorMessage = "FATAL: Version %i is not supported. Currently only version %i is supported." % (responseObj['version'], self.supportedAccountsVersion)
-            raise RuntimeError(errorMessage)
-        return responseObj
+            response_obj: dict = json.loads(file_handle.read())
+        except json.JSONDecodeError as err:
+            error_message = "FATAL: Failed to load json from file '%s': %s" % (self._accounts_file_path, err.msg)
+            raise RuntimeError(error_message)
+        file_handle.close()
+        # Version check accounts file:
+        if response_obj['version'] != self.supported_accounts_version:
+            error_message = "FATAL: Version %i is not supported. Currently only version %i is supported." % (
+                response_obj['version'], self.supported_accounts_version)
+            raise RuntimeError(error_message)
+        return response_obj
 
-    def __doLoad__(self) -> None:
-    # Load acccounts file:
-        accountsDict = self.__loadAccountsFile__()
-    # Parse the file and create the accounts:
+    def __do_load__(self) -> None:
+        # Load accounts file:
+        accounts_dict = self.__load_accounts_file__()
+        # Parse the file and create the accounts:
         global ACCOUNTS
         ACCOUNTS = []
         count = 0
-        for rawAccount in accountsDict['accounts']:
+        for raw_account in accounts_dict['accounts']:
             count = count + 1
-            account = Account(syncSocket=self._syncSocket, commandSocket=self._commandSocket, configPath=self._configPath,
-                                stickerPacks=self._stickerPacks, signalAccountPath=rawAccount['path'], doLoad=True)
+            account = Account(syncSocket=self._sync_socket, commandSocket=self._command_socket,
+                              configPath=self._config_path,
+                              stickerPacks=self._sticker_packs, signalAccountPath=raw_account['path'], doLoad=True)
             ACCOUNTS.append(account)
         return
-    
+
     def __sync__(self) -> list[Account]:
         global ACCOUNTS
-        newAccount = None
-    # Load accounts file:
-        accountsDict: dict = self.__loadAccountsFile__()
-    # Parse the accounts file looking for a new account.
-        for rawAccount in accountsDict['accounts']:
-            accountFound = False
+        new_account = None
+        # Load accounts file:
+        accounts_dict: dict = self.__load_accounts_file__()
+        # Parse the accounts file looking for a new account.
+        for raw_account in accounts_dict['accounts']:
+            account_found = False
             for account in ACCOUNTS:
-                if (account.number == rawAccount['number']):
-                    accountFound = True
-            if (accountFound == False):
-                newAccount = Account(syncSocket=self._syncSocket, commandSocket=self._commandSocket,
-                                        configPath=self._configPath, stickerPacks=self._stickerPacks,
-                                        signalAccountPath=rawAccount['path'], doLoad=True)
-                ACCOUNTS.append(newAccount)
+                if account.number == raw_account['number']:
+                    account_found = True
+            if not account_found:
+                new_account = Account(syncSocket=self._sync_socket, commandSocket=self._command_socket,
+                                     configPath=self._config_path, stickerPacks=self._sticker_packs,
+                                     signalAccountPath=raw_account['path'], doLoad=True)
+                ACCOUNTS.append(new_account)
                 # newAccounts.append(newAccount)
-        return newAccount
-##############################
-# Overrides:
-##############################
+        return new_account
+
+    ##############################
+    # Overrides:
+    ##############################
     def __iter__(self) -> Iterator:
         global ACCOUNTS
         return iter(ACCOUNTS)
-##############################
-# Getters:
-##############################
-    def getUnregistered(self) -> list[Account]:
+
+    ##############################
+    # Getters:
+    ##############################
+    def get_unregistered(self) -> list[Account]:
         global ACCOUNTS
-        return [acct for acct in ACCOUNTS if acct.registered == False]
-    
-    def getByNumber(self, number:str) -> Optional[Account]:
+        return [acct for acct in ACCOUNTS if acct.registered is False]
+
+    def get_by_number(self, number: str) -> Optional[Account]:
         global ACCOUNTS
-        numberMatch = phoneNumberRegex.match(number)
-        if (numberMatch == None):
-            errorMessage = "number must be in format: +nnnnnnnn..."
-            raise ValueError(errorMessage)
+        number_match = phoneNumberRegex.match(number)
+        if number_match is None:
+            error_message = "number must be in format: +nnnnnnnn..."
+            raise ValueError(error_message)
         for account in ACCOUNTS:
-            if (account.number == number):
+            if account.number == number:
                 return account
         return None

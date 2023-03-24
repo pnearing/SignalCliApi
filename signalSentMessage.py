@@ -53,9 +53,9 @@ class SentMessage(Message):
                     sentTo: Optional[Iterable[Contact] | Contact] = None,
                     preview: Optional[Preview] = None,
                 ) -> None:
-    # Check stickerPacks:
+    # Check sticker_packs:
         if (isinstance(stickerPacks, StickerPacks) == False):
-            __typeError__("stickerPacks", "StickerPacks", stickerPacks)
+            __typeError__("sticker_packs", "StickerPacks", stickerPacks)
     # Check Body:   
         if (body != None and isinstance(body, str) == False):
             __typeError__("body", "Optional[str]", body)

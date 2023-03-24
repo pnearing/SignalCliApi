@@ -33,9 +33,9 @@ class Preview(object):
                     description: Optional[str] = None,
                     image: Optional[Attachment|str] = None,
                 ) -> None:
-    # Check configPath:
+    # Check config_path:
         if (isinstance(configPath, str) == False):
-            __typeError__("configPath", "str", configPath)
+            __typeError__("config_path", "str", configPath)
     # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == False):
             __typeError__("from_dict", "dict", fromDict)

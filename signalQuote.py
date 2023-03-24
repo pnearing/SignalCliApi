@@ -29,9 +29,9 @@ class Quote(object):
                     mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
                     conversation: Optional[Contact|Group] = None,
                 ) -> None:
-    # Check configPath:
+    # Check config_path:
         if (isinstance(configPath, str) == False):
-            __typeError__("configPath", "str", configPath)
+            __typeError__("config_path", "str", configPath)
     # Check contacts:
         if (isinstance(contacts, Contacts) == False):
             __typeError__("contacts", "Contacts", contacts)

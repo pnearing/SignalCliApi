@@ -106,7 +106,7 @@ def __socketCreate__(serverAddress:tuple[str,int]|str) -> socket.socket:
     elif (isinstance(serverAddress, str) == True):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     else:
-        errorMessage = "serverAddress must be of type tuple(str,int) or str"
+        errorMessage = "server_address must be of type tuple(str,int) or str"
         raise TypeError(errorMessage)
     return sock
 

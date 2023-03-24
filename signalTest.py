@@ -138,8 +138,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     signalConfigPath = '/home/streak/.local/share/signal-cli'
-    # signalConfigPath = "/home/streak/signal-cli"
-    # signalConfigPath = None
+    # signal_config_path = "/home/streak/signal-cli"
+    # signal_config_path = None
     logFilePath = '/home/streak/signal-cli/output.log'
     previewUrl = 'https://thepostmillennial.com/balenciaga-tries-to-walk-back-ads-promoting-child-exploitation-by-suing-ad-creator'
 
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         print (account.number)
 
     if (args.register != None):
-        response = signal.registerAccount(args.register, args.captcha)
+        response = signal.register_account(args.register, args.captcha)
         if (response[0] == True):
             print ("Registration successful. Please verify.")
         else:
@@ -160,7 +160,7 @@ if __name__ == '__main__':
 
     elif (args.verify != None):
     # Get unregistered accounts:
-        account = signal.accounts.getByNumber(args.verify)
+        account = signal.accounts.get_by_number(args.verify)
         if (account == None):
             print("Unknown account: %s" % args.verify)
             exit(1)
@@ -171,16 +171,16 @@ if __name__ == '__main__':
         print(response[0], response[1])
         exit(0)
     elif( args.link == True):
-        response = signal.startLinkAccount("SignalApi")
+        response = signal.start_link_account("SignalApi")
         print("LINK: ", response[0])
         print("QRCODE: \n", response[1])
         print("pngCode: ", response[2])
 
-        response = signal.finshLink()
+        response = signal.finsh_link()
         print (response)
         exit(0)
     elif (args.addContact != None):
-        account = signal.accounts.getByNumber(args.account)
+        account = signal.accounts.get_by_number(args.account)
         print("Existing contacts:")
         for contact in account.contacts:
             print("name:", contact.name, "number:", contact.number, "uuid:", contact.uuid)
@@ -189,7 +189,7 @@ if __name__ == '__main__':
         print(contact)
         exit(0)
     
-    account = signal.accounts.getByNumber(args.account)
+    account = signal.accounts.get_by_number(args.account)
     print("GROUPS:")
     for group in account.groups:
         print ("Id: ", group.id, "Name: ", group.name)
@@ -211,8 +211,8 @@ if __name__ == '__main__':
         update = account.profile.setEmoji('🤖')
         print("Updated=", updated)
 
-    signal.startRecieve(account, allMsgCb, receivedMsgCb, receiptMsgCb, syncMsgCb, typeMsgCb, storyMsgCb, paymentMsgCb,
-                            reactionMsgCb)
+    signal.start_receive(account, allMsgCb, receivedMsgCb, receiptMsgCb, syncMsgCb, typeMsgCb, storyMsgCb, paymentMsgCb,
+                         reactionMsgCb)
 
     
 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
                 body="Test message.\n%s" % previewUrl,
                 preview=preview,
             )
-        stickerPack = signal.stickerPacks.getPackByName("Josh Saunders")
+        stickerPack = signal.sticker_packs.getPackByName("Josh Saunders")
         sticker = stickerPack[0]
         account.messages.sendMessage( contact, sticker=sticker)
     
@@ -253,5 +253,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("\nKeyboard Interrupt")
     signal.stopReceive(account)
-    signal.stopSignal()
+    signal.stop_signal()
     exit(0)

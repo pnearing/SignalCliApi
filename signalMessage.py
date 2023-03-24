@@ -55,11 +55,11 @@ class Message(object):
                 ) -> None:
     # Arg Type Checks:
         if (isinstance(commandSocket, socket.socket) == False):
-            __typeError__('commandSocket', 'socket', commandSocket)
+            __typeError__('command_socket', 'socket', commandSocket)
         if (isinstance(accountId, str) == False):
             __typeError__('accountId', 'str', accountId)
         if (isinstance(configPath, str) == False):
-            __typeError__('configPath', 'str', configPath)
+            __typeError__('config_path', 'str', configPath)
         if (isinstance(contacts, Contacts) == False):
             __typeError__("contacts" "Contacts", contacts)
         if (isinstance(groups, Groups) == False):

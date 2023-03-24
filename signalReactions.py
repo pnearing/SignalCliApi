@@ -25,7 +25,7 @@ class Reactions(object):
                 ) -> None:
     # Argument checks:
         if (isinstance(commandSocket, socket.socket) == False):
-            __typeError__("commandSocket", "socket.socket", commandSocket)
+            __typeError__("command_socket", "socket.socket", commandSocket)
         if (isinstance(accountId, str) == False):
             __typeError__("accountId", "str", accountId)
         if (isinstance(contacts, Contacts) == False):
