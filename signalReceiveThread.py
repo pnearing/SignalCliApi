@@ -149,10 +149,10 @@ class ReceiveThread(threading.Thread):
                             isGroupUpdate = False
                         if (isGroupUpdate == True):
                             message = GroupUpdate(
-                                                    commandSocket=self._commandSocket, accountId=self._account.number,
-                                                    configPath=self._configPath, contacts=self._account.contacts,
+                                                    command_socket=self._commandSocket, account_id=self._account.number,
+                                                    config_path=self._configPath, contacts=self._account.contacts,
                                                     groups=self._account.groups, devices=self._account.devices,
-                                                    thisDevice=self._account.device, rawMessage=envelopeDict
+                                                    this_device=self._account.device, raw_message=envelopeDict
                                                 )
                             if (DEBUG == True):
                                 print("Parsing group update.", file=sys.stderr)

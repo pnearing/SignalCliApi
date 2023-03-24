@@ -201,7 +201,7 @@ class SentMessage(Message):
 # Init:
 ##########################
     def __fromRawMessage__(self, rawMessage: dict) -> None:
-        # super().__fromRawMessage__(rawMessage)
+        # super().__fromRawMessage__(raw_message)
         print("SentMessage.__fromRawMessage__")
         print(rawMessage)
         rawSentMessage: dict[str, object] = rawMessage['sync_message']['sentMessage']

@@ -35,7 +35,7 @@ class Reactions(object):
         if (isinstance(devices, Devices) == False):
             __type_error__("devices", "Devices", devices)
         if (isinstance(thisDevice, Device) == False):
-            __type_error__("thisDevice", "Device", thisDevice)
+            __type_error__("this_device", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
             __type_error__("from_dict", "dict", fromDict)
     # Set internal vars:

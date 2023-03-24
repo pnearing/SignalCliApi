@@ -196,7 +196,7 @@ class ReceivedMessage(Message):
     def __fromRawMessage__(self, rawMessage: dict) -> None:
         super().__fromRawMessage__(rawMessage)
         # print("RecievedMessage.__fromRawMessage__")
-        # print(rawMessage)
+        # print(raw_message)
         dataMessage: dict[str, object] = rawMessage['dataMessage']
         # Parse body:
         self.body = dataMessage['message']

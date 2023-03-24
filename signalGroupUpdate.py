@@ -11,44 +11,44 @@ from .signalGroups import Groups
 from .signalMessage import Message
 from .signalTimestamp import Timestamp
 
+
 class GroupUpdate(Message):
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    sender: Optional[Contact] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    device: Optional[Device] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None
-                ) -> None:
-    # Set external properties:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 device: Optional[Device] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 is_delivered: bool = False,
+                 time_delivered: Optional[Timestamp] = None,
+                 is_read: bool = False,
+                 time_read: Optional[Timestamp] = None,
+                 is_viewed: bool = False,
+                 time_viewed: Optional[Timestamp] = None
+                 ) -> None:
+        # Set external properties:
         self.body: str = ''
-    # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, sender, recipient, device, timestamp, Message.TYPE_GROUP_UPDATE_MESSAGE,
-                            isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
+        # Run super init:
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, sender, recipient, device, timestamp, Message.TYPE_GROUP_UPDATE_MESSAGE,
+                         is_delivered, time_delivered, is_read, time_read, is_viewed, time_viewed)
         self.__updateBody__()
         return
 
-
     def __updateBody__(self) -> None:
-        if (self.sender != None and self.recipient != None):
+        if self.sender is not None and self.recipient is not None:
             self.body = "At %s, %s updated the group %s." % (
-                                                            self.timestamp.get_display_time(),
-                                                            self.sender.get_display_name(),
-                                                            self.recipient.get_display_name()
-                                                        )
+                self.timestamp.get_display_time(),
+                self.sender.get_display_name(),
+                self.recipient.get_display_name()
+            )
         else:
             self.body = "Invalid group update."

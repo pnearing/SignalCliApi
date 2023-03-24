@@ -67,11 +67,11 @@ class Message(object):
         if (isinstance(devices, Devices) == False):
             __type_error__("devices", "Devices", devices)
         if (isinstance(thisDevice, Device) == False):
-            __type_error__("thisDevice", "Device", thisDevice)
+            __type_error__("this_device", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
             __type_error__("from_dict", "dict", fromDict)
         if (rawMessage != None and isinstance(rawMessage, dict) == False):
-            __type_error__("rawMessage", "dict", rawMessage)
+            __type_error__("raw_message", "dict", rawMessage)
         if (sender != None and isinstance(sender, Contact) == False):
             __type_error__("sender", "Contact", sender)
         if (recipient != None and isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
@@ -83,17 +83,17 @@ class Message(object):
         if (isinstance(messageType, int) == False):
             __type_error__("messageType", "int", messageType)
         if (isinstance(isDelivered, bool) == False):
-            __type_error__("isDelivered", "bool", isDelivered)
+            __type_error__("is_delivered", "bool", isDelivered)
         if (timeDelivered != None and isinstance(timeDelivered, Timestamp) == False):
-            __type_error__("timeDelivered", "Timestamp", timeDelivered)
+            __type_error__("time_delivered", "Timestamp", timeDelivered)
         if (isinstance(isRead, bool) == False):
-            __type_error__("isRead", "bool", isRead)
+            __type_error__("is_read", "bool", isRead)
         if (timeRead != None and isinstance(timeRead, Timestamp) == False):
-            __type_error__("timeRead", "Timestamp", timeRead)
+            __type_error__("time_read", "Timestamp", timeRead)
         if (isinstance(isViewed, bool) == False):
-            __type_error__("isViewed", "bool", isViewed)
+            __type_error__("is_viewed", "bool", isViewed)
         if (timeViewed != None and isinstance(timeViewed, Timestamp) == False):
-            __type_error__("timeViewed", "Timestamp", timeViewed)
+            __type_error__("time_viewed", "Timestamp", timeViewed)
     # Set internal vars:
         self._commandSocket: socket.socket = commandSocket
         self._accountId: str = accountId
@@ -137,7 +137,7 @@ class Message(object):
 #######################
     def __fromRawMessage__(self, rawMessage:dict) -> None:
         # print("Message.__fromRawMessage__")
-        # print(rawMessage)
+        # print(raw_message)
     # Parse Sender
         added, self.sender = self._contacts.__get_or_add__(
                                                             name=rawMessage['sourceName'],
@@ -214,12 +214,12 @@ class Message(object):
             'device': None,
             'timestamp': None,
             'messageType': self.messageType,
-            'isDelivered': self.isDelivered,
-            'timeDelivered': None,
-            'isRead': self.isRead,
-            'timeRead': None,
-            'isViewed': self.isViewed,
-            'timeViewed': None,
+            'is_delivered': self.isDelivered,
+            'time_delivered': None,
+            'is_read': self.isRead,
+            'time_read': None,
+            'is_viewed': self.isViewed,
+            'time_viewed': None,
         }
         if (self.sender != None):
             messageDict['sender'] = self.sender.get_id()
@@ -230,11 +230,11 @@ class Message(object):
         if (self.timestamp != None):
             messageDict['timestamp'] = self.timestamp.__toDict__()
         if (self.timeDelivered != None):
-            messageDict['timeDelivered'] = self.timeDelivered.__toDict__()
+            messageDict['time_delivered'] = self.timeDelivered.__toDict__()
         if (self.timeRead != None):
-            messageDict['timeRead'] = self.timeRead.__toDict__()
+            messageDict['time_read'] = self.timeRead.__toDict__()
         if (self.timeViewed != None):
-            messageDict['timeViewed'] = self.timeViewed.__toDict__()
+            messageDict['time_viewed'] = self.timeViewed.__toDict__()
         return messageDict
 
     def __fromDict__(self, fromDict:dict) -> None:
@@ -260,21 +260,21 @@ class Message(object):
     # Parse message Type:
         self.messageType = fromDict['messageType']
     # Parse Delivered: (is and time)
-        self.isDelivered = fromDict['isDelivered']
-        if (fromDict['timeDelivered'] != None):
-            self.timeDelivered = Timestamp(fromDict=fromDict['timeDelivered'])
+        self.isDelivered = fromDict['is_delivered']
+        if (fromDict['time_delivered'] != None):
+            self.timeDelivered = Timestamp(fromDict=fromDict['time_delivered'])
         else:
             self.timeDelivered = None
     # Parse read (is and time):
-        self.isRead = fromDict['isRead']
-        if (fromDict['timeRead'] != None):
-            self.timeRead = Timestamp(fromDict=fromDict['timeRead'])
+        self.isRead = fromDict['is_read']
+        if (fromDict['time_read'] != None):
+            self.timeRead = Timestamp(fromDict=fromDict['time_read'])
         else:
             self.timeRead = None
     # Parse viewed (is and time):
-        self.isViewed = fromDict['isViewed']
-        if (fromDict['timeViewed'] != None):
-            self.timeViewed = Timestamp(fromDict=fromDict['timeViewed'])
+        self.isViewed = fromDict['is_viewed']
+        if (fromDict['time_viewed'] != None):
+            self.timeViewed = Timestamp(fromDict=fromDict['time_viewed'])
         else:
             self.timeViewed = None
         return

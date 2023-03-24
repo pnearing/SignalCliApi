@@ -91,9 +91,9 @@ class Receipt(Message):
     # Load receipt type:
         if (receiptMessage['isDelivery'] == True):
             self.receiptType = self.TYPE_DELIVERY
-        elif (receiptMessage['isRead'] == True):
+        elif (receiptMessage['is_read'] == True):
             self.receiptType = self.TYPE_READ
-        elif (receiptMessage['isViewed'] == True):
+        elif (receiptMessage['is_viewed'] == True):
             self.receiptType = self.TYPE_VIEWED
         else:
             errorMessage = "Unknown receipt type... receiptMessage= %s" % str(receiptMessage)

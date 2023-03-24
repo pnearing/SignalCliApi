@@ -35,12 +35,12 @@ class Reaction(Message):
                     recipient: Optional[Contact | Group] = None,
                     # device: Optional[Device] = None,
                     # timestamp: Optional[Timestamp] = None,
-                    # isDelivered: bool = False,
-                    # timeDelivered: Optional[Timestamp] = None,
-                    # isRead: bool = False,
-                    # timeRead: Optional[Timestamp] = None,
-                    # isViewed: bool = False,
-                    # timeViewed: Optional[Timestamp] = None,
+                    # is_delivered: bool = False,
+                    # time_delivered: Optional[Timestamp] = None,
+                    # is_read: bool = False,
+                    # time_read: Optional[Timestamp] = None,
+                    # is_viewed: bool = False,
+                    # time_viewed: Optional[Timestamp] = None,
                     emoji: Optional[str] = None,
                     targetAuthor: Optional[Contact] = None,
                     targetTimestamp: Optional[Timestamp] = None,
@@ -60,7 +60,7 @@ class Reaction(Message):
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
                          rawMessage, contacts.get_self(), recipient, thisDevice, None,
-                         Message.TYPE_REACTION_MESSAGE)#, isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
+                         Message.TYPE_REACTION_MESSAGE)#, is_delivered, time_delivered, is_read, time_read, is_viewed, time_viewed)
 
     # Set body:
         self.__updateBody__()

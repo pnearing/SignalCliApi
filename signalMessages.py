@@ -124,9 +124,9 @@ class Messages(object):
         self.sync = []
         for messageDict in fromDict['syncMessages']:
             if (messageDict['messageType'] == Message.TYPE_GROUP_UPDATE_MESSAGE):
-                message = GroupUpdate(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                        devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
+                message = GroupUpdate(command_socket=self._commandSocket, account_id=self._accountId,
+                                      config_path=self._configPath, contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._thisDevice, from_dict=messageDict)
             elif (messageDict['messageType'] == Message.TYPE_SYNC_MESSAGE):
                 message = SyncMessage(commandSocket=self._commandSocket, accountId=self._accountId,
                                         configPath=self._configPath, contacts=self._contacts, groups=self._groups,
