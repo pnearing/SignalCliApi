@@ -231,7 +231,7 @@ if __name__ == '__main__':
         account.messages.sendMessage( contact, sticker=sticker)
     
 
-    # stickerPack = signal.stickers.getByName("Josh Saunders")
+    # stickerPack = signal.stickers.get_by_name("Josh Saunders")
     # sticker = stickerPack[0]
     # account.messages.sendMessage(recipients=[recipient], sticker=sticker)
     if (args.doSendGroup == True):

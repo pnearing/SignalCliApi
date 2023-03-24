@@ -202,7 +202,7 @@ class Quote(object):
         if (fromDict["conversationType"] == 'contact'):
             added, self.conversation = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['conversation'])
         elif (fromDict["conversationType"] == 'group'):
-            added, self.conversation = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", fromDict['conversation'])
+            added, self.conversation = self._groups.__get_or_add__("<UNKNOWN-GROUP>", fromDict['conversation'])
         return
 
 ##########################

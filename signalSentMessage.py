@@ -213,7 +213,7 @@ class SentMessage(Message):
                                                                   uuid=rawSentMessage['destinationUuid'])
         elif ('groupInfo' in rawSentMessage.keys()):
             self.recipientType = 'group'
-            added, self.recipient = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", rawSentMessage['groupInfo']['groupId'])
+            added, self.recipient = self._groups.__get_or_add__("<UNKNOWN-GROUP>", rawSentMessage['groupInfo']['groupId'])
     # Load timestamp:
         self.timestamp = Timestamp(timestamp=rawSentMessage['timestamp'])
     # Load Device:

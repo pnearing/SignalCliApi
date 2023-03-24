@@ -72,8 +72,8 @@ class Account(object):
             self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                      account_path=self._account_path, do_load=True, do_sync=True)
             # Load groups from signal:
-            self.groups = Groups(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
-                                 accountContacts=self.contacts, doSync=True)
+            self.groups = Groups(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
+                                 account_contacts=self.contacts, do_sync=True)
             # Load messages from file:
             self.messages = Messages(commandSocket=self._command_socket, configPath=self.config_path,
                                      accountId=self.number, accountPath=self._account_path, contacts=self.contacts,
