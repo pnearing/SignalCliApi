@@ -3,7 +3,7 @@
 from typing import Optional, Iterable
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalGroup import Group
@@ -31,28 +31,28 @@ class Quote(object):
                 ) -> None:
     # Check config_path:
         if (isinstance(configPath, str) == False):
-            __typeError__("config_path", "str", configPath)
+            __type_error__("config_path", "str", configPath)
     # Check contacts:
         if (isinstance(contacts, Contacts) == False):
-            __typeError__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "Contacts", contacts)
     # Check groups:
         if (isinstance(groups, Groups) == False):
-            __typeError__("groups", "Groups", groups)
+            __type_error__("groups", "Groups", groups)
     # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == None):
-            __typeError__("from_dict", "dict[str, object]", fromDict)
+            __type_error__("from_dict", "dict[str, object]", fromDict)
     # Check rawQuote:
         if (rawQuote != None and isinstance(rawQuote, dict) == False):
-            __typeError__("rawQuote", "dict[str, object]", rawQuote)
+            __type_error__("rawQuote", "dict[str, object]", rawQuote)
     # Check timestamp:
         if (timestamp != None and isinstance(timestamp, Timestamp) == False):
-            __typeError__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "Timestamp", timestamp)
     # Check author: 
         if (author != None and isinstance(author, Contact) == False):
-            __typeError__("author", "Contact", author)
+            __type_error__("author", "Contact", author)
     # Check text:
         if (text != None and isinstance(text, str) == False):
-            __typeError__("text", "str", text)
+            __type_error__("text", "str", text)
     # Check attachments:
         attachmentList: list[Attachment] = []
         if (attachments != None):
@@ -62,11 +62,11 @@ class Quote(object):
                 i = 0
                 for attachment in attachments:
                     if (isinstance(attachment, Attachment) == False):
-                        __typeError__("attachments[%i]" % i, "Attachment", attachment)
+                        __type_error__("attachments[%i]" % i, "Attachment", attachment)
                     attachmentList.append(attachment)
                     i = i + 1
             else:
-                __typeError__("attachments", "Iterable[Attachment] | Attachment")
+                __type_error__("attachments", "Iterable[Attachment] | Attachment")
     # Check mentions:
         mentionList: list[Mention] = []
         if (mentions != None):
@@ -78,15 +78,15 @@ class Quote(object):
                 i = 0
                 for mention in mentions:
                     if (isinstance(mention, Mention) == False):
-                        __typeError__("mentions[%i]" % i, "Mention", mention)
+                        __type_error__("mentions[%i]" % i, "Mention", mention)
                     mentionList.append(mention)
                     i = i + 1
             else:
-                __typeError__("mentions", "Iterable[Mention] | Mentions | Mention", mentions)
+                __type_error__("mentions", "Iterable[Mention] | Mentions | Mention", mentions)
     # Check conversation:
         if (conversation != None):
             if (isinstance(conversation, Contact) == False and isinstance(conversation, Group) == False):
-                __typeError__("conversation", "Contact | Group", conversation)
+                __type_error__("conversation", "Contact | Group", conversation)
 # Set internal vars:
         self._configPath: str = configPath
         self._contacts: Contacts = contacts

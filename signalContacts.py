@@ -6,7 +6,7 @@ import os
 import json
 import socket
 
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__, phoneNumberRegex, uuidRegex, NUMBER_FORMAT_STR, UUID_FORMAT_STR
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, phone_number_regex, uuid_regex, NUMBER_FORMAT_STR, UUID_FORMAT_STR
 from .signalContact import Contact
 # from signalSyncMessage import SyncMessage
 
@@ -64,8 +64,8 @@ class Contacts(object):
         if (isinstance(index, int) == True):
             return self._contacts[index]
         elif (isinstance(index, str) == True):
-            numberMatch = phoneNumberRegex.match(index)
-            uuidMatch = uuidRegex.match(index)
+            numberMatch = phone_number_regex.match(index)
+            uuidMatch = uuid_regex.match(index)
             if (numberMatch != None):
                 for contact in self._contacts:
                     if (contact.number == index):
@@ -79,7 +79,7 @@ class Contacts(object):
             errorMessage = "index not found: %s" % index
             raise IndexError(errorMessage)
         else:
-            __typeError__(index, "int | str", index)
+            __type_error__(index, "int | str", index)
 ##########################
 # To / From Dict:
 ##########################
@@ -155,8 +155,8 @@ class Contacts(object):
         }
         jsonCommandStr = json.dumps(listContactsCommandObj) + '\n'
     # Communicate with signal-cli:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj:dict = json.loads(responseStr)
     # Check for error:
@@ -203,8 +203,8 @@ class Contacts(object):
             RuntimeError("Either number or uuid, or id must be defined.")
     # Check id type:
         if (id != None):
-            numberMatch = phoneNumberRegex.match(id)
-            uuidMatch = uuidRegex.match(id)
+            numberMatch = phone_number_regex.match(id)
+            uuidMatch = uuid_regex.match(id)
             if (numberMatch == None and uuidMatch == None):
                 errorMessage = "id must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
                 raise ValueError(errorMessage)
@@ -242,7 +242,7 @@ class Contacts(object):
 # Getters:
 ##################################
     def getByNumber(self, number:str) -> Optional[Contact]:
-        numberMatch = phoneNumberRegex.match(number)
+        numberMatch = phone_number_regex.match(number)
         if (numberMatch == None):
             errorMessage = "number must be in format '+nnnnnnnn...'"
             raise ValueError(errorMessage)
@@ -252,7 +252,7 @@ class Contacts(object):
         return None
     
     def getByUuid(self, uuid:str) -> Optional[Contact]:
-        uuidMatch = uuidRegex.match(uuid)
+        uuidMatch = uuid_regex.match(uuid)
         if (uuidMatch == None):
             errorMessage = "uuid must be in format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
             raise ValueError(errorMessage)
@@ -262,8 +262,8 @@ class Contacts(object):
         return None
     
     def getById(self, id:str) -> Optional[Contact]:
-        numberMatch = phoneNumberRegex.match(id)
-        uuidMatch = uuidRegex.match(id)
+        numberMatch = phone_number_regex.match(id)
+        uuidMatch = uuid_regex.match(id)
         if (numberMatch != None):
             return self.getByNumber(id)
         elif (uuidMatch != None):
@@ -300,8 +300,8 @@ class Contacts(object):
             addContactCommandObj['params']['expiration'] = expiration
         jsonCommandStr = json.dumps(addContactCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj:dict = json.loads(responseStr)
     # Check for error:
@@ -309,8 +309,8 @@ class Contacts(object):
             if (DEBUG == True):
                 errorMessage = "signal error. Code: %i, Message: %s" % (responseObj['error']['code'], responseObj['error']['message'])
                 print(errorMessage, file=sys.stderr)
-            numberMatch = phoneNumberRegex.match(id)
-            uuidMatch = uuidRegex.match(id)
+            numberMatch = phone_number_regex.match(id)
+            uuidMatch = uuid_regex.match(id)
             if (numberMatch != None):
                 newContact = Contact(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self._accountId,
                                     accountPath=self._accountPath, name=name, number=id)

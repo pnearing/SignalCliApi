@@ -9,8 +9,9 @@ import re
 ########################################
 # Regex:
 ########################################
-phoneNumberRegex:Pattern = re.compile(r'(?P<number>\+\d+)')
-uuidRegex:Pattern = re.compile(r'(?P<uuid>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-f0-9]{12})')
+phone_number_regex: Pattern = re.compile(r'(?P<number>\+\d+)')
+uuid_regex: Pattern = re.compile(
+    r'(?P<uuid>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-f0-9]{12})')
 
 #########################
 # Strings:
@@ -19,148 +20,159 @@ UUID_FORMAT_STR = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 NUMBER_FORMAT_STR = "+nnnnnnn..."
 
 
-
 ####################################
 # xdg-open helper:
 ####################################
-def findXdgOpen() -> Optional[str]:
-    '''Use which to find xdg-open'''
-    xdgopenPath: Optional[str]
+def find_xdg_open() -> Optional[str]:
+    """Use which to find xdg-open"""
+    xdg_open_path: Optional[str]
     try:
-        xdgopenPath = check_output(['which', 'xdg-open'])
-        xdgopenPath = xdgopenPath.rstrip()
+        xdg_open_path = check_output(['which', 'xdg-open'])
+        xdg_open_path = xdg_open_path.rstrip()
     except CalledProcessError:
-        xdgopenPath = None
-    return xdgopenPath
+        xdg_open_path = None
+    return xdg_open_path
+
 
 ####################################
 # qrencode helper:
 ####################################
-def findQrencode() -> Optional[str]:
-    '''Use which to fild qrencode.'''
-    qrencodePath:Optional[str]
+def find_qrencode() -> Optional[str]:
+    """Use which to fild qrencode."""
+    qrencode_path: Optional[str]
     try:
-        qrencodePath = check_output(['which', 'qrencode'])
-        qrencodePath = qrencodePath.rstrip()
+        qrencode_path = check_output(['which', 'qrencode'])
+        qrencode_path = qrencode_path.rstrip()
     except CalledProcessError:
-        qrencodePath = None
-    return qrencodePath
+        qrencode_path = None
+    return qrencode_path
+
 
 ####################################
 # Signal cli helpers:
 ####################################
-def findSignal() -> str | NoReturn:
-    '''Find signal-cli in it's many forms. Returns str, exeption FileNotFound if signal not found.'''
-    signalPath = None
+def find_signal() -> str | NoReturn:
+    """Find signal-cli in it's many forms. Returns str, exeption FileNotFound if signal not found."""
+    signal_path = None
     try:
-        signalPath = check_output(['which', 'signal-cli'], text=True)
-        signalPath = signalPath.strip()
+        signal_path = check_output(['which', 'signal-cli'], text=True)
+        signal_path = signal_path.strip()
     except CalledProcessError as e:
-        signalPath = None
-# Check for 'signal-cli-native':
-    if (signalPath == None):
+        signal_path = None
+    # Check for 'signal-cli-native':
+    if signal_path is None:
         try:
-            signalPath = check_output(['which', 'signal-cli-native'], text=True)
-            signalPath = signalPath.strip()
+            signal_path = check_output(['which', 'signal-cli-native'], text=True)
+            signal_path = signal_path.strip()
         except CalledProcessError as e:
-            signalPath = None
-# Check for 'signal-cli-jre':
-    if (signalPath == None):
+            signal_path = None
+    # Check for 'signal-cli-jre':
+    if signal_path is None:
         try:
-            signalPath = check_output(['which', 'signal-cli-jre'], text=True)
-            signalPath = signalPath.strip()
+            signal_path = check_output(['which', 'signal-cli-jre'], text=True)
+            signal_path = signal_path.strip()
         except CalledProcessError as e:
-            signalPath = None
-# Exit if we couldn't find signal
-    if (signalPath == None):
-        errorMessage = "FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ]. Please ensure it's installed and in you $PATH enviroment variable."
-        raise FileNotFoundError(errorMessage)
-    return signalPath
+            signal_path = None
+    # Exit if we couldn't find signal
+    if signal_path is None:
+        error_message = "FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ]."
+        error_message += " Please ensure it's installed and in you $PATH environment variable."
+        raise FileNotFoundError(error_message)
+    return signal_path
 
-def parseSignalReturnCode(returncode:int, commandLine:str | list[str], output:str) -> NoReturn:
-        if (returncode == 1):
-            errorMessage = "Exit code 1: Invalid command line: %s" % str(commandLine)
-            raise RuntimeError(errorMessage)
-        elif (returncode == 2):
-            errorMessage = "Exit Code 2: Unexpected error. %s" % output
-            raise RuntimeError(errorMessage)
-        elif (returncode == 3):
-            errorMessage = "FATAL: Server / Network error. Try again later: %s" % (output)
-            raise RuntimeError(errorMessage)
-        elif (returncode == 4):
-            errorMessage = "FATAL: Operation failed due to untrusted key: %s" % (output)
-            raise RuntimeError(errorMessage)
-        else:
-            errorMessage = "FATAL: Unknown / unhandled error. Running '%s' returned exit code: %i : %s" % (str(commandLine),
-                                                                                                        returncode, output)
-            raise RuntimeError(errorMessage)
+
+def parse_signal_return_code(return_code: int, command_line: str | list[str], output: str) -> NoReturn:
+    if return_code == 1:
+        error_message = "Exit code 1: Invalid command line: %s" % str(command_line)
+        raise RuntimeError(error_message)
+    elif return_code == 2:
+        error_message = "Exit Code 2: Unexpected error. %s" % output
+        raise RuntimeError(error_message)
+    elif return_code == 3:
+        error_message = "FATAL: Server / Network error. Try again later: %s" % output
+        raise RuntimeError(error_message)
+    elif return_code == 4:
+        error_message = "FATAL: Operation failed due to untrusted key: %s" % output
+        raise RuntimeError(error_message)
+    else:
+        error_message = "FATAL: Unknown / unhandled error. Running '%s' returned exit code: %i : %s" % (
+                                                                                                    str(command_line),
+                                                                                                    return_code,
+                                                                                                    output)
+        raise RuntimeError(error_message)
+
 
 ####################################
 # Socket helpers:
 ####################################
 
-def __socketCreate__(serverAddress:tuple[str,int]|str) -> socket.socket:
-    '''Create a socket.socket object based on server address type.'''
-    if (isinstance(serverAddress, tuple) == True):
+def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
+    """Create a socket.socket object based on server address type."""
+    if isinstance(server_address, tuple):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    elif (isinstance(serverAddress, str) == True):
+    elif isinstance(server_address, str):
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     else:
-        errorMessage = "server_address must be of type tuple(str,int) or str"
-        raise TypeError(errorMessage)
+        error_message = "server_address must be of type tuple(str,int) or str"
+        raise TypeError(error_message)
     return sock
 
-def __socketConnect__(sock:socket.socket, serverAddress:tuple[str,int]|str) -> None:
-    '''Connect a socket to a server address.'''
-    try:
-        sock.connect(serverAddress)
-    except socket.error as e:
-        errorMessage = "FATAL: Couldn't connect to socket: %s" % (str(e.args))
-        raise RuntimeError(errorMessage)
-    return
-    
-def __socketSend__(sock:socket.socket, message:str) -> int:
-    '''Send a message to the socket.'''
-    try:
-        bytesSent = sock.send(message.encode())
-    except socket.error as e:
-        errorMessage = "FATAL: Couldn't send to socket: %s" % (str(e.args))
-        raise RuntimeError(errorMessage)
-    return bytesSent
 
-def __socketReceive__(sock:socket.socket) -> str:
-    '''Read a string from a socket. Blocks until msg read.'''
+def __socket_connect__(sock: socket.socket, server_address: tuple[str, int] | str) -> None:
+    """Connect a socket to a server address."""
     try:
-        while (True):
-            readable, writeable, errored = select.select([sock],[],[], 0.5)
-            if (len(readable) > 0):
+        sock.connect(server_address)
+    except socket.error as e:
+        error_message = "FATAL: Couldn't connect to socket: %s" % (str(e.args))
+        raise RuntimeError(error_message)
+    return
+
+
+def __socket_send__(sock: socket.socket, message: str) -> int:
+    """Send a message to the socket."""
+    try:
+        bytes_sent = sock.send(message.encode())
+    except socket.error as err:
+        error_message = "FATAL: Couldn't send to socket: %s" % (str(err.args))
+        raise RuntimeError(error_message)
+    return bytes_sent
+
+
+def __socket_receive__(sock: socket.socket) -> str:
+    """Read a string from a socket. Blocks until msg read."""
+    try:
+        while True:
+            readable, writeable, erred = select.select([sock], [], [], 0.5)
+            if len(readable) > 0:
                 message = b''
-                while (True):
+                while True:
                     data = sock.recv(1)
-                    message = message + data
+                    message += data
                     try:
                         if data.decode() == '\n':
                             break
-                    except Exception as e:
+                    except Exception as err:
                         pass
                 return message.decode()
-    except socket.error as e:
-        errorMessage = "FATAL: Failed to read from socket: %s" % (str(e.args))
-        raise RuntimeError(errorMessage)
+    except socket.error as err:
+        error_message = "FATAL: Failed to read from socket: %s" % (str(err.args))
+        raise RuntimeError(error_message)
     return None
 
-def __socketClose__(sock:socket.socket) -> None:
-    '''Close a socket.'''
+
+def __socket_close__(sock: socket.socket) -> None:
+    """Close a socket."""
     try:
         sock.close()
     except socket.error as e:
-        errorMessage = "FATAL: Couldn't close socket connection: %s" % (str(e.args))
-        raise RuntimeError(errorMessage)
+        error_message = "FATAL: Couldn't close socket connection: %s" % (str(e.args))
+        raise RuntimeError(error_message)
     return None
+
 
 ################################
 # Type checking helper:
 ###############################
-def __typeError__(varName:str, validTypeName:str, var:Any) -> NoReturn:
-    errorMessage = "%s must be of type %s, not: %s" % (varName, validTypeName, str(type(var)))
+def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
+    errorMessage = "%s must be of type %s, not: %s" % (var_name, valid_type_name, str(type(var)))
     raise TypeError(errorMessage)

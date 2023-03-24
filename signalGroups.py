@@ -4,7 +4,7 @@ from typing import Optional, Iterator
 import socket
 import json
 
-from .signalCommon import __socketReceive__, __socketSend__
+from .signalCommon import __socket_receive__, __socket_send__
 from .signalGroup import Group
 from .signalContacts import Contacts
 # from signalSyncMessage import SyncMessage
@@ -76,8 +76,8 @@ class Groups(object):
         }
         jsonCommandStr = json.dumps(listGroupsCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseString = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseString = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict = json.loads(responseString)
         # print(responseObj)

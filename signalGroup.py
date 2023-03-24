@@ -5,7 +5,7 @@ import socket
 import json
 import sys
 
-from .signalCommon import __socketReceive__, __socketSend__
+from .signalCommon import __socket_receive__, __socket_send__
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalTimestamp import Timestamp
@@ -264,8 +264,8 @@ class Group(object):
         }
         jsonCommandStr = json.dumps(listGroupCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict = json.loads(responseStr)
     # Check for error:

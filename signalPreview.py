@@ -17,7 +17,7 @@ import shutil
 import sys
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 
 global DEBUG
 DEBUG: bool = True
@@ -35,28 +35,28 @@ class Preview(object):
                 ) -> None:
     # Check config_path:
         if (isinstance(configPath, str) == False):
-            __typeError__("config_path", "str", configPath)
+            __type_error__("config_path", "str", configPath)
     # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("from_dict", "dict", fromDict)
+            __type_error__("from_dict", "dict", fromDict)
     # Check rawPreview:
         if (rawPreview != None and isinstance(rawPreview, dict) == False):
-            __typeError__("rawPreview", "dict", rawPreview)
+            __type_error__("rawPreview", "dict", rawPreview)
     # Check generate preview:
         if (isinstance(generatePreview, bool) == False):
-            __typeError__("generatePreview", "bool", generatePreview)
+            __type_error__("generatePreview", "bool", generatePreview)
     # Check url:
         if (url != None and isinstance(url, str) == False):
-            __typeError__("url", "str", url)
+            __type_error__("url", "str", url)
     # Check title:
         if (title != None and isinstance(title, str) == False):
-            __typeError__("title", "str", title)
+            __type_error__("title", "str", title)
     # Check description:
         if (description != None and isinstance(description, str) == False):
-            __typeError__("description", "str", description)
+            __type_error__("description", "str", description)
     # Check image:
         if (image != None and isinstance(image, Attachment) == False and isinstance(image, str) == False):
-            __typeError__("image", "Attachment | str", image)
+            __type_error__("image", "Attachment | str", image)
 # Set internal Vars:
         self._configPath = configPath
 # Set external properties:

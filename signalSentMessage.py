@@ -6,7 +6,7 @@ from datetime import timedelta
 import json
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -55,10 +55,10 @@ class SentMessage(Message):
                 ) -> None:
     # Check sticker_packs:
         if (isinstance(stickerPacks, StickerPacks) == False):
-            __typeError__("sticker_packs", "StickerPacks", stickerPacks)
+            __type_error__("sticker_packs", "StickerPacks", stickerPacks)
     # Check Body:   
         if (body != None and isinstance(body, str) == False):
-            __typeError__("body", "Optional[str]", body)
+            __type_error__("body", "Optional[str]", body)
     # Check attachments:    
         attachmentList: list[Attachment] = []
         if (attachments != None):
@@ -68,11 +68,11 @@ class SentMessage(Message):
                 i = 0
                 for attachment in attachments:
                     if (isinstance(attachment, Attachment) == False):
-                        __typeError__("attachments[%i]" % i, "Attachment", attachment)
+                        __type_error__("attachments[%i]" % i, "Attachment", attachment)
                     attachmentList.append(attachment)
                     i = i + 1
             else:
-                __typeError__("attachments", "Optional[Iterable[Attachment] | Attachment", attachments)
+                __type_error__("attachments", "Optional[Iterable[Attachment] | Attachment", attachments)
     # Check mentions:
         mentionsList: list[Mention] | Mentions = []
         if (mentions != None):
@@ -84,11 +84,11 @@ class SentMessage(Message):
                 i = 0
                 for mention in mentions:
                     if (isinstance(mention, Mention) == False):
-                        __typeError__("mentions[%i]" % i, "Mention", mention)
+                        __type_error__("mentions[%i]" % i, "Mention", mention)
                     mentionsList.append(mention)
                     i = i + 1
             else:
-                __typeError__("mentions", "Optional[Iterable[Mention] | Mentions | Mention]", mentions)
+                __type_error__("mentions", "Optional[Iterable[Mention] | Mentions | Mention]", mentions)
     # Check reactions:
         reactionList: list[Reaction] = []
         if (reactions != None):
@@ -100,29 +100,29 @@ class SentMessage(Message):
                 i = 0
                 for reaction in reactions:
                     if (isinstance(reaction, Reaction) == False):
-                        __typeError__('reactions[%i]' % i, "Reaction", reaction)
+                        __type_error__('reactions[%i]' % i, "Reaction", reaction)
                     reactionList.append(reaction)
                     i = i + 1
             else:
-                __typeError__("reactions", "Optional[Iterable[Reaction] | Reactions | Reaction", reactions)
+                __type_error__("reactions", "Optional[Iterable[Reaction] | Reactions | Reaction", reactions)
     # Check sticker:    
         if (sticker != None and isinstance(sticker, Sticker) == False):
-            __typeError__("sticker", "Sticker", sticker)
+            __type_error__("sticker", "Sticker", sticker)
     # Check quote:
         if (quote != None and isinstance(quote, Quote) == False):
-                __typeError__("quote", "Quote", quote)
+                __type_error__("quote", "Quote", quote)
     # Check expiry:
         if (expiration != None):
             if (isinstance(expiration, timedelta) == False):
-                __typeError__("expiry", "timedelta", expiration)
+                __type_error__("expiry", "timedelta", expiration)
         if (expirationTimestamp != None):
             if (isinstance(expirationTimestamp, Timestamp) == False):
-                __typeError__("expirationTimestamp", "Timestamp", expirationTimestamp)
+                __type_error__("expirationTimestamp", "Timestamp", expirationTimestamp)
         if (isinstance(isExpired, bool) == False):
-            __typeError__("isExpired", "bool", isExpired)
+            __type_error__("isExpired", "bool", isExpired)
     # Check isSent:
         if (isinstance(isSent, bool) == False):
-            __typeError__("isSent", "bool", isSent)
+            __type_error__("isSent", "bool", isSent)
     # Check sentTo:
         sentToList: Optional[list[Contact]] = None
         if (sentTo != None):
@@ -133,14 +133,14 @@ class SentMessage(Message):
                 i = 0
                 for contact in sentToList:
                     if (isinstance(contact, Contact) == False):
-                        __typeError__("sentTo[%i]" % i, "Contact", contact)
+                        __type_error__("sentTo[%i]" % i, "Contact", contact)
                     sentToList.append(contact)
                     i = i + 1
             else:
-                __typeError__("sentTo", "Iterable[Contact] | Contact", sentTo)
+                __type_error__("sentTo", "Iterable[Contact] | Contact", sentTo)
     # Check previews:
         if (preview != None and isinstance(preview, Preview) == False):
-            __typeError__("preview", "Preview", preview)
+            __type_error__("preview", "Preview", preview)
 # Set internal vars:
         self._stickerPacks = stickerPacks
 # Set external properties:
@@ -449,7 +449,7 @@ class SentMessage(Message):
     def react(self, emoji:str) -> tuple[bool, Reaction | str]:
     # Argument check:
         if (isinstance(emoji, str) == False):
-            __typeError__('emoji', "str, len = 1 or 2", emoji)
+            __type_error__('emoji', "str, len = 1 or 2", emoji)
         if (len(emoji) != 1 and len(emoji) != 2):
             errorMessage = "emoji must be str of len 1 or 2"
             raise ValueError(errorMessage)

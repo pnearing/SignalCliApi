@@ -5,7 +5,7 @@ import os
 import json
 import socket
 
-from .signalCommon import phoneNumberRegex, uuidRegex
+from .signalCommon import phone_number_regex, uuid_regex
 from .signalAccount import Account
 from .signalSticker import StickerPacks
 
@@ -105,7 +105,7 @@ class Accounts(object):
 
     def get_by_number(self, number: str) -> Optional[Account]:
         global ACCOUNTS
-        number_match = phoneNumberRegex.match(number)
+        number_match = phone_number_regex.match(number)
         if number_match is None:
             error_message = "number must be in format: +nnnnnnnn..."
             raise ValueError(error_message)

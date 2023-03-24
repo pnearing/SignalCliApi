@@ -5,7 +5,7 @@ import socket
 import json
 import sys
 
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -151,8 +151,8 @@ class Reaction(Message):
             raise ValueError("recipent type = %s" % self.recipientType)
         jsonCommandStr = json.dumps(sendReactionCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._commandSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._commandSocket)
+        __socket_send__(self._commandSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._commandSocket)
     # Parse response:
         responseObj:dict[str, object] = json.loads(responseStr)
         # print (responseObj)

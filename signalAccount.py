@@ -6,7 +6,7 @@ import json
 import sys
 import socket
 
-from .signalCommon import __socketReceive__, __socketSend__
+from .signalCommon import __socket_receive__, __socket_send__
 from .signalDevice import Device
 from .signalDevices import Devices
 from .signalContacts import Contacts
@@ -144,8 +144,8 @@ class Account(object):
             verify_command_obj['params']['pin'] = pin
         json_command_str = json.dumps(verify_command_obj) + '\n'
         # Communicate with signal:
-        __socketSend__(self._sync_socket, json_command_str)
-        response_str = __socketReceive__(self._sync_socket)
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
         # Parse response:
         response_obj: dict = json.loads(response_str)
         # Check for error:

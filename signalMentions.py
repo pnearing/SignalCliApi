@@ -2,7 +2,7 @@
 from typing import Optional, Iterable, Iterator
 import re
 
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalMention import Mention
@@ -16,28 +16,28 @@ class Mentions(object):
                 ) -> None:
     # Argument check contacts:
         if (isinstance(contacts, Contacts) == False):
-            __typeError__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "Contacts", contacts)
     # Argument check from_dict:
         if (fromDict != None and isinstance(fromDict,dict) == False):
-            __typeError__("from_dict", "dict", fromDict)
+            __type_error__("from_dict", "dict", fromDict)
     # Argument check rawMentions:
         if (rawMentions != None):
             if (isinstance(rawMentions, list) == False):
-                __typeError__("rawMentions", "list[dict[str, object]]", rawMentions)
+                __type_error__("rawMentions", "list[dict[str, object]]", rawMentions)
             i = 0
             for rawMention in rawMentions:
                 if (isinstance(rawMention, dict) == False):
-                    __typeError__("rawMention[%i]" % i, "dict", rawMention)
+                    __type_error__("rawMention[%i]" % i, "dict", rawMention)
                 i = i + 1
     # Argument Check mentions:
         mentionsList: list[Mention] = []
         if (mentions != None):
             if (isinstance(mentions, Iterable) == False):
-                __typeError__("mentions", "Optional[Iterable[Mention]]", mentions)
+                __type_error__("mentions", "Optional[Iterable[Mention]]", mentions)
             i = 0
             for mention in mentions:
                 if (isinstance(mention, Mention) == False):
-                    __typeError__("mentions[%i]" % i, "Mention", mention)
+                    __type_error__("mentions[%i]" % i, "Mention", mention)
                 mentionsList.append(mention)
                 i = i + 1
         if (mentions != None):
@@ -80,7 +80,7 @@ class Mentions(object):
                     return mention
             raise IndexError("Mention with contactId: %s not found." % index.getId())
         else:
-            __typeError__("index", "int | Contact", index)
+            __type_error__("index", "int | Contact", index)
 
 #######################################
 # To / From Dict:
@@ -145,7 +145,7 @@ class Mentions(object):
     
     def createFromBody(self, body:str) -> list[Mention]:
         if (isinstance(body, str) == False):
-            __typeError__("body", "str", body)
+            __type_error__("body", "str", body)
         regex = re.compile(r'(@<(\+\d+|[0-9a-fA-F]{8}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{12})>)')
         matchList = regex.findall(body)
         lastFind = 0

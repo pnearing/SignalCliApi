@@ -11,7 +11,7 @@ except ModuleNotFoundError:
     print("pip install tzlocal")
 import sys
 
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 
 Self = TypeVar("Self", bound="Timestamp")
 
@@ -29,13 +29,13 @@ class Timestamp(object):
             raise RuntimeError(error_message)
         # Type check args:
         if timestamp is not None and isinstance(timestamp, int) is False:
-            __typeError__("timestamp", "int", timestamp)
+            __type_error__("timestamp", "int", timestamp)
         if fromDict != None and isinstance(fromDict, dict) is False:
-            __typeError__("from_dict", "dict[str, object]", fromDict)
+            __type_error__("from_dict", "dict[str, object]", fromDict)
         if dateTime != None and isinstance(dateTime, datetime.datetime) is False:
-            __typeError__("date_time", "datetime.datetime", dateTime)
+            __type_error__("date_time", "datetime.datetime", dateTime)
         if isinstance(now, bool) is False:
-            __typeError__("now", "bool", now)
+            __type_error__("now", "bool", now)
         # Set vars:
         self.timestamp: int = timestamp  # Int
         self.datetime: Optional[datetime.datetime] = None  # Python tz aware datetime object.

@@ -6,7 +6,7 @@ import json
 import sys
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -55,45 +55,45 @@ class Message(object):
                 ) -> None:
     # Arg Type Checks:
         if (isinstance(commandSocket, socket.socket) == False):
-            __typeError__('command_socket', 'socket', commandSocket)
+            __type_error__('command_socket', 'socket', commandSocket)
         if (isinstance(accountId, str) == False):
-            __typeError__('accountId', 'str', accountId)
+            __type_error__('accountId', 'str', accountId)
         if (isinstance(configPath, str) == False):
-            __typeError__('config_path', 'str', configPath)
+            __type_error__('config_path', 'str', configPath)
         if (isinstance(contacts, Contacts) == False):
-            __typeError__("contacts" "Contacts", contacts)
+            __type_error__("contacts" "Contacts", contacts)
         if (isinstance(groups, Groups) == False):
-            __typeError__("groups", "Groups", groups)
+            __type_error__("groups", "Groups", groups)
         if (isinstance(devices, Devices) == False):
-            __typeError__("devices", "Devices", devices)
+            __type_error__("devices", "Devices", devices)
         if (isinstance(thisDevice, Device) == False):
-            __typeError__("thisDevice", "Device", thisDevice)
+            __type_error__("thisDevice", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("from_dict", "dict", fromDict)
+            __type_error__("from_dict", "dict", fromDict)
         if (rawMessage != None and isinstance(rawMessage, dict) == False):
-            __typeError__("rawMessage", "dict", rawMessage)
+            __type_error__("rawMessage", "dict", rawMessage)
         if (sender != None and isinstance(sender, Contact) == False):
-            __typeError__("sender", "Contact", sender)
+            __type_error__("sender", "Contact", sender)
         if (recipient != None and isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
-            __typeError__("recipient", "Contact | Group", recipient)
+            __type_error__("recipient", "Contact | Group", recipient)
         if (device != None and isinstance(device, Device) == False):
-            __typeError__("device", "Device", device)
+            __type_error__("device", "Device", device)
         if (timestamp != None and isinstance(timestamp, Timestamp) == False):
-            __typeError__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "Timestamp", timestamp)
         if (isinstance(messageType, int) == False):
-            __typeError__("messageType", "int", messageType)
+            __type_error__("messageType", "int", messageType)
         if (isinstance(isDelivered, bool) == False):
-            __typeError__("isDelivered", "bool", isDelivered)
+            __type_error__("isDelivered", "bool", isDelivered)
         if (timeDelivered != None and isinstance(timeDelivered, Timestamp) == False):
-            __typeError__("timeDelivered", "Timestamp", timeDelivered)
+            __type_error__("timeDelivered", "Timestamp", timeDelivered)
         if (isinstance(isRead, bool) == False):
-            __typeError__("isRead", "bool", isRead)
+            __type_error__("isRead", "bool", isRead)
         if (timeRead != None and isinstance(timeRead, Timestamp) == False):
-            __typeError__("timeRead", "Timestamp", timeRead)
+            __type_error__("timeRead", "Timestamp", timeRead)
         if (isinstance(isViewed, bool) == False):
-            __typeError__("isViewed", "bool", isViewed)
+            __type_error__("isViewed", "bool", isViewed)
         if (timeViewed != None and isinstance(timeViewed, Timestamp) == False):
-            __typeError__("timeViewed", "Timestamp", timeViewed)
+            __type_error__("timeViewed", "Timestamp", timeViewed)
     # Set internal vars:
         self._commandSocket: socket.socket = commandSocket
         self._accountId: str = accountId
@@ -283,7 +283,7 @@ class Message(object):
 ###############################
     def markDelivered(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
-            __typeError__('when', 'Timestamp', when)
+            __type_error__('when', 'Timestamp', when)
         if (self.isDelivered == True):
             return
         self.isDelivered = True
@@ -292,7 +292,7 @@ class Message(object):
 
     def markRead(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
-            __typeError__('when', 'Timestamp', when)
+            __type_error__('when', 'Timestamp', when)
         if (self.isRead == True):
             return
         self.isRead = True
@@ -301,7 +301,7 @@ class Message(object):
 
     def markViewed(self, when: Timestamp) -> None:
         if (isinstance(when, Timestamp) == False):
-            __typeError__('when', 'Timestamp', when)
+            __type_error__('when', 'Timestamp', when)
         if (self.isViewed == True):
             return
         self.isViewed = True

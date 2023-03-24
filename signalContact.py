@@ -5,7 +5,7 @@ import socket
 import json
 import sys
 
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalProfile import Profile
 from .signalTimestamp import Timestamp
 from .signalDevices import Devices
@@ -211,8 +211,8 @@ class Contact(object):
         }
         jsonCommandStr = json.dumps(setNameCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict = json.loads(responseStr)
     # Check for error:
@@ -245,7 +245,7 @@ class Contact(object):
 ############################
     def seen(self, timeSeen:Timestamp) -> None:
         if (isinstance(timeSeen, Timestamp) == False):
-            __typeError__('timeSeen', 'Timestamp', timeSeen)
+            __type_error__('timeSeen', 'Timestamp', timeSeen)
         if (self.lastSeen != None):
             if (self.lastSeen < timeSeen):
                 self.lastSeen = timeSeen

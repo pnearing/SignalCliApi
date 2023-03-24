@@ -6,7 +6,7 @@ import json
 import sys
 import socket
 
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalTimestamp import Timestamp
 
 global DEBUG
@@ -238,7 +238,7 @@ class Profile(object):
 ###############################
     def setGivenName(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.givenName == value):
@@ -255,8 +255,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setGivenNameObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
         # print(responseObj)
@@ -275,7 +275,7 @@ class Profile(object):
 
     def setFamilyName(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.familyName == value):
@@ -292,8 +292,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setFamilyNameCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
     # Check for error:
@@ -311,7 +311,7 @@ class Profile(object):
     
     def setAbout(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.about == value):
@@ -328,8 +328,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setAboutCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
     # Check for error:
@@ -347,7 +347,7 @@ class Profile(object):
 
     def setEmoji(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.emoji == value):
@@ -364,8 +364,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setEmojiCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
     # Check for error:
@@ -383,7 +383,7 @@ class Profile(object):
 
     def setCoinAddress(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.coinAddress == value):
@@ -400,8 +400,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setCoinAddressCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
     # Check for error:
@@ -419,7 +419,7 @@ class Profile(object):
     
     def setAvatar(self, value:str) -> bool:
         if (isinstance(value, str) == False):
-            __typeError__("value", "str", value)
+            __type_error__("value", "str", value)
         if (self._isAccountProfile == False):
             return False
         if (self.avatar == value):
@@ -436,8 +436,8 @@ class Profile(object):
         }
         jsonCommandStr = json.dumps(setAvatarCommandObj) + '\n'
     # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
     # Check for error:

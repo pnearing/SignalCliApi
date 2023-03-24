@@ -5,7 +5,7 @@ import mimetypes
 import os
 from subprocess import check_call, CalledProcessError
 
-from .signalCommon import __typeError__, findXdgOpen
+from .signalCommon import __type_error__, find_xdg_open
 from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
@@ -23,32 +23,32 @@ class Attachment(object):
                 ) -> None:
     # Check config_path:
         if (isinstance(configPath, str) == False):
-            __typeError__("config_path", "str", configPath)
+            __type_error__("config_path", "str", configPath)
     # Check from_dict:
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("from_dict", "dict[str, object]", fromDict)
+            __type_error__("from_dict", "dict[str, object]", fromDict)
     # Check raw Attachment:
         if (rawAttachment != None and isinstance(rawAttachment, dict) == False):
-            __typeError__("rawAttachment", "dict[str, object]", rawAttachment)
+            __type_error__("rawAttachment", "dict[str, object]", rawAttachment)
     # Check content type:
         if (contentType != None and isinstance(contentType, str) == False):
-            __typeError__("contentType", "str", contentType)
+            __type_error__("contentType", "str", contentType)
     # Check filename:
         if (filename != None and isinstance(filename, str) == False):
-            __typeError__("filename", "str", filename)
+            __type_error__("filename", "str", filename)
     # Check size:
         if (size != None and isinstance(size, int) == False):
-            __typeError__("size", "int", size)
+            __type_error__("size", "int", size)
     # Check localPath:
         if (localPath != None and isinstance(localPath, str) == False):
-            __typeError__("localPath", "str", localPath)
+            __type_error__("localPath", "str", localPath)
     # Check thumbnail:
         if (thumbnail != None and isinstance(thumbnail, Thumbnail) == False):
-            __typeError__("thumbnail", "Thumbnail", thumbnail)
+            __type_error__("thumbnail", "Thumbnail", thumbnail)
 
     # Set internal vars:
         self._configPath: str = configPath
-        self._xdgopenPath: Optional[str] = findXdgOpen()
+        self._xdgopenPath: Optional[str] = find_xdg_open()
     # Set external vars:
         self.contentType: Optional[str] = contentType
         self.fileName: Optional[str] = filename

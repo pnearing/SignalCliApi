@@ -11,8 +11,8 @@ from typing import Optional, Callable, Tuple, List
 from signalAccount import Account
 from .signalAccount import Account
 from .signalAccounts import Accounts
-from .signalCommon import __typeError__, findSignal, findQrencode, parseSignalReturnCode, __socketCreate__, \
-    __socketConnect__, __socketClose__, __socketReceive__, __socketSend__, phoneNumberRegex
+from .signalCommon import __type_error__, find_signal, find_qrencode, parse_signal_return_code, __socket_create__, \
+    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 
@@ -31,14 +31,14 @@ class SignalCli(object):
         # Check signal config path:
         if signal_config_path is not None:
             if not isinstance(signal_config_path, str):
-                __typeError__("signal_config_path", "str", signal_config_path)
+                __type_error__("signal_config_path", "str", signal_config_path)
             elif not os.path.exists(signal_config_path) and not start_signal:
                 error_message = "FATAL: signal_config_path '%s' doesn't exist." % signal_config_path
                 raise FileNotFoundError(error_message)
         # Check signal exec path:
         if signal_exec_path is not None:
             if not isinstance(signal_exec_path, str):
-                __typeError__("signal_exec_path", "str", signal_exec_path)
+                __type_error__("signal_exec_path", "str", signal_exec_path)
             elif not os.path.exists(signal_exec_path) and start_signal:
                 error_message = "FATAL: signal_exec_path '%s' does not exist." % signal_exec_path
                 raise FileNotFoundError(error_message)
@@ -46,9 +46,9 @@ class SignalCli(object):
         if server_address is not None:
             if isinstance(server_address, list) or isinstance(server_address, tuple):
                 if not isinstance(server_address[0], str):
-                    __typeError__("server_address[0]", "str", server_address[0])
+                    __type_error__("server_address[0]", "str", server_address[0])
                 elif not isinstance(server_address[1], int):
-                    __typeError__("server_address[1]", "int", server_address[1])
+                    __type_error__("server_address[1]", "int", server_address[1])
             elif isinstance(server_address, str):
                 if os.path.exists(server_address) and start_signal:
                     error_message = "socket path '%s' already exists. Perhaps signal is already running." % server_address
@@ -56,10 +56,10 @@ class SignalCli(object):
         # Check log file path:
         if log_file_path is not None:
             if not isinstance(log_file_path, str):
-                __typeError__("log_file_path", "str", log_file_path)
+                __type_error__("log_file_path", "str", log_file_path)
         # Check start signal:
         if not isinstance(start_signal, bool):
-            __typeError__("start_signal", "bool", start_signal)
+            __type_error__("start_signal", "bool", start_signal)
 
         # Set internal vars:
         # Set config path:
@@ -74,7 +74,7 @@ class SignalCli(object):
         if signal_exec_path is not None:
             self._signal_exec_path = signal_exec_path
         elif start_signal:
-            self._signal_exec_path = findSignal()
+            self._signal_exec_path = find_signal()
         else:
             self._signal_exec_path = None
         # Set server address:
@@ -98,7 +98,7 @@ class SignalCli(object):
         # Set var to hold link process:
         self._link_process: Optional[Popen] = None
         # Set qrencode exec path:
-        self._qrencode_exec_path: Optional[str] = findQrencode()
+        self._qrencode_exec_path: Optional[str] = find_qrencode()
         # Set external properties and objects:
         # Set accounts:
         self.accounts: Accounts = None
@@ -125,7 +125,7 @@ class SignalCli(object):
                 else:
                     self._process = Popen(signal_command_line, text=True, stdout=PIPE, stderr=PIPE)
             except CalledProcessError as e:
-                parseSignalReturnCode(e.returncode, signal_command_line, e.output)
+                parse_signal_return_code(e.returncode, signal_command_line, e.output)
         # Give signal 5 seconds to start
         sleep(5)
         # Wait for socket to appear:
@@ -141,10 +141,10 @@ class SignalCli(object):
                     error_message = "Failed to to locate socket at '%s'" % self._server_address
                     raise RuntimeError(error_message)
         # Create sockets and connect to them:
-        self._sync_socket = __socketCreate__(self._server_address)
-        __socketConnect__(self._sync_socket, self._server_address)
-        self._command_socket = __socketCreate__(self._server_address)
-        __socketConnect__(self._command_socket, self._server_address)
+        self._sync_socket = __socket_create__(self._server_address)
+        __socket_connect__(self._sync_socket, self._server_address)
+        self._command_socket = __socket_create__(self._server_address)
+        __socket_connect__(self._command_socket, self._server_address)
         # Load stickers:
         self.sticker_packs = StickerPacks(configPath=self.config_path)
         # Load accounts:
@@ -171,8 +171,8 @@ class SignalCli(object):
     #################################
     def stop_signal(self):
         try:
-            __socketClose__(self._sync_socket)
-            __socketClose__(self._command_socket)
+            __socket_close__(self._sync_socket)
+            __socket_close__(self._command_socket)
         except:
             pass
         try:
@@ -189,7 +189,7 @@ class SignalCli(object):
 
     def register_account(self, number: str, captcha: str, voice: bool = False) -> tuple[bool, Account | str]:
         # Check arguments:
-        number_match = phoneNumberRegex.match(number)
+        number_match = phone_number_regex.match(number)
         if number_match is None:
             return False, "number must be in format +nnnnnnnn...."
         if captcha[:16] == 'signalcaptcha://':
@@ -214,8 +214,8 @@ class SignalCli(object):
         }
         json_command_str = json.dumps(register_account_command_obj) + '\n'
         # Communicate with signal:
-        __socketSend__(self._sync_socket, json_command_str)
-        response_str = __socketReceive__(self._sync_socket)
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
         # Parse response:
         response_obj: dict = json.loads(response_str)
         # Check for error:
@@ -233,8 +233,8 @@ class SignalCli(object):
             }
             json_command_str = json.dumps(delete_local_data_command_obj) + '\n'
             # Communicate with signal:
-            __socketSend__(self._sync_socket, json_command_str)
-            response_str = __socketReceive__(self._sync_socket)
+            __socket_send__(self._sync_socket, json_command_str)
+            response_str = __socket_receive__(self._sync_socket)
             # print(responseStr)
             return False, error_message
         # No error found, get the new account:
@@ -255,7 +255,7 @@ class SignalCli(object):
         try:
             self._link_process = Popen(link_command_line, text=True, stdout=PIPE, stderr=PIPE)
         except CalledProcessError as e:
-            parseSignalReturnCode(e.returncode, link_command_line, e.output)
+            parse_signal_return_code(e.returncode, link_command_line, e.output)
             # :NO RETURN :
         # Gather link from stdout
         signal_link = self._link_process.stdout.readline()

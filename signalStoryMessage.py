@@ -4,7 +4,7 @@ from typing import Optional
 import socket
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -38,14 +38,14 @@ class StoryMessage(Message):
 # Argument Checks:
     # Check allows replies:
         if (isinstance(allowsReplies, bool) == False):
-            __typeError__("allowsReplies", "bool", allowsReplies)
+            __type_error__("allowsReplies", "bool", allowsReplies)
     # Check preview:
         if (preview != None and isinstance(preview, Preview) == False):
-            __typeError__("preview", "Preview", preview)
+            __type_error__("preview", "Preview", preview)
     # Check attachment:
         if (attachment != None):
             if (isinstance(attachment, Attachment) == False and isinstance(attachment, TextAttachment) == False):
-                __typeError__("attachment", "Attachment | TextAttachment", attachment)
+                __type_error__("attachment", "Attachment | TextAttachment", attachment)
 # Set external properties:
     # Allows replies:
         self.allowsReplies: bool = allowsReplies

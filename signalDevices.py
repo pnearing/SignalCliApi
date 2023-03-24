@@ -4,7 +4,7 @@ from typing import Optional
 import json
 import socket
 
-from .signalCommon import __socketReceive__, __socketSend__
+from .signalCommon import __socket_receive__, __socket_send__
 from .signalDevice import Device
 from .signalTimestamp import Timestamp
 
@@ -63,8 +63,8 @@ class Devices(object):
     # Create json command string
         jsonCommand = json.dumps(listDevicesCommandObj) + '\n'
     # Communicate with the socket:  
-        __socketSend__(self._syncSocket, jsonCommand)
-        responseString = __socketReceive__(self._syncSocket)
+        __socket_send__(self._syncSocket, jsonCommand)
+        responseString = __socket_receive__(self._syncSocket)
     # Parse response:
         responseObj:dict = json.loads(responseString)
     # Check for error:

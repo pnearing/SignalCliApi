@@ -5,7 +5,7 @@ import sys
 import socket
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -40,13 +40,13 @@ class TypingMessage(Message):
         # Check action
         if (action != None):
             if(isinstance(action, str) == False):
-                __typeError__("action", 'str', action)
+                __type_error__("action", 'str', action)
             action = action.upper()
             if (action != 'STARTED' and action != 'STOPPED'):
                 raise ValueError("action must be either STARTED or STOPPED")
         # Check time changed:
         if (timeChanged != None and isinstance(timeChanged, Timestamp) == False):
-            __typeError__("timeChanged", "Timestamp", timeChanged)
+            __type_error__("timeChanged", "Timestamp", timeChanged)
     # Set external properties:
         self.action: str = action
         self.timeChanged: Timestamp = timeChanged

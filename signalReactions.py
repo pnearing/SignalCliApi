@@ -3,7 +3,7 @@
 from typing import Optional, Iterable, Iterator
 import socket
 
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -25,19 +25,19 @@ class Reactions(object):
                 ) -> None:
     # Argument checks:
         if (isinstance(commandSocket, socket.socket) == False):
-            __typeError__("command_socket", "socket.socket", commandSocket)
+            __type_error__("command_socket", "socket.socket", commandSocket)
         if (isinstance(accountId, str) == False):
-            __typeError__("accountId", "str", accountId)
+            __type_error__("accountId", "str", accountId)
         if (isinstance(contacts, Contacts) == False):
-            __typeError__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "Contacts", contacts)
         if (isinstance(groups, Groups) == False):
-            __typeError__("groups", "Groups", groups)
+            __type_error__("groups", "Groups", groups)
         if (isinstance(devices, Devices) == False):
-            __typeError__("devices", "Devices", devices)
+            __type_error__("devices", "Devices", devices)
         if (isinstance(thisDevice, Device) == False):
-            __typeError__("thisDevice", "Device", thisDevice)
+            __type_error__("thisDevice", "Device", thisDevice)
         if (fromDict != None and isinstance(fromDict, dict) == False):
-            __typeError__("from_dict", "dict", fromDict)
+            __type_error__("from_dict", "dict", fromDict)
     # Set internal vars:
         self._commandSocket: socket.socket = commandSocket
         self._accountId: str = accountId
@@ -50,7 +50,7 @@ class Reactions(object):
             i = 0
             for reaction in reactions:
                 if (isinstance(reaction, Reaction) == False):
-                    __typeError__("reactions[%i]" % i, "Reaction", reaction)
+                    __type_error__("reactions[%i]" % i, "Reaction", reaction)
                 i = i + 1
                 self._reactions.append(reaction)
         return
@@ -63,7 +63,7 @@ class Reactions(object):
     
     def __getitem__(self, index:int) -> Reaction:
         if (isinstance(index, int) == False):
-            __typeError__("index", "int", index)
+            __type_error__("index", "int", index)
         return self._reactions[index]
 
 #########################
@@ -103,7 +103,7 @@ class Reactions(object):
 
     def __add__(self, newReaction:Reaction) -> None:
         if (isinstance(newReaction, Reaction) == False):
-            __typeError__("newReaction", "Reaction", newReaction)
+            __type_error__("newReaction", "Reaction", newReaction)
         if (newReaction in self._reactions):
             raise RuntimeError("reaction already in reactions.")
         self._reactions.append(newReaction)
@@ -111,7 +111,7 @@ class Reactions(object):
 
     def __remove__(self, targetReaction:Reaction) -> None:
         if (isinstance(targetReaction, Reaction) == False):
-            __typeError__("targetReaction", "Reaction", targetReaction)
+            __type_error__("targetReaction", "Reaction", targetReaction)
         for index in range(len(self._reactions)):
             reaction = self._reactions[index]
             if (reaction.sender == targetReaction.sender):
@@ -135,7 +135,7 @@ class Reactions(object):
 
     def getByContact(self, contact:Contact) -> Optional[Reaction]:
         if (isinstance(contact, Contact) == False):
-            __typeError__("contact", "Contact | str", contact)
+            __type_error__("contact", "Contact | str", contact)
         for reaction in self._reactions:
             if (reaction.sender == contact):
                 return reaction
@@ -143,7 +143,7 @@ class Reactions(object):
 
     def getByEmoji(self, emoji:str) -> tuple[Reaction]:
         if (isinstance(emoji, str) == False):
-            __typeError__("emoji", "str", emoji)
+            __type_error__("emoji", "str", emoji)
         if (len(emoji) == 0 or len(emoji) > 1):
             raise ValueError("emoji must be one character")
         reactions = [ reaction for reaction in self._reactions if reaction.emoji == emoji ]
@@ -151,6 +151,6 @@ class Reactions(object):
     
     def getByRecipient(self, recipient: Contact | Group) -> tuple[Reaction]:
         if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
-            __typeError__("recipient", "Contact | Group", recipient)
+            __type_error__("recipient", "Contact | Group", recipient)
         reactions = [ reaction for reaction in self._reactions if reaction.recipient == recipient]
         return tuple(reactions)

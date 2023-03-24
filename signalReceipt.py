@@ -3,7 +3,7 @@
 from typing import Optional, Iterable
 import socket
 
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -43,19 +43,19 @@ class Receipt(Message):
 # Argument Checks:
     # Check when:
         if (when != None and isinstance(when, Timestamp) == False):
-            __typeError__("when", "Timestamp", when)
+            __type_error__("when", "Timestamp", when)
     # Check receipt Type:
         if (isinstance(receiptType, int) == False):
-            __typeError__("receiptType", "int", receiptType)
+            __type_error__("receiptType", "int", receiptType)
     # Check Timestamps:
         timestampList: list[Timestamp] = []
         if (timestamps != None):
             if (isinstance(timestamps, Iterable) == False):
-                __typeError__("timestamps", "Iterable[Timestamp]", timestamps)
+                __type_error__("timestamps", "Iterable[Timestamp]", timestamps)
             i = 0
             for targetTimestamp in timestamps:
                 if (isinstance(targetTimestamp, Timestamp) == False):
-                    __typeError__("timestamps[%i]" % i, "Timestamp", targetTimestamp)
+                    __type_error__("timestamps[%i]" % i, "Timestamp", targetTimestamp)
                 timestampList.append(targetTimestamp)
                 i = i + 1
 # Set external properties:

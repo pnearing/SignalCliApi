@@ -2,7 +2,7 @@
 
 from typing import Optional
 
-from .signalCommon import __typeError__
+from .signalCommon import __type_error__
 
 class TextAttachment(object):
     def __init__(self,
@@ -17,19 +17,19 @@ class TextAttachment(object):
 # Argument checks:
     # Check text:
         if (text != None and isinstance(text, str) == False):
-            __typeError__("text", "str", text)
+            __type_error__("text", "str", text)
     # Check style:
         if (style != None and isinstance(style, str) == False):
-            __typeError__("style", "str", style)
+            __type_error__("style", "str", style)
     # check text fg colour:
         if (textForegroundColor != None and isinstance(textForegroundColor, str) == False):
-            __typeError__("textForegroundColor", "str", textForegroundColor)
+            __type_error__("textForegroundColor", "str", textForegroundColor)
     # Check text bg colour:
         if (textBackgroundColor != None and isinstance(textBackgroundColor, str) == False):
-            __typeError__("textBackgroundColor", "str", textBackgroundColor)
+            __type_error__("textBackgroundColor", "str", textBackgroundColor)
     # Check bg Colour:
         if (backgroudColor != None and isinstance(backgroudColor, str) == False):
-            __typeError__("backgroundColor", "str", backgroudColor)
+            __type_error__("backgroundColor", "str", backgroudColor)
 # Set external properties
     # Set text:
         self.text: str = text

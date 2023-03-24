@@ -7,7 +7,7 @@ import threading
 import json
 
 from .signalAccount import Account
-from .signalCommon import __socketCreate__, __socketConnect__, __socketClose__, __socketReceive__, __socketSend__
+from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, __socket_send__
 from .signalGroupUpdate import GroupUpdate
 from .signalMessage import Message
 from .signalReaction import Reaction
@@ -55,8 +55,8 @@ class ReceiveThread(threading.Thread):
         self._ractMsgCb: Optional[Callable] = reactionMessageCallback
         self._callMsgCb: Optional[Callable] = callMessageCallback
         self._subscriptionId : Optional[int]
-        self._receiveSocket: socket.socket = __socketCreate__(serverAddress)
-        __socketConnect__(self._receiveSocket, serverAddress)
+        self._receiveSocket: socket.socket = __socket_create__(serverAddress)
+        __socket_connect__(self._receiveSocket, serverAddress)
         return
 
     def run(self):
@@ -73,8 +73,8 @@ class ReceiveThread(threading.Thread):
             }
             jsonCommandStr = json.dumps(syncRequestCommandObj) + '\n'
         # Send the request to signal:
-            __socketSend__(self._receiveSocket, jsonCommandStr)
-            responseStr = __socketReceive__(self._receiveSocket)
+            __socket_send__(self._receiveSocket, jsonCommandStr)
+            responseStr = __socket_receive__(self._receiveSocket)
         # Parse response:
             messageObj:dict[str, object] = json.loads(responseStr)
             # print(responseObj)
@@ -96,8 +96,8 @@ class ReceiveThread(threading.Thread):
         }
         jsonCommandStr = json.dumps(startReceiveCommandObject) + '\n'
     # Communicate start recieve with signal:
-        __socketSend__(self._receiveSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._receiveSocket)
+        __socket_send__(self._receiveSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._receiveSocket)
     # Parse response:
         responseObj: dict = json.loads(responseStr)
         self._subscriptionId = responseObj['result']
@@ -105,7 +105,7 @@ class ReceiveThread(threading.Thread):
         while(self._subscriptionId != None):
         # Blocks unil message received:
             try:
-                messageStr = __socketReceive__(self._receiveSocket)
+                messageStr = __socket_receive__(self._receiveSocket)
             except:
                 break
         # Delay processing until messages are finished sending:
@@ -303,9 +303,9 @@ class ReceiveThread(threading.Thread):
         #     }
         # }
         # jsonCommandStr = json.dumps(stopReceiveCommandObj) + '\n'
-        # __socketSend__(self._socket, jsonCommandStr)
+        # __socket_send__(self._socket, jsonCommandStr)
         self._subscriptionId = None
-        __socketClose__(self._receiveSocket)
+        __socket_close__(self._receiveSocket)
         return
     
     # def __del__(self):

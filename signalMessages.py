@@ -7,7 +7,7 @@ import socket
 import json
 
 from .signalAttachment import Attachment
-from .signalCommon import __typeError__, __socketReceive__, __socketSend__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -259,19 +259,19 @@ class Messages(object):
 ##################################
     def getByTimestamp(self, timestamp:Timestamp) -> list[Message]:
         if (isinstance(timestamp, Timestamp) == False):
-            __typeError__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "Timestamp", timestamp)
         messages = [message for message in self.messages if message.timestamp == timestamp]
         return messages
     
     def getByRecipient(self, recipient:Group|Contact) -> list[Message]:
         if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
-            __typeError__("recipient", "Contact | Group", recipient)
+            __type_error__("recipient", "Contact | Group", recipient)
         messages = [ message for message in self.messages if message.recipient == recipient ]
         return messages
     
     def getBySender(self, sender:Contact) -> list[Message]:
         if (isinstance(sender, Contact) == False):
-            __typeError__("sender", "Contact", sender)
+            __type_error__("sender", "Contact", sender)
         messages = [message for message in self.messages if message.sender == sender]
         return messages
     
@@ -289,7 +289,7 @@ class Messages(object):
                 if (message.recipient == target):
                     returnMessages.append(message)
         else:
-            __typeError__("target", "Contact | Group", target)
+            __type_error__("target", "Contact | Group", target)
         return returnMessages
 
     def find(self, author:Contact, timestamp:Timestamp, conversation:Contact | Group) -> Message | None:
@@ -298,7 +298,7 @@ class Messages(object):
         if (isinstance(author, Contact) == True):
             targetAuthor = author
         else:
-            __typeError__("author", "Contact", author)
+            __type_error__("author", "Contact", author)
     # Validate recipient:
         targetConversation: Contact | Group
         if (isinstance(conversation, Contact) == True):
@@ -306,13 +306,13 @@ class Messages(object):
         elif (isinstance(conversation, Group) == True):
             targetConversation = conversation
         else:
-            __typeError__("recpipient", "Contact | Group", conversation)
+            __type_error__("recpipient", "Contact | Group", conversation)
     # Validate timestamp:
         targetTimestamp: Timestamp
         if (isinstance(timestamp, Timestamp) == True):
             targetTimestamp = timestamp
         else:
-            __typeError__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "Timestamp", timestamp)
     # Find Message:
         searchMessages = self.getConversation(targetConversation)
         for message in searchMessages:
@@ -322,7 +322,7 @@ class Messages(object):
     
     def getQuoted(self, quote:Quote) -> Optional[SentMessage | ReceivedMessage]:
         if (isinstance(quote, Quote) == False):
-            __typeError__("quote", "Quote", quote)
+            __type_error__("quote", "Quote", quote)
         searchMessages = self.getConversation(quote.conversation)
         for message in searchMessages:
             if (message.sender == quote.author):
@@ -375,7 +375,7 @@ class Messages(object):
             checkType = None
             for recipient in recipients:
                 if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
-                    __typeError__("recipients[%i]" % i, "Contact | Group", recipient)
+                    __type_error__("recipients[%i]" % i, "Contact | Group", recipient)
                 if (i == 0):
                     checkType = type(recipient)
                     if (isinstance(recipient, Contact) == True):
@@ -383,16 +383,16 @@ class Messages(object):
                     else:
                         recipientType = 'group'
                 elif (isinstance(recipient, checkType) == False):
-                    __typeError__("recipients[%i]", str(type(checkType)), recipient)
+                    __type_error__("recipients[%i]", str(type(checkType)), recipient)
                 i = i + 1
                 targetRecipients.append(recipient)
         else:
-            __typeError__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
+            __type_error__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
         if (len(targetRecipients) == 0):
             raise ValueError("recipients cannot be of zero length")
     # Validate body Type and value:
         if (body != None and isinstance(body, str) == False):
-            __typeError__("body", "str | None", body)
+            __type_error__("body", "str | None", body)
         # elif (body != None and len(body) == 0):
             # raise ValueError("body cannot be empty string")
     # Validate attachments:
@@ -407,13 +407,13 @@ class Messages(object):
                 i = 0
                 for attachment in attachments:
                     if (isinstance(attachment, Attachment) == False and isinstance(attachment, str) == False):
-                        __typeError__("attachments[%i]" % i, "Attachment | str", attachment)
+                        __type_error__("attachments[%i]" % i, "Attachment | str", attachment)
                     if (isinstance(attachment, Attachment) == True):
                         targetAttachments.append(attachment)
                     else:
                         targetAttachments.append(Attachment(configPath=self._configPath, localPath=attachment))
             else:
-                __typeError__("attachments", "Iterable[Attachment | str] | Attachment | str", attachments)
+                __type_error__("attachments", "Iterable[Attachment | str] | Attachment | str", attachments)
         if (targetAttachments != None and len(targetAttachments) == 0):
             raise ValueError("attachments cannot be empty")
     # Validate mentions:
@@ -428,23 +428,23 @@ class Messages(object):
                 i = 0
                 for mention in mentions:
                     if (isinstance(mention, Mention) == False):
-                        __typeError__("mentions[%i]" % i, "Mention", mention)
+                        __type_error__("mentions[%i]" % i, "Mention", mention)
                     targetMentions.append( mention )
             else:
-                __typeError__("mentions", "Optional[Iterable[Mention] | Mention]", mentions)
+                __type_error__("mentions", "Optional[Iterable[Mention] | Mention]", mentions)
         if (targetMentions != None and len(targetMentions) ==0):
             raise ValueError("mentions cannot be empty")
     # Validate quote:
         if (quote != None and isinstance(quote, Quote) == False):
-            __typeError__("quote", "SentMessage | RecieivedMessage", quote)
+            __type_error__("quote", "SentMessage | RecieivedMessage", quote)
     # Validate sticker:
         if (sticker != None):
             if (isinstance(sticker, Sticker) == False):
-                raise __typeError__("sticker", "Sticker", sticker)
+                raise __type_error__("sticker", "Sticker", sticker)
     # Validate preview:
         if (preview != None):
             if (isinstance(preview, Preview) == False):
-                __typeError__("preview", "Preview", preview)
+                __type_error__("preview", "Preview", preview)
             if (body.find(preview.url) == -1):
                 errorMessage = "FATAL: error while sending message. preview URL must appear in body of message."
                 raise ValueError(errorMessage)
@@ -516,8 +516,8 @@ class Messages(object):
     # Mark system as sending:
         self._sending = True
     # Communicate with signal:
-        __socketSend__(self._commandSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._commandSocket)
+        __socket_send__(self._commandSocket, jsonCommandStr)
+        responseStr = __socket_receive__(self._commandSocket)
     # Parse response:
         responseObj: dict[str, object] = json.loads(responseStr)
         # print(responseObj)
