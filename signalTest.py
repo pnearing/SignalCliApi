@@ -27,7 +27,7 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
     print("Received message FROM: %s AT: %s on DEVICE: %s" % (
                                                             message.sender.get_display_name(),
                                                             message.timestamp.get_display_time(),
-                                                            message.device.getDisplayName(),
+                                                            message.device.get_display_name(),
                                                     ))
     if message.recipientType == 'group':
         print("In GROUP: %s" % message.recipient.get_display_name())

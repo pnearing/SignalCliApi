@@ -144,19 +144,19 @@ class Receipt(Message):
             self.body = "The messages: %s have been delivered to: %s 's device: %s" % ( 
                                                                                     timestampsStr,
                                                                                     self.sender.get_display_name(),
-                                                                                    self.device.getDisplayName(),
+                                                                                    self.device.get_display_name(),
                                                                                 )
         elif (self.receiptType == self.TYPE_READ):
             self.body = "The messages: %s have been read by: %s on device: %s" % (
                                                                                     timestampsStr,
                                                                                     self.sender.get_display_name(),
-                                                                                    self.device.getDisplayName(),
+                                                                                    self.device.get_display_name(),
                                                                                 )
         elif (self.receiptType == self.TYPE_VIEWED):
             self.body = "The messages: %s have been viewed by: %s on device: %s" % (
                                                                                     timestampsStr,
                                                                                     self.sender.get_display_name(),
-                                                                                    self.device.getDisplayName(),
+                                                                                    self.device.get_display_name(),
                                                                                 )
         else:
             self.body = "Invalid receipt."

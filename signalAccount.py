@@ -64,10 +64,10 @@ class Account(object):
         # If the account is registered load account data from signal:
         if self.registered:
             # Load devices from signal:
-            self.devices = Devices(syncSocket=self._sync_socket, accountId=self.number, accountDevice=self.device_id,
-                                   doSync=True)
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, account_device=self.device_id,
+                                   do_sync=True)
             # Set this device:
-            self.device = self.devices.getAccountDevice()
+            self.device = self.devices.get_account_device()
             # Load contacts from signal:
             self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                      account_path=self._account_path, do_load=True, do_sync=True)
@@ -78,7 +78,7 @@ class Account(object):
             self.messages = Messages(commandSocket=self._command_socket, configPath=self.config_path,
                                      accountId=self.number, accountPath=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
-                                     thisDevice=self.devices.getAccountDevice(),
+                                     thisDevice=self.devices.get_account_device(),
                                      stickerPacks=self._sticker_packs, doLoad=True)
             # Load profile from file and merge self contact.
             self.profile = Profile(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,

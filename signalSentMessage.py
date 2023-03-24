@@ -217,7 +217,7 @@ class SentMessage(Message):
     # Load timestamp:
         self.timestamp = Timestamp(timestamp=rawSentMessage['timestamp'])
     # Load Device:
-        added, self.device = self._devices.__getOrAdd__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
+        added, self.device = self._devices.__get_or_add__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
     
     # Load body:
         self.body = rawSentMessage['message']

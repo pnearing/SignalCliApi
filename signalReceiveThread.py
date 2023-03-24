@@ -244,7 +244,7 @@ class ReceiveThread(threading.Thread):
                                             commandSocket=self._commandSocket, accountId=self._account.number,
                                             configPath=self._configPath, contacts=self._account.contacts,
                                             groups=self._account.groups, devices=self._account.devices,
-                                            thisDevice=self._account.devices.getAccountDevice(), rawMessage=envelopeDict
+                                            thisDevice=self._account.devices.get_account_device(), rawMessage=envelopeDict
                                         )
                 # Parse typing message:
                     if (DEBUG == True):

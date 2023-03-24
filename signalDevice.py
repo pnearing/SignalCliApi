@@ -7,113 +7,119 @@ from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="Device")
 
+
 class Device(object):
     def __init__(self,
-                    syncSocket: socket.socket,
-                    accountId: str,
-                    accountDevice: Optional[int] = None,
-                    rawDevice: Optional[dict] = None,
-                    fromDict: Optional[dict] = None,
-                    id: Optional[int] = None,
-                    name: Optional[str] = None,
-                    created: Optional[Timestamp] = None,
-                    lastSeen: Optional[Timestamp] = None,
-                    isAccountDevice: Optional[bool] = None,
-                    isPrimaryDevice: Optional[bool] = None,
-                ) -> None:
-    # TODO: Argument checks
-    # Set internal vars:    
-        self._syncSocket: socket.socket = syncSocket
-        self._accountId: str = accountId
-    # Set external properties:
-        self.id: int = id
+                 sync_socket: socket.socket,
+                 account_id: str,
+                 account_device: Optional[int] = None,
+                 raw_device: Optional[dict] = None,
+                 from_dict: Optional[dict] = None,
+                 device_id: Optional[int] = None,
+                 name: Optional[str] = None,
+                 created: Optional[Timestamp] = None,
+                 last_seen: Optional[Timestamp] = None,
+                 is_account_device: Optional[bool] = None,
+                 is_primary_device: Optional[bool] = None,
+                 ) -> None:
+        # TODO: Argument checks
+        # Set internal vars:
+        self._sync_socket: socket.socket = sync_socket
+        self._account_id: str = account_id
+        # Set external properties:
+        self.id: int = device_id
         self.name: Optional[str] = name
         self.created: Optional[Timestamp] = created
-        self.lastSeen: Optional[Timestamp] = lastSeen
-        self.isAccountDevice: Optional[bool] = isAccountDevice
-        self.isPrimaryDevice: Optional[bool] = isPrimaryDevice
-    # Parse Raw device:
-        if (rawDevice != None):
-            self.__fromRawDevice__(rawDevice)
-            if (self.id == accountDevice): self.isAccountDevice = True
-            if (self.id == 1): self.isPrimaryDevice = True
-    # Parse from dict:
-        elif (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Otherwise assume all values have been specified.
+        self.last_seen: Optional[Timestamp] = last_seen
+        self.is_account_device: Optional[bool] = is_account_device
+        self.is_primary_device: Optional[bool] = is_primary_device
+        # Parse Raw device:
+        if raw_device is not None:
+            self.__fromRawDevice__(raw_device)
+            if self.id == account_device:
+                self.is_account_device = True
+            if self.id == 1:
+                self.is_primary_device = True
+        # Parse from dict:
+        elif from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Otherwise assume all values have been specified.
         else:
-            if (self.id != None and accountDevice != None and self.id == accountDevice): self.isAccountDevice = True
-            if (self.id != None and self.id == 1): self.isPrimaryDevice = True
+            if self.id is not None and account_device is not None and self.id == account_device:
+                self.is_account_device = True
+            if self.id is not None and self.id == 1:
+                self.is_primary_device = True
         return
 
-    def __fromRawDevice__(self, rawDevice:dict) -> None:
-        # print(rawDevice)
-        self.id = rawDevice['contact_id']
-        self.name = rawDevice['name']
-        if (rawDevice['createdTimestamp'] != None):
-            self.created = Timestamp(timestamp=rawDevice['createdTimestamp'])
+    def __fromRawDevice__(self, raw_device: dict) -> None:
+        # print(raw_device)
+        self.id = raw_device['contact_id']
+        self.name = raw_device['name']
+        if raw_device['createdTimestamp'] is not None:
+            self.created = Timestamp(timestamp=raw_device['createdTimestamp'])
         else:
             self.created = None
-        if (rawDevice['lastSeenTimestamp'] != None):
-            self.lastSeen = Timestamp(timestamp=rawDevice['lastSeenTimestamp'])
+        if raw_device['lastSeenTimestamp'] is not None:
+            self.last_seen = Timestamp(timestamp=raw_device['lastSeenTimestamp'])
         else:
-            self.lastSeen = None
+            self.last_seen = None
         return
 
-    def __merge__(self, __o:Self) -> None:
-        if (self.name == None):
+    def __merge__(self, __o: Self) -> None:
+        if self.name is None:
             self.name = __o.name
-        if (self.created != __o.created):
+        if self.created != __o.created:
             self.created = __o.created
-        if (self.lastSeen != None and __o.lastSeen != None):
-            if (self.lastSeen < __o.lastSeen):
-                self.lastSeen = __o.lastSeen
-            elif (self.lastSeen == None and __o.lastSeen != None):
-                self.lastSeen = __o.lastSeen
+        if self.last_seen is not None and __o.last_seen is not None:
+            if self.last_seen < __o.last_seen:
+                self.last_seen = __o.last_seen
+            elif self.last_seen is None and __o.last_seen is not None:
+                self.last_seen = __o.last_seen
         return
-##########################
-# To / From dict:
-##########################
-    def __toDict__(self) -> dict:
-        deviceDict = {
+
+    ##########################
+    # To / From dict:
+    ##########################
+    def __to_dict__(self) -> dict:
+        device_dict = {
             'contact_id': self.id,
             'name': self.name,
             'created': None,
             'last_seen': None,
-            'isAccountDevice': self.isAccountDevice,
-            'isPrimaryDevice': self.isPrimaryDevice,
+            'is_account_device': self.is_account_device,
+            'is_primary_device': self.is_primary_device,
         }
-        if (self.created != None):
-            deviceDict['created'] = self.created.__toDict__()
-        if (self.lastSeen != None):
-            deviceDict['last_seen'] = self.lastSeen.__toDict__()
-        return deviceDict
-    
-    def __fromDict__(self, fromDict:dict) -> None:
-        self.id = fromDict['contact_id']
-        self.name = fromDict['name']
-        if (fromDict['created'] != None):
-            self.created = Timestamp(fromDict=fromDict['created'])
+        if self.created is not None:
+            device_dict['created'] = self.created.__toDict__()
+        if self.last_seen is not None:
+            device_dict['last_seen'] = self.last_seen.__toDict__()
+        return device_dict
+
+    def __from_dict__(self, from_dict: dict) -> None:
+        self.id = from_dict['contact_id']
+        self.name = from_dict['name']
+        if from_dict['created'] is not None:
+            self.created = Timestamp(fromDict=from_dict['created'])
         else:
             self.created = None
-        if (fromDict['last_seen'] != None):
-            self.lastSeen = Timestamp(fromDict=fromDict['last_seen'])
+        if from_dict['last_seen'] is not None:
+            self.last_seen = Timestamp(fromDict=from_dict['last_seen'])
         else:
-            self.lastSeen = None
-        self.isAccountDevice = fromDict['isAccountDevice']
-        self.isPrimaryDevice = fromDict['isPrimaryDevice']
+            self.last_seen = None
+        self.is_account_device = from_dict['is_account_device']
+        self.is_primary_device = from_dict['is_primary_device']
         return
 
-########################
-# Methods:
-########################
-    def seen(self, timeSeen:Timestamp) -> None:
-        if (self.lastSeen != None):
-            if (self.lastSeen < timeSeen):
-                self.lastSeen = timeSeen
+    ########################
+    # Methods:
+    ########################
+    def seen(self, time_seen: Timestamp) -> None:
+        if self.last_seen is not None:
+            if self.last_seen < time_seen:
+                self.last_seen = time_seen
         else:
-            self.lastSeen = timeSeen
+            self.last_seen = time_seen
         return
-    
-    def getDisplayName(self):
-        returnStr = "%i<%s>" % (self.id, self.name)
+
+    def get_display_name(self) -> str:
+        return "%i<%s>" % (self.id, self.name)

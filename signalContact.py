@@ -70,7 +70,7 @@ class Contact(object):
                 self.name = self.profile.name  # Force the name for this session if setting failed.
         # If devices isn't yet set create empty devices:
         if self.devices is None:
-            self.devices = Devices(syncSocket=self._sync_socket, accountId=self.number)
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number)
 
         return
 
@@ -128,7 +128,7 @@ class Contact(object):
         if self.profile is not None:
             contact_dict['profile'] = self.profile.__toDict__()
         if self.devices is not None:
-            contact_dict['devices'] = self.devices.__toDict__()
+            contact_dict['devices'] = self.devices.__to_dict__()
         if self.last_typing_change is not None:
             contact_dict['last_typing_change'] = self.last_typing_change.__toDict__()
         if self.last_seen is not None:
@@ -157,7 +157,7 @@ class Contact(object):
             self.profile = None
         # Load Devices:
         if from_dict['devices'] is not None:
-            self.devices = Devices(syncSocket=self._sync_socket, accountId=self._account_id, fromDict=from_dict['devices'])
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self._account_id, from_dict=from_dict['devices'])
         else:
             self.devices = None
         # Load last typing change:
