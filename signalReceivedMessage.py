@@ -214,7 +214,7 @@ class ReceivedMessage(Message):
                 self.attachments.append(attachment)
         # Parse mentions:
         if ('mentions' in dataMessage.keys()):
-            self.mentions = Mentions(contacts=self._contacts, rawMentions=dataMessage['mentions'])
+            self.mentions = Mentions(contacts=self._contacts, raw_mentions=dataMessage['mentions'])
         # Parse sticker:
         if ('sticker' in dataMessage.keys()):
             stickerDict: dict[str, object] = dataMessage['sticker']
@@ -252,7 +252,7 @@ class ReceivedMessage(Message):
             for attachment in self.attachments:
                 receivedMessageDict["attachments"].append(attachment.__toDict__())
         # Set mentions:
-        receivedMessageDict['mentions'] = self.mentions.__toDict__()
+        receivedMessageDict['mentions'] = self.mentions.__to_dict__()
         # Set reactions:
         # receivedMessageDict['reactions'] = None
         # if (self.reactions != None):
@@ -294,7 +294,7 @@ class ReceivedMessage(Message):
                 attachment = Attachment(configPath=self._configPath, fromDict=attachmentDict)
                 self.attachments.append(attachment)
         # Load mentions:
-        self.mentions = Mentions(contacts=self._contacts, fromDict=fromDict['mentions'])
+        self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
         # Load reactions:
         # self.reactions = None
         # if (from_dict['reactions'] != None):
@@ -417,7 +417,7 @@ class ReceivedMessage(Message):
         return quote
 
     def parseMentions(self) -> str:
-        return self.mentions.__parseMentions__(self.body)
+        return self.mentions.__parse_mentions__(self.body)
 
     def react(self, emoji: str) -> tuple[bool, Reaction | str]:
         # Argument check:

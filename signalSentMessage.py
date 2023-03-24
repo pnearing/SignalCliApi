@@ -235,7 +235,7 @@ class SentMessage(Message):
     # Load mentions:
         self.mentions = None
         if ('mentions' in rawSentMessage.keys()):
-            self.mentions = Mentions(contacts=self._contacts, rawMentions=rawSentMessage['mentions'])
+            self.mentions = Mentions(contacts=self._contacts, raw_mentions=rawSentMessage['mentions'])
     # Load quote:
         self.quote = None
         if ('quote' in rawSentMessage.keys()):
@@ -280,7 +280,7 @@ class SentMessage(Message):
     # Set Mentions:
         sentMessageDict['mentions'] = None
         if (self.mentions != None):
-            sentMessageDict['mentions'] = self.mentions.__toDict__()
+            sentMessageDict['mentions'] = self.mentions.__to_dict__()
     # Set Reactions:
         sentMessageDict['reactions'] = None
         if (self.reactions != None):
@@ -338,7 +338,7 @@ class SentMessage(Message):
     # Load mentions:
         self.mentions = None
         if (fromDict['mentions'] != None):
-            self.mentions = Mentions(contacts=self._contacts, fromDict=fromDict['mentions'])
+            self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
     # Load reactions:        
         self.reactions = None
         if (fromDict['reactions'] != None):
@@ -444,7 +444,7 @@ class SentMessage(Message):
     def parseMentions(self) -> str:
         if (self.mentions == None):
             return self.body
-        return self.mentions.__parseMentions__(self.body)
+        return self.mentions.__parse_mentions__(self.body)
     
     def react(self, emoji:str) -> tuple[bool, Reaction | str]:
     # Argument check:

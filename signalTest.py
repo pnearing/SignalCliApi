@@ -241,7 +241,7 @@ if __name__ == '__main__':
         messageText = "This is a test.\n@<+16134548055>Please ignore.\n@<53bfafdc-9b22-4559-a7a6-1c8029f599d7>Also ignore."
 
         mentions = Mentions(contacts=account.contacts)
-        mentions.createFromBody(messageText)
+        mentions.create_from_body(messageText)
 
         results = account.messages.sendMessage(group, messageText, mentions=mentions, attachments=marshJpg)
         for result in results:

@@ -147,7 +147,7 @@ class Quote(object):
             self.attachments.append( Attachment(configPath=self._configPath, rawAttachment=rawAttachment))
     # Load Mentions:
         if ('mentions' in rawQuote.keys()):
-            self.mentions = Mentions(contacts=self._contacts, rawMentions=rawQuote['mentions'])
+            self.mentions = Mentions(contacts=self._contacts, raw_mentions=rawQuote['mentions'])
         return
 
 #################
@@ -172,7 +172,7 @@ class Quote(object):
         for attachment in self.attachments:
             quoteDict['attachments'].append(attachment.__toDict__())
     # Store mentions:
-        quoteDict['mentions'] = self.mentions.__toDict__()
+        quoteDict['mentions'] = self.mentions.__to_dict__()
     # Store conversation:
         if (self.conversation != None):
             quoteDict['conversation'] = self.conversation.get_id()
@@ -196,7 +196,7 @@ class Quote(object):
     # Set mentions:
         self.mentions = None
         if (fromDict['mentions'] != None):
-            self.mentions = Mentions(contacts=self._contacts, fromDict=fromDict['mentions'])
+            self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
     # Set conversation:
         self.conversation = None
         if (fromDict["conversationType"] == 'contact'):
@@ -209,4 +209,4 @@ class Quote(object):
 # Methods:
 ##########################
     def parseMentions(self) -> str:
-        return self.mentions.__parseMentions__(self.text)
+        return self.mentions.__parse_mentions__(self.text)
