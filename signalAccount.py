@@ -75,11 +75,11 @@ class Account(object):
             self.groups = Groups(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                  account_contacts=self.contacts, do_sync=True)
             # Load messages from file:
-            self.messages = Messages(commandSocket=self._command_socket, configPath=self.config_path,
-                                     accountId=self.number, accountPath=self._account_path, contacts=self.contacts,
+            self.messages = Messages(command_socket=self._command_socket, config_path=self.config_path,
+                                     account_id=self.number, account_path=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
-                                     thisDevice=self.devices.get_account_device(),
-                                     stickerPacks=self._sticker_packs, doLoad=True)
+                                     this_device=self.devices.get_account_device(),
+                                     sticker_packs=self._sticker_packs, do_load=True)
             # Load profile from file and merge self contact.
             self.profile = Profile(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
                                    contactId=self.number, accountPath=self._account_path, doLoad=True,

@@ -22,32 +22,32 @@ Self = TypeVar("Self", bound="Reaction")
 
 class Reaction(Message):
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    # sender: Optional[Contact] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    # device: Optional[Device] = None,
-                    # timestamp: Optional[Timestamp] = None,
-                    # is_delivered: bool = False,
-                    # time_delivered: Optional[Timestamp] = None,
-                    # is_read: bool = False,
-                    # time_read: Optional[Timestamp] = None,
-                    # is_viewed: bool = False,
-                    # time_viewed: Optional[Timestamp] = None,
-                    emoji: Optional[str] = None,
-                    targetAuthor: Optional[Contact] = None,
-                    targetTimestamp: Optional[Timestamp] = None,
-                    isRemove: bool = False,
-                    # isChange: bool = False,
-                    # previousEmoji: Optional[str] = None,
-                ) -> None:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 # sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 # device: Optional[Device] = None,
+                 # timestamp: Optional[Timestamp] = None,
+                 # is_delivered: bool = False,
+                 # time_delivered: Optional[Timestamp] = None,
+                 # is_read: bool = False,
+                 # time_read: Optional[Timestamp] = None,
+                 # is_viewed: bool = False,
+                 # time_viewed: Optional[Timestamp] = None,
+                 emoji: Optional[str] = None,
+                 targetAuthor: Optional[Contact] = None,
+                 targetTimestamp: Optional[Timestamp] = None,
+                 isRemove: bool = False,
+                 # isChange: bool = False,
+                 # previousEmoji: Optional[str] = None,
+                 ) -> None:
     # TODO: Argument checks:
 
     # Set external properties:
@@ -58,8 +58,8 @@ class Reaction(Message):
         self.isChange: bool = False
         self.previousEmoji: Optional[str] = None
     # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                         rawMessage, contacts.get_self(), recipient, thisDevice, None,
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, contacts.get_self(), recipient, this_device, None,
                          Message.TYPE_REACTION_MESSAGE)#, is_delivered, time_delivered, is_read, time_read, is_viewed, time_viewed)
 
     # Set body:
@@ -69,9 +69,9 @@ class Reaction(Message):
 ###############################
 # Init:
 ###############################
-    def __fromRawMessage__(self, rawMessage:dict) -> None:
-        super().__fromRawMessage__(rawMessage)
-        reactionDict:dict = rawMessage['dataMessage']['reaction']
+    def __from_raw_message__(self, raw_message:dict) -> None:
+        super().__from_raw_message__(raw_message)
+        reactionDict:dict = raw_message['dataMessage']['reaction']
         # print(reactionDict)
         self.emoji = reactionDict['emoji']
         added, self.targetAuthor = self._contacts.__get_or_add__(
@@ -94,8 +94,8 @@ class Reaction(Message):
 #####################
 # To / From Dict:
 #####################
-    def __toDict__(self) -> dict:
-        reactionDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        reactionDict = super().__to_dict__()
         reactionDict['emoji'] = self.emoji
         reactionDict['targetAuthorId'] = None
         reactionDict['targetTimestamp'] = None
@@ -108,24 +108,24 @@ class Reaction(Message):
             reactionDict['targetTimestamp'] = self.targetTimestamp.__toDict__()
         return reactionDict
     
-    def __fromDict__(self, fromDict:dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict:dict) -> None:
+        super().__from_dict__(from_dict)
     # Parse Emoji:
-        self.emoji = fromDict['emoji']
+        self.emoji = from_dict['emoji']
     # Parse target author:
-        if (fromDict['targetAuthorId'] != None):
-            added, self.targetAuthor = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['targetAuthorId'])
+        if (from_dict['targetAuthorId'] != None):
+            added, self.targetAuthor = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['targetAuthorId'])
         else:
             self.targetAuthor = None
     # Parse target timestamp:
-        if (fromDict['targetTimestamp'] != None):
-            self.targetTimestamp = Timestamp(fromDict=fromDict['targetTimestamp'])
+        if (from_dict['targetTimestamp'] != None):
+            self.targetTimestamp = Timestamp(fromDict=from_dict['targetTimestamp'])
     # Parse is remove:
-        self.isRemove = fromDict['isRemove']
+        self.isRemove = from_dict['isRemove']
     # Parse is change:
-        self.isChange = fromDict['isChange']
+        self.isChange = from_dict['isChange']
     # Parse previous emoji:
-        self.previousEmoji = fromDict['previousEmoji']
+        self.previousEmoji = from_dict['previousEmoji']
         return
 ###########################
 # Send reaction:
@@ -137,22 +137,22 @@ class Reaction(Message):
             "contact_id": 10,
             "method": "sendReaction",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "emoji": self.emoji,
                 "targetAuthor": self.targetAuthor.get_id(),
                 "targetTimestamp": self.targetTimestamp.timestamp,
             }
         }
-        if (self.recipientType == 'contact'):
+        if (self.recipient_type == 'contact'):
             sendReactionCommandObj['params']['recipient'] = self.sender.get_id()
-        elif (self.recipientType == 'group'):
+        elif (self.recipient_type == 'group'):
             sendReactionCommandObj['params']['groupId'] = self.recipient.get_id()
         else:
-            raise ValueError("recipent type = %s" % self.recipientType)
+            raise ValueError("recipent type = %s" % self.recipient_type)
         jsonCommandStr = json.dumps(sendReactionCommandObj) + '\n'
     # Communicate with signal:
-        __socket_send__(self._commandSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._commandSocket)
+        __socket_send__(self._command_socket, jsonCommandStr)
+        responseStr = __socket_receive__(self._command_socket)
     # Parse response:
         responseObj:dict[str, object] = json.loads(responseStr)
         # print (responseObj)
@@ -179,17 +179,17 @@ class Reaction(Message):
 # Helpers:
 ###########################
     def __updateBody__(self) -> None:
-        if (self.sender != None and self.recipient != None and self.targetTimestamp != None and self.targetAuthor != None and self.recipientType!=None):
+        if (self.sender != None and self.recipient != None and self.targetTimestamp != None and self.targetAuthor != None and self.recipient_type!=None):
         # Removed reaction:
             if (self.isRemove == True):
-                if (self.recipientType == 'contact'):
+                if (self.recipient_type == 'contact'):
                     self.body = "%s removed the reaction %s from %s's message %i." % ( 
                                                                                     self.sender.get_display_name(),
                                                                                     self.emoji,
                                                                                     self.targetAuthor.get_display_name(),
                                                                                     self.targetTimestamp.timestamp
                                                                                 )
-                elif (self.recipientType == 'group'):
+                elif (self.recipient_type == 'group'):
                     self.body = "%s removed the reaction %s from %s's message %i in group %s" % (
                                                                                     self.sender.get_display_name(),
                                                                                     self.emoji,
@@ -198,10 +198,10 @@ class Reaction(Message):
                                                                                     self.recipient.get_display_name()
                                                                                 )
                 else:
-                    raise ValueError("recipientType invalid value: %s" % self.recipientType)
+                    raise ValueError("recipient_type invalid value: %s" % self.recipient_type)
         # Changed reaction:
             elif(self.isChange == True):
-                if (self.recipientType == 'contact'):
+                if (self.recipient_type == 'contact'):
                     self.body = "%s changed their reaction to %s's message %i, from %s to %s" % (
                                                                                     self.sender.get_display_name(),
                                                                                     self.targetAuthor.get_display_name(),
@@ -209,7 +209,7 @@ class Reaction(Message):
                                                                                     self.previousEmoji,
                                                                                     self.emoji
                                                                                 )
-                elif (self.recipientType == 'group'):
+                elif (self.recipient_type == 'group'):
                     self.body = "%s changed their reaction to %s's message %i in group %s, from %s to %s" % (
                                                                                     self.sender.get_display_name(),
                                                                                     self.targetAuthor.get_display_name(),
@@ -219,16 +219,16 @@ class Reaction(Message):
                                                                                     self.emoji
                                                                                 )
                 else:
-                    raise ValueError("recipientType invalid value: %s" % self.recipientType)
+                    raise ValueError("recipient_type invalid value: %s" % self.recipient_type)
             else:
             # Added new reaction:
-                if (self.recipientType == 'contact'):
+                if (self.recipient_type == 'contact'):
                     self.body = "%s reacted to %s's message with %s" % (
                                                                             self.sender.get_display_name(),
                                                                             self.targetAuthor.get_display_name(),
                                                                             self.emoji
                                                                         )
-                elif (self.recipientType == 'group'):
+                elif (self.recipient_type == 'group'):
                     self.body = "%s reacted to %s's message %i in group %s with %s" % (
                                                                             self.sender.get_display_name(),
                                                                             self.targetAuthor.get_display_name(),
@@ -237,7 +237,7 @@ class Reaction(Message):
                                                                             self.emoji
                                                                         )
                 else:
-                    raise ValueError("recipientType invalid value: %s" % self.recipientType)
+                    raise ValueError("recipient_type invalid value: %s" % self.recipient_type)
             
         else:
             self.body = 'Invalid reaction.'

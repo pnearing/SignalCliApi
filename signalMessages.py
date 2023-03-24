@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Tuple
 import sys
 import os
 import socket
 import json
+
+from signalContact import Contact
+from signalGroup import Group
+from signalSentMessage import SentMessage
 
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
@@ -30,573 +34,582 @@ from .signalSyncMessage import SyncMessage
 from .signalTimestamp import Timestamp
 from .signalTypingMessage import TypingMessage
 
-global DEBUG
 DEBUG: bool = True
+
 
 class Messages(object):
     def __init__(self,
-                    commandSocket: socket.socket,
-                    configPath: str,
-                    accountId: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    accountPath: str,
-                    thisDevice: Device,
-                    stickerPacks: StickerPacks,
-                    doLoad:bool = False,
-                ) -> None:
-        
-    # TODO: Argument checks:
-# Set internal vars:
-        self._commandSocket: socket.socket = commandSocket
-        self._configPath: str = configPath
-        self._accountId: str = accountId
+                 command_socket: socket.socket,
+                 config_path: str,
+                 account_id: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 account_path: str,
+                 this_device: Device,
+                 sticker_packs: StickerPacks,
+                 do_load: bool = False,
+                 ) -> None:
+
+        # TODO: Argument checks:
+        # Set internal vars:
+        self._command_socket: socket.socket = command_socket
+        self._config_path: str = config_path
+        self._account_id: str = account_id
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
         self._devices: Device = devices
-        self._thisDevice: Device = thisDevice
-        self._stickerPacks: StickerPacks = stickerPacks
-        self._filePath: str = os.path.join(accountPath, "messages.json")
-# Set external properties:
-        self.messages : list[SentMessage|ReceivedMessage] = []
-        self.sync: list[GroupUpdate|SyncMessage] = []
+        self._this_device: Device = this_device
+        self._sticker_packs: StickerPacks = sticker_packs
+        self._file_path: str = os.path.join(account_path, "messages.json")
+        # Set external properties:
+        self.messages: list[SentMessage | ReceivedMessage] = []
+        self.sync: list[GroupUpdate | SyncMessage] = []
         self.typing: list[TypingMessage] = []
         self.story: list[StoryMessage] = []
         # self.calls: list[]
         self._sending: bool = False
-    # Do load:
-        if (doLoad == True):
+        # Do load:
+        if do_load:
             try:
                 self.__load__()
             except:
-                if (DEBUG == True):
-                    errorMessage = "warning, creating empy messages: %s" % self._filePath
+                if DEBUG:
+                    errorMessage = "warning, creating empy messages: %s" % self._file_path
                     print(errorMessage, file=sys.stderr)
                 self.__save__()
         return
 
-################################
-# To / From Dict:
-################################
-    def __toDict__(self) -> dict:
-        messagesDict = {
+    ################################
+    # To / From Dict:
+    ################################
+    def __to_dict__(self) -> dict:
+        messages_dict = {
             "messages": [],
             "syncMessages": [],
             "typingMessages": [],
             "storyMessages": [],
         }
-    # Store messages: SentMessage | ReceivedMessage
+        # Store messages: SentMessage | ReceivedMessage
         for message in self.messages:
-            messagesDict["messages"].append(message.__toDict__())
-    # Store sync messages: (sync and group update)
+            messages_dict["messages"].append(message.__to_dict__())
+        # Store sync messages: (sync and group update)
         for message in self.sync:
-            if (message == None): raise RuntimeError("WTF")
-            messagesDict['syncMessages'].append(message.__toDict__())
-    # Store typing messages: TypingMessage
+            if message is None:
+                raise RuntimeError("WTF")
+            messages_dict['syncMessages'].append(message.__to_dict__())
+        # Store typing messages: TypingMessage
         for message in self.typing:
-            messagesDict['typingMessages'].append(message.__toDict__())
-    # Store story messages: StoryMessage
+            messages_dict['typingMessages'].append(message.__to_dict__())
+        # Store story messages: StoryMessage
         for message in self.story:
-            messagesDict['storyMessages'].append(message.__toDict__())
-        return messagesDict
-    
-    def __fromDict__(self, fromDict:dict) -> None:
-    # Load messages: SentMessage | ReceivedMessage
+            messages_dict['storyMessages'].append(message.__to_dict__())
+        return messages_dict
+
+    def __from_dict__(self, fromDict: dict) -> None:
+        # Load messages: SentMessage | ReceivedMessage
         self.messages = []
-        for messageDict in fromDict['messages']:
-            if (messageDict['messageType'] == Message.TYPE_SENT_MESSAGE):
-                message = SentMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                        devices=self._devices, thisDevice=self._thisDevice, stickerPacks=self._stickerPacks,
-                                        fromDict=messageDict)
-            
-            elif (messageDict['messageType'] == Message.TYPE_RECEIVED_MESSAGE):
-                message = ReceivedMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                            configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                            devices=self._devices, thisDevice=self._thisDevice,
-                                            stickerPacks=self._stickerPacks, fromDict=messageDict)
-            else:   
-                errorMessage = "FATAL: Invalid message type in messages from_dict: %s" % fromDict['messageType']
-                raise RuntimeError(errorMessage)
-            self.messages.append(message)
-    # Load sync messages: GroupUpdate | SyncMessage
-        self.sync = []
-        for messageDict in fromDict['syncMessages']:
-            if (messageDict['messageType'] == Message.TYPE_GROUP_UPDATE_MESSAGE):
-                message = GroupUpdate(command_socket=self._commandSocket, account_id=self._accountId,
-                                      config_path=self._configPath, contacts=self._contacts, groups=self._groups,
-                                      devices=self._devices, this_device=self._thisDevice, from_dict=messageDict)
-            elif (messageDict['messageType'] == Message.TYPE_SYNC_MESSAGE):
-                message = SyncMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                        devices=self._devices, thisDevice=self._thisDevice,
-                                        stickerPacks=self._stickerPacks,fromDict=messageDict)
+        for message_dict in fromDict['messages']:
+            if message_dict['message_type'] == Message.TYPE_SENT_MESSAGE:
+                message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device,
+                                      stickerPacks=self._sticker_packs,
+                                      from_dict=message_dict)
+
+            elif message_dict['message_type'] == Message.TYPE_RECEIVED_MESSAGE:
+                message = ReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                          config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                          devices=self._devices, this_device=self._this_device,
+                                          stickerPacks=self._sticker_packs, from_dict=message_dict)
             else:
-                errorMessage = "FATAL: Invalid message type in for sync messages in Messges.__from_dict__"
-                raise RuntimeError(errorMessage)
+                error_message = "FATAL: Invalid message type in messages from_dict: %s" % fromDict['message_type']
+                raise RuntimeError(error_message)
+            self.messages.append(message)
+        # Load sync messages: GroupUpdate | SyncMessage
+        self.sync = []
+        for message_dict in fromDict['syncMessages']:
+            if message_dict['message_type'] == Message.TYPE_GROUP_UPDATE_MESSAGE:
+                message = GroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
+                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+            elif message_dict['message_type'] == Message.TYPE_SYNC_MESSAGE:
+                message = SyncMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device,
+                                      stickerPacks=self._sticker_packs, from_dict=message_dict)
+            else:
+                error_message = "FATAL: Invalid message type in for sync messages in Messages.__from_dict__"
+                raise RuntimeError(error_message)
             self.sync.append(message)
-    # Load typing messages:
+        # Load typing messages:
         self.typing = []
-        for messageDict in fromDict['typingMessages']:
-            message = TypingMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                        devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
+        for message_dict in fromDict['typingMessages']:
+            message = TypingMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                    config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                    devices=self._devices, this_device=self._this_device, from_dict=message_dict)
             self.typing.append(message)
-    # Load Story Messages:
+        # Load Story Messages:
         self.story = []
-        for messageDict in fromDict['storyMessages']:
-            message = StoryMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                    configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                    devices=self._devices, thisDevice=self._thisDevice, fromDict=messageDict)
+        for message_dict in fromDict['storyMessages']:
+            message = StoryMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                   config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                   devices=self._devices, this_device=self._this_device, from_dict=message_dict)
             self.story.append(message)
         return
 
-#################################
-# Load / save:
-#################################
+    #################################
+    # Load / save:
+    #################################
     def __load__(self) -> None:
-    # Try to open the file:
+        # Try to open the file:
         try:
-            fileHandle = open(self._filePath, 'r')
+            fileHandle = open(self._file_path, 'r')
         except Exception as e:
-            errorMessage = "FATAL: Couldn't open '%s' for reading: %s" % (self._filePath, str(e.args))
+            errorMessage = "FATAL: Couldn't open '%s' for reading: %s" % (self._file_path, str(e.args))
             raise RuntimeError(errorMessage)
-    # Try to load the json from the file:
+        # Try to load the json from the file:
         try:
             messagesDict: dict = json.loads(fileHandle.read())
         except json.JSONDecodeError as e:
-            errorMessage = "FATAL: Couldn't load json from '%s': %s" % (self._filePath, e.msg)
+            errorMessage = "FATAL: Couldn't load json from '%s': %s" % (self._file_path, e.msg)
             raise RuntimeError(errorMessage)
-    # Load the dict:
-        self.__fromDict__(messagesDict)
+        # Load the dict:
+        self.__from_dict__(messagesDict)
         return
 
     def __save__(self) -> None:
-    # Create messages Object, and json save string:
-        messagesDict = self.__toDict__()
+        # Create messages Object, and json save string:
+        messagesDict = self.__to_dict__()
         jsonMessagesStr = json.dumps(messagesDict, indent=4)
-    # Try to open the file for writing:
+        # Try to open the file for writing:
         try:
-            fileHandle = open(self._filePath, 'w')
+            fileHandle = open(self._file_path, 'w')
         except Exception as e:
-            errorMessage = "FATAL: Failed to open '%s' for writing: %s" % (self._filePath, str(e.args))
+            errorMessage = "FATAL: Failed to open '%s' for writing: %s" % (self._file_path, str(e.args))
             raise RuntimeError(errorMessage)
-    # Write to the file and close it.
+        # Write to the file and close it.
         fileHandle.write(jsonMessagesStr)
         fileHandle.close()
         return
-##################################
-# Helpers:
-##################################
-    def __parseReaction__(self, reaction:Reaction) -> bool:
-    # Get the messages from the recipients:
-        searchMessages: list[Message] = []
-        if (reaction.recipientType == 'contact'):
-            messages = self.getBySender(reaction.recipient)
-            searchMessages.extend(messages)
-        elif (reaction.recipientType == 'group'):
-            messages = self.getByRecipient(reaction.recipient)
-            searchMessages.extend(messages)
+
+    ##################################
+    # Helpers:
+    ##################################
+    def __parse_reaction__(self, reaction: Reaction) -> bool:
+        # Get the messages from the recipients:
+        search_messages: list[Message] = []
+        if reaction.recipient_type == 'contact':
+            messages = self.get_by_sender(reaction.recipient)
+            search_messages.extend(messages)
+        elif reaction.recipient_type == 'group':
+            messages = self.get_by_recipient(reaction.recipient)
+            search_messages.extend(messages)
         else:
-        # Invalid recipient type:
-            errorMessage = "Invalid reaction cannot parse."
-            raise RuntimeError(errorMessage)
-    # Find the message that was reacted to:
+            # Invalid recipient type:
+            error_message = "Invalid reaction cannot parse."
+            raise RuntimeError(error_message)
+        # Find the message that was reacted to:
         reactedMessage = None
-        for message in searchMessages:
-            if (message.sender == reaction.targetAuthor):
-                if (message.timestamp == reaction.targetTimestamp):
+        for message in search_messages:
+            if message.sender == reaction.targetAuthor:
+                if message.timestamp == reaction.targetTimestamp:
                     reactedMessage = message
-    # If the message isn't in history do nothing:
-        if (reactedMessage == None):
+        # If the message isn't in history do nothing:
+        if reactedMessage is None:
             return False
-    # Have the message add / change / remove the reaction:
+        # Have the message add / change / remove the reaction:
         reactedMessage.reactions.__parse__(reaction)
         return True
-    
-    def __parseReceipt__(self, receipt:Receipt) -> None:
-        sentMessages = [ message for message in self.messages if isinstance(message, SentMessage)]
+
+    def __parse_receipt__(self, receipt: Receipt) -> None:
+        sentMessages = [message for message in self.messages if isinstance(message, SentMessage)]
         for message in sentMessages:
             for timestamp in receipt.timestamps:
-                if (message.timestamp == timestamp):
+                if message.timestamp == timestamp:
                     message.__parseReceipt__(receipt)
                     self.__save__()
         return
-    
-    def __parseReadMessageSync__(self, syncMessage:SyncMessage) -> None:
-        for contact, timestamp in syncMessage.readMessages:
-            searchMessages = self.getBySender(contact)
-            for message in searchMessages:
-                if (message.timestamp == timestamp):
-                    if (message.isRead == False):
-                        if (isinstance(message, ReceivedMessage) == True):
-                            message.markRead(when=syncMessage.timestamp, sendReceipt=False)
+
+    def __parse_read_message_sync__(self, sync_message: SyncMessage) -> None:
+        for contact, timestamp in sync_message.readMessages:
+            search_messages = self.get_by_sender(contact)
+            for message in search_messages:
+                if message.timestamp == timestamp:
+                    if not message.is_read:
+                        if isinstance(message, ReceivedMessage):
+                            message.mark_read(when=sync_message.timestamp, sendReceipt=False)
                         else:
-                            message.markRead(when=syncMessage.timestamp)
+                            message.mark_read(when=sync_message.timestamp)
         return
-    
-    def __parseSentMessageSync__(self, syncMessage:SyncMessage) -> None:
-        message = SentMessage(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
-                                contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, stickerPacks=self._stickerPacks,
-                                rawMessage=syncMessage.rawSentMessage)
+
+    def __parse_sent_message_sync__(self, sync_message: SyncMessage) -> None:
+        message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                              config_path=self._config_path,
+                              contacts=self._contacts, groups=self._groups, devices=self._devices,
+                              this_device=self._this_device, stickerPacks=self._sticker_packs,
+                              raw_message=sync_message.rawSentMessage)
         self.append(message)
         return
-    
-    def __parseSyncMessage__(self, syncMessage:SyncMessage) -> None:
-        if (syncMessage.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC):
-            self.__parseReadMessageSync__(syncMessage)
-        elif (syncMessage.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
-            self.__parseSentMessageSync__(syncMessage)
+
+    def __parse_sync_message__(self, sync_message: SyncMessage) -> None:
+        if sync_message.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC:
+            self.__parse_read_message_sync__(sync_message)
+        elif sync_message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
+            self.__parse_sent_message_sync__(sync_message)
         else:
-            errorMessage = "Can only parse SyncMessage.TYPE_READ_MESSAGE_SYNC and SyncMessage.TYPE_SENT_MESSAGE_SYNC not: %i" % syncMessage.syncType
-            raise TypeError(errorMessage)
+            error_message = "Can only parse SyncMessage.TYPE_READ_MESSAGE_SYNC and SyncMessage.TYPE_SENT_MESSAGE_SYNC not: %i" % sync_message.syncType
+            raise TypeError(error_message)
         self.__save__()
         return
-##################################
-# Getters:
-##################################
-    def getByTimestamp(self, timestamp:Timestamp) -> list[Message]:
-        if (isinstance(timestamp, Timestamp) == False):
+
+    ##################################
+    # Getters:
+    ##################################
+    def get_by_timestamp(self, timestamp: Timestamp) -> list[Message]:
+        if not isinstance(timestamp, Timestamp):
             __type_error__("timestamp", "Timestamp", timestamp)
         messages = [message for message in self.messages if message.timestamp == timestamp]
         return messages
-    
-    def getByRecipient(self, recipient:Group|Contact) -> list[Message]:
-        if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
+
+    def get_by_recipient(self, recipient: Group | Contact) -> list[Message]:
+        if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
             __type_error__("recipient", "Contact | Group", recipient)
-        messages = [ message for message in self.messages if message.recipient == recipient ]
+        messages = [message for message in self.messages if message.recipient == recipient]
         return messages
-    
-    def getBySender(self, sender:Contact) -> list[Message]:
-        if (isinstance(sender, Contact) == False):
+
+    def get_by_sender(self, sender: Contact) -> list[Message]:
+        if not isinstance(sender, Contact):
             __type_error__("sender", "Contact", sender)
         messages = [message for message in self.messages if message.sender == sender]
         return messages
-    
-    def getConversation(self, target:Contact|Group) -> list[Message]:
+
+    def get_conversation(self, target: Contact | Group) -> list[Message]:
         returnMessages = []
-        if (isinstance(target, Contact) == True):
+        if isinstance(target, Contact):
             selfContact = self._contacts.get_self()
             for message in self.messages:
-                if (message.sender == selfContact and message.recipient == target):
+                if message.sender == selfContact and message.recipient == target:
                     returnMessages.append(message)
-                elif(message.sender == target and message.recipient == selfContact):
+                elif message.sender == target and message.recipient == selfContact:
                     returnMessages.append(message)
-        elif (isinstance(target, Group) == True):
+        elif isinstance(target, Group):
             for message in self.messages:
-                if (message.recipient == target):
+                if message.recipient == target:
                     returnMessages.append(message)
         else:
             __type_error__("target", "Contact | Group", target)
         return returnMessages
 
-    def find(self, author:Contact, timestamp:Timestamp, conversation:Contact | Group) -> Message | None:
-    # Validate  author:
-        targetAuthor: Contact
-        if (isinstance(author, Contact) == True):
-            targetAuthor = author
+    def find(self, author: Contact, timestamp: Timestamp, conversation: Contact | Group) -> Message | None:
+        # Validate  author:
+        target_author: Contact
+        if isinstance(author, Contact):
+            target_author = author
         else:
             __type_error__("author", "Contact", author)
-    # Validate recipient:
+        # Validate recipient:
         targetConversation: Contact | Group
-        if (isinstance(conversation, Contact) == True):
+        if isinstance(conversation, Contact):
             targetConversation = conversation
-        elif (isinstance(conversation, Group) == True):
+        elif isinstance(conversation, Group):
             targetConversation = conversation
         else:
             __type_error__("recpipient", "Contact | Group", conversation)
-    # Validate timestamp:
+        # Validate timestamp:
         targetTimestamp: Timestamp
-        if (isinstance(timestamp, Timestamp) == True):
+        if isinstance(timestamp, Timestamp):
             targetTimestamp = timestamp
         else:
             __type_error__("timestamp", "Timestamp", timestamp)
-    # Find Message:
-        searchMessages = self.getConversation(targetConversation)
+        # Find Message:
+        searchMessages = self.get_conversation(targetConversation)
         for message in searchMessages:
-            if (message.sender == targetAuthor and message.timestamp == targetTimestamp):
+            if message.sender == target_author and message.timestamp == targetTimestamp:
                 return message
         return None
-    
-    def getQuoted(self, quote:Quote) -> Optional[SentMessage | ReceivedMessage]:
-        if (isinstance(quote, Quote) == False):
+
+    def get_quoted(self, quote: Quote) -> Optional[SentMessage | ReceivedMessage]:
+        if not isinstance(quote, Quote):
             __type_error__("quote", "Quote", quote)
-        searchMessages = self.getConversation(quote.conversation)
+        searchMessages = self.get_conversation(quote.conversation)
         for message in searchMessages:
-            if (message.sender == quote.author):
-                if (message.timestamp == quote.timestamp):
+            if message.sender == quote.author:
+                if message.timestamp == quote.timestamp:
                     return message
         return None
-    
-    def getSent(self) -> list[SentMessage]:
+
+    def get_sent(self) -> list[SentMessage]:
         return [message for message in self.messages if isinstance(message, SentMessage)]
-##################################
-# Methods:
-##################################
-    def append(self, message:Message) -> None:
-        if (message == None):
-            if (DEBUG == True):
+
+    ##################################
+    # Methods:
+    ##################################
+    def append(self, message: Message) -> None:
+        if message is None:
+            if DEBUG:
                 print("ATTEMPTING TO APPEND NONE TYPE to messages", file=sys.stderr)
             raise RuntimeError()
             return
-        if (isinstance(message, SentMessage) == True or isinstance(message, ReceivedMessage) == True):
+        if isinstance(message, SentMessage) or isinstance(message, ReceivedMessage):
             self.messages.append(message)
-        elif (isinstance(message, GroupUpdate) == True or isinstance(message, SyncMessage) == True):
+        elif isinstance(message, GroupUpdate) or isinstance(message, SyncMessage):
             self.sync.append(message)
-        elif (isinstance(message, TypingMessage) == True):
+        elif isinstance(message, TypingMessage):
             self.typing.append(message)
-        
+
         self.__save__()
         return
-    
-    def sendMessage(self,
-                        recipients: Iterable[Contact | Group] | Contact | Group,
-                        body: Optional[str] = None,
-                        attachments: Optional[Iterable[Attachment | str]| Attachment | str] = None,
-                        mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
-                        quote: Optional[Quote] = None,
-                        sticker: Optional[Sticker] = None,
-                        preview: Optional[Preview] = None,
-                    ) -> tuple[tuple[bool, Contact, SentMessage | str]]:
-    # Validate recipients:
-        recipientType: str
-        targetRecipients: list[Contact|Group]
-        if (isinstance(recipients, Contact) == True):
-            recipientType = 'contact'
-            targetRecipients = [recipients]
-        elif (isinstance(recipients, Group) == True):
-            recipientType = 'group'
-            targetRecipients = [ recipients ]
-        elif (isinstance(recipients, Iterable) == True):
-            targetRecipients = []
+
+    def send_message(self,
+                     recipients: Iterable[Contact | Group] | Contact | Group,
+                     body: Optional[str] = None,
+                     attachments: Optional[Iterable[Attachment | str] | Attachment | str] = None,
+                     mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
+                     quote: Optional[Quote] = None,
+                     sticker: Optional[Sticker] = None,
+                     preview: Optional[Preview] = None,
+                     ) -> tuple[
+        tuple[bool, Contact, str] | tuple[bool, Contact | Group, str] | tuple[bool, Contact, SentMessage] | tuple[
+            bool, Contact, object], ...]:
+        # Validate recipients:
+        recipient_type: str
+        target_recipients: list[Contact | Group]
+        if isinstance(recipients, Contact):
+            recipient_type = 'contact'
+            target_recipients = [recipients]
+        elif isinstance(recipients, Group):
+            recipient_type = 'group'
+            target_recipients = [recipients]
+        elif isinstance(recipients, Iterable):
+            target_recipients = []
             i = 0
             checkType = None
             for recipient in recipients:
-                if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
+                if not isinstance(recipient, Contact) and isinstance(recipient, Group):
                     __type_error__("recipients[%i]" % i, "Contact | Group", recipient)
-                if (i == 0):
+                if i == 0:
                     checkType = type(recipient)
-                    if (isinstance(recipient, Contact) == True):
-                        recipientType = 'contact'
+                    if isinstance(recipient, Contact):
+                        recipient_type = 'contact'
                     else:
-                        recipientType = 'group'
-                elif (isinstance(recipient, checkType) == False):
+                        recipient_type = 'group'
+                elif not isinstance(recipient, checkType):
                     __type_error__("recipients[%i]", str(type(checkType)), recipient)
                 i = i + 1
-                targetRecipients.append(recipient)
+                target_recipients.append(recipient)
         else:
             __type_error__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
-        if (len(targetRecipients) == 0):
+        if len(target_recipients) == 0:
             raise ValueError("recipients cannot be of zero length")
-    # Validate body Type and value:
-        if (body != None and isinstance(body, str) == False):
+        # Validate body Type and value:
+        if body is not None and not isinstance(body, str):
             __type_error__("body", "str | None", body)
         # elif (body != None and len(body) == 0):
-            # raise ValueError("body cannot be empty string")
-    # Validate attachments:
-        targetAttachments: Optional[list[Attachment]] = None
-        if (attachments != None):
-            if (isinstance(attachments, Attachment) == True):
-                targetAttachments = [ attachments ]
-            elif (isinstance(attachments, str) == True):
-                targetAttachments = [ Attachment(configPath=self._configPath, localPath=attachments) ]
-            elif (isinstance(attachments, Iterable) == True):
-                targetAttachments = []
+        # raise ValueError("body cannot be empty string")
+        # Validate attachments:
+        target_attachments: Optional[list[Attachment]] = None
+        if attachments is not None:
+            if isinstance(attachments, Attachment):
+                target_attachments = [attachments]
+            elif isinstance(attachments, str):
+                target_attachments = [Attachment(configPath=self._config_path, localPath=attachments)]
+            elif isinstance(attachments, Iterable):
+                target_attachments = []
                 i = 0
                 for attachment in attachments:
-                    if (isinstance(attachment, Attachment) == False and isinstance(attachment, str) == False):
+                    if not isinstance(attachment, Attachment) and not isinstance(attachment, str):
                         __type_error__("attachments[%i]" % i, "Attachment | str", attachment)
-                    if (isinstance(attachment, Attachment) == True):
-                        targetAttachments.append(attachment)
+                    if isinstance(attachment, Attachment):
+                        target_attachments.append(attachment)
                     else:
-                        targetAttachments.append(Attachment(configPath=self._configPath, localPath=attachment))
+                        target_attachments.append(Attachment(configPath=self._config_path, localPath=attachment))
             else:
                 __type_error__("attachments", "Iterable[Attachment | str] | Attachment | str", attachments)
-        if (targetAttachments != None and len(targetAttachments) == 0):
+        if target_attachments is not None and len(target_attachments) == 0:
             raise ValueError("attachments cannot be empty")
-    # Validate mentions:
-        targetMentions: Optional[list[Mention] | Mentions] = None
-        if (mentions != None):
-            if (isinstance(mentions, Mentions)):
-                targetMentions = mentions
-            elif (isinstance(mentions, Mention) == True):
-                targetMentions = [ mentions ]
-            elif (isinstance(mentions, Iterable) == True):
-                targetMentions = []
+        # Validate mentions:
+        target_mentions: Optional[list[Mention] | Mentions] = None
+        if mentions is not None:
+            if isinstance(mentions, Mentions):
+                target_mentions = mentions
+            elif isinstance(mentions, Mention):
+                target_mentions = [mentions]
+            elif isinstance(mentions, Iterable):
+                target_mentions = []
                 i = 0
                 for mention in mentions:
-                    if (isinstance(mention, Mention) == False):
+                    if not isinstance(mention, Mention):
                         __type_error__("mentions[%i]" % i, "Mention", mention)
-                    targetMentions.append( mention )
+                    target_mentions.append(mention)
             else:
                 __type_error__("mentions", "Optional[Iterable[Mention] | Mention]", mentions)
-        if (targetMentions != None and len(targetMentions) ==0):
+        if target_mentions is not None and len(target_mentions) == 0:
             raise ValueError("mentions cannot be empty")
-    # Validate quote:
-        if (quote != None and isinstance(quote, Quote) == False):
-            __type_error__("quote", "SentMessage | RecieivedMessage", quote)
-    # Validate sticker:
-        if (sticker != None):
-            if (isinstance(sticker, Sticker) == False):
+        # Validate quote:
+        if quote is not None and not isinstance(quote, Quote):
+            __type_error__("quote", "SentMessage | ReceivedMessage", quote)
+        # Validate sticker:
+        if sticker is not None:
+            if not isinstance(sticker, Sticker):
                 raise __type_error__("sticker", "Sticker", sticker)
-    # Validate preview:
-        if (preview != None):
-            if (isinstance(preview, Preview) == False):
+        # Validate preview:
+        if preview is not None:
+            if not isinstance(preview, Preview):
                 __type_error__("preview", "Preview", preview)
-            if (body.find(preview.url) == -1):
-                errorMessage = "FATAL: error while sending message. preview URL must appear in body of message."
-                raise ValueError(errorMessage)
-    # Validate conflicting options:
-        if (sticker != None):
-            if (body != None or attachments != None):
-                errorMessage = "If body or attachments are defined, sticker must be None."
-                raise ValueError(errorMessage)
-            if (mentions != None):
-                errorMessage = "If sticker is defined, mentions must be None"
-                raise ValueError(errorMessage)
-            if (quote != None):
-                errorMessage = "If sticker is defined, quote must be None"
-                raise ValueError(errorMessage)
-    # Create send message command object:
-        sendCommandObj = {
+            if body.find(preview.url) == -1:
+                error_message = "FATAL: error while sending message. preview URL must appear in body of message."
+                raise ValueError(error_message)
+        # Validate conflicting options:
+        if sticker is not None:
+            if body is not None or attachments is not None:
+                error_message = "If body or attachments are defined, sticker must be None."
+                raise ValueError(error_message)
+            if mentions is not None:
+                error_message = "If sticker is defined, mentions must be None"
+                raise ValueError(error_message)
+            if quote is not None:
+                error_message = "If sticker is defined, quote must be None"
+                raise ValueError(error_message)
+        # Create send message command object:
+        send_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "send",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
             }
         }
-    # Add recipients:
-        if (recipientType == 'group'):
-            sendCommandObj['params']['groupId'] = []
-            for group in targetRecipients:
-                sendCommandObj['params']['groupId'].append(group.get_id())
-        elif (recipientType == 'contact'):
-            sendCommandObj['params']['recipient'] = []
-            for contact in targetRecipients:
-                sendCommandObj['params']['recipient'].append(contact.get_id())
+        # Add recipients:
+        if recipient_type == 'group':
+            send_command_obj['params']['groupId'] = []
+            for group in target_recipients:
+                send_command_obj['params']['groupId'].append(group.get_id())
+        elif recipient_type == 'contact':
+            send_command_obj['params']['recipient'] = []
+            for contact in target_recipients:
+                send_command_obj['params']['recipient'].append(contact.get_id())
         else:
-            raise ValueError("recipientType must be either 'contact' or 'group'")
-    # Add body:
-        if (body != None):
-            sendCommandObj['params']['message'] = body
-    # Add attachments:
-        if (targetAttachments != None):
-            sendCommandObj['params']['attachments'] = []
-            for attachment in targetAttachments:
-                sendCommandObj['params']['attachments'].append(attachment.localPath)
-    # Add mentions:
-        if (targetMentions != None):
-            sendCommandObj['params']['mention'] = []
-            for mention in targetMentions:
-                sendCommandObj['params']['mention'].append(str(mention))
-    # Add quote:
-        if (quote != None):
-            sendCommandObj['params']['quoteTimestamp'] = quote.timestamp.timestamp
-            sendCommandObj['params']['quoteAuthor'] = quote.author.get_id()
-            sendCommandObj['params']['quoteMessage'] = quote.text
-            if (quote.mentions != None):
-                sendCommandObj['params']['quoteMention'] = []
+            raise ValueError("recipient_type must be either 'contact' or 'group'")
+        # Add body:
+        if body is not None:
+            send_command_obj['params']['message'] = body
+        # Add attachments:
+        if target_attachments is not None:
+            send_command_obj['params']['attachments'] = []
+            for attachment in target_attachments:
+                send_command_obj['params']['attachments'].append(attachment.localPath)
+        # Add mentions:
+        if target_mentions is not None:
+            send_command_obj['params']['mention'] = []
+            for mention in target_mentions:
+                send_command_obj['params']['mention'].append(str(mention))
+        # Add quote:
+        if quote is not None:
+            send_command_obj['params']['quoteTimestamp'] = quote.timestamp.timestamp
+            send_command_obj['params']['quoteAuthor'] = quote.author.get_id()
+            send_command_obj['params']['quoteMessage'] = quote.text
+            if quote.mentions is not None:
+                send_command_obj['params']['quoteMention'] = []
                 for mention in quote.mentions:
-                    sendCommandObj['params']['quoteMention'].append(str(mention))
-    # Add sticker:
-        if (sticker != None):
-            sendCommandObj['params']['sticker'] = str(sticker)
-    # Add preview:
-        if (preview != None):
-            sendCommandObj['params']['previewUrl'] = preview.url
-            sendCommandObj['params']['previewTitle'] = preview.title
-            sendCommandObj['params']['previewDescription'] = preview.description
-            if (preview.image != None):
-                sendCommandObj['params']['previewImage'] = preview.image.localPath
-    # Create json command string:
-        jsonCommandStr = json.dumps(sendCommandObj) + '\n'
-    # Mark system as sending:
+                    send_command_obj['params']['quoteMention'].append(str(mention))
+        # Add sticker:
+        if sticker is not None:
+            send_command_obj['params']['sticker'] = str(sticker)
+        # Add preview:
+        if preview is not None:
+            send_command_obj['params']['previewUrl'] = preview.url
+            send_command_obj['params']['previewTitle'] = preview.title
+            send_command_obj['params']['previewDescription'] = preview.description
+            if preview.image is not None:
+                send_command_obj['params']['previewImage'] = preview.image.localPath
+        # Create json command string:
+        json_command_str = json.dumps(send_command_obj) + '\n'
+        # Mark system as sending:
         self._sending = True
-    # Communicate with signal:
-        __socket_send__(self._commandSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._commandSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
+        # Communicate with signal:
+        __socket_send__(self._command_socket, json_command_str)
+        response_str = __socket_receive__(self._command_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
         # print(responseObj)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            errorMessage = "ERROR: failed to send message, signal error. Code: %i Message: %s" % ( responseObj['error']['code'],
-                                                                                                responseObj['error']['message'])
-            if (DEBUG == True):
-                print(errorMessage, file=sys.stderr)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            error_message = "ERROR: failed to send message, signal error. Code: %i Message: %s" % (
+                response_obj['error']['code'],
+                response_obj['error']['message'])
+            if DEBUG:
+                print(error_message, file=sys.stderr)
                 self._sending = False
-                returnValue = []
-                for recipient in targetRecipients:
-                    if (recipientType == 'group'):
+                return_value = []
+                for recipient in target_recipients:
+                    if recipient_type == 'group':
                         for member in group.members:
-                            returnValue.append( (False, member, errorMessage) )
+                            return_value.append((False, member, error_message))
                     else:
-                        returnValue.append( (False, recipient, errorMessage) )
-                return tuple(returnValue)
-    # Some messages sent, some may have failed.
-        resultsList: list[dict[str, object]] = responseObj['result']['results']
-    # Gather timestamp:
-        timestamp = Timestamp(timestamp=responseObj['result']['timestamp'])
-    # Parse results:
-        returnValue = []
-        if (recipientType == 'group'):
-            sentMessages: list[SentMessage] = []
-            for recipient in targetRecipients:
-                sentMessage = SentMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                            configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                            devices=self._devices, thisDevice=self._thisDevice,
-                                            stickerPacks=self._stickerPacks, recipient=recipient,
-                                            timestamp=timestamp, body=body, attachments=targetAttachments,
-                                            mentions=targetMentions, quote=quote, sticker=sticker, isSent=True)
-                self.append(sentMessage)
-                sentMessages.append(sentMessage)
-            for result in resultsList:
-            # Gather group and contact:
-                groupId = result['groupId']
-                added, group = self._groups.__get_or_add__("<UNKNOWN-GROUP>", groupId)
-                contactId = result['recipientAddress']['number']
-                if (contactId == None):
-                    contactId = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
-            # Message sent successfully
-                if (result['type'] == "SUCCESS"):
-                    for message in sentMessages:
-                        if (message.recipient == group):
+                        return_value.append((False, recipient, error_message))
+                return tuple(return_value)
+        # Some messages sent, some may have failed.
+        results_list: list[dict[str, object]] = response_obj['result']['results']
+        # Gather timestamp:
+        timestamp = Timestamp(timestamp=response_obj['result']['timestamp'])
+        # Parse results:
+        return_value = []
+        if recipient_type == 'group':
+            sent_messages: list[SentMessage] = []
+            for recipient in target_recipients:
+                sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                           config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                           devices=self._devices, this_device=self._this_device,
+                                           stickerPacks=self._sticker_packs, recipient=recipient,
+                                           timestamp=timestamp, body=body, attachments=target_attachments,
+                                           mentions=target_mentions, quote=quote, sticker=sticker, isSent=True)
+                self.append(sent_message)
+                sent_messages.append(sent_message)
+            for result in results_list:
+                # Gather group and contact:
+                group_id = result['groupId']
+                added, group = self._groups.__get_or_add__("<UNKNOWN-GROUP>", group_id)
+                contact_id = result['recipientAddress']['number']
+                if contact_id is None:
+                    contact_id = result['recipientAddress']['uuid']
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
+                # Message sent successfully
+                if result['type'] == "SUCCESS":
+                    for message in sent_messages:
+                        if message.recipient == group:
                             message.sentTo.append(contact)
-                            returnValue.append( (True, contact, message) )
-            # Message failed to sent:
+                            return_value.append((True, contact, message))
+                # Message failed to send:
                 else:
-                    returnValue.append( (False, contact, result['type']) )
+                    return_value.append((False, contact, result['type']))
             self._sending = False
-            return tuple(returnValue)
+            return tuple(return_value)
         else:
-            for result in resultsList:
-            # Gather contact:
-                contactId = result['recipientAddress']['number']
-                if (contactId == None):
-                    contactId = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
+            for result in results_list:
+                # Gather contact:
+                contact_id = result['recipientAddress']['number']
+                if contact_id is None:
+                    contact_id = result['recipientAddress']['uuid']
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
 
-            # Message Sent successfully:
-                if (result['type'] == 'SUCCESS'):
-                # Create sent message
-                    sentMessage = SentMessage(commandSocket=self._commandSocket, accountId=self._accountId,
-                                                configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                                devices=self._devices, thisDevice=self._thisDevice,
-                                                stickerPacks=self._stickerPacks, recipient=contact,
-                                                timestamp=timestamp, body=body, attachments=targetAttachments,
-                                                mentions=targetMentions, quote=quote, sticker=sticker, isSent=True,
-                                                sentTo=targetRecipients)
-                    returnValue.append((True, contact, sentMessage))
-                    self.append(sentMessage)
+                # Message Sent successfully:
+                if result['type'] == 'SUCCESS':
+                    # Create sent message
+                    sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                               config_path=self._config_path, contacts=self._contacts,
+                                               groups=self._groups,
+                                               devices=self._devices, this_device=self._this_device,
+                                               stickerPacks=self._sticker_packs, recipient=contact,
+                                               timestamp=timestamp, body=body, attachments=target_attachments,
+                                               mentions=target_mentions, quote=quote, sticker=sticker, isSent=True,
+                                               sentTo=target_recipients)
+                    return_value.append((True, contact, sent_message))
+                    self.append(sent_message)
                     self.__save__()
-            # Message failed to send:
+                # Message failed to send:
                 else:
-                    returnValue.append((False, contact, result['type']))
-    # Mark sending finished.
+                    return_value.append((False, contact, result['type']))
+            # Mark sending finished.
             self._sending = False
-            return tuple(returnValue)
-        
+            return tuple(return_value)

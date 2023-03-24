@@ -31,26 +31,26 @@ Self = TypeVar("Self", bound="ReceivedMessage")
 
 class ReceivedMessage(Message):
     def __init__(self,
-                 commandSocket: socket.socket,
-                 accountId: str,
-                 configPath: str,
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
                  contacts: Contacts,
                  groups: Groups,
                  devices: Devices,
-                 thisDevice: Device,
+                 this_device: Device,
                  stickerPacks: StickerPacks,
-                 fromDict: Optional[dict] = None,
-                 rawMessage: Optional[dict] = None,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
                  sender: Optional[Contact] = None,
                  recipient: Optional[Contact | Group] = None,
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
-                 isDelivered: bool = False,
-                 timeDelivered: Optional[Timestamp] = None,
-                 isRead: bool = False,
-                 timeRead: Optional[Timestamp] = None,
-                 isViewed: bool = False,
-                 timeViewed: Optional[Timestamp] = None,
+                 is_delivered: bool = False,
+                 time_delivered: Optional[Timestamp] = None,
+                 is_read: bool = False,
+                 time_read: Optional[Timestamp] = None,
+                 is_viewed: bool = False,
+                 time_viewed: Optional[Timestamp] = None,
                  body: Optional[str] = None,
                  attachments: Optional[Iterable[Attachment] | Attachment] = None,
                  mentions: Optional[Iterable[Mention] | Mention] = None,
@@ -164,11 +164,11 @@ class ReceivedMessage(Message):
         if isinstance(reactions, Reactions):
             self.reactions = reactions
         if len(reactionList) == 0:
-            self.reactions = Reactions(commandSocket=commandSocket, accountId=accountId, contacts=contacts,
-                                       groups=groups, devices=devices, thisDevice=thisDevice)
+            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
+                                       groups=groups, devices=devices, thisDevice=this_device)
         else:
-            self.reactions = Reactions(commandSocket=commandSocket, accountId=accountId, contacts=contacts,
-                                       groups=groups, devices=devices, thisDevice=thisDevice,
+            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
+                                       groups=groups, devices=devices, thisDevice=this_device,
                                        reactions=reactionList)
         # Set sticker:
         self.sticker: Optional[Sticker] = sticker
@@ -182,22 +182,22 @@ class ReceivedMessage(Message):
         self.previews: Optional[list[Preview]] = previewList
         # Continue Init:
         # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                         rawMessage, sender, recipient, device, timestamp, Message.TYPE_RECEIVED_MESSAGE, isDelivered,
-                         timeDelivered, isRead, timeRead, isViewed, timeViewed)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, sender, recipient, device, timestamp, Message.TYPE_RECEIVED_MESSAGE, is_delivered,
+                         time_delivered, is_read, time_read, is_viewed, time_viewed)
         # Mark this as delivered:
         if (self.timestamp != None):
-            self.markDelivered(self.timestamp)
+            self.mark_delivered(self.timestamp)
         return
 
     ######################
     # Init:
     ######################
-    def __fromRawMessage__(self, rawMessage: dict) -> None:
-        super().__fromRawMessage__(rawMessage)
-        # print("RecievedMessage.__fromRawMessage__")
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        super().__from_raw_message__(raw_message)
+        # print("RecievedMessage.__from_raw_message__")
         # print(raw_message)
-        dataMessage: dict[str, object] = rawMessage['dataMessage']
+        dataMessage: dict[str, object] = raw_message['dataMessage']
         # Parse body:
         self.body = dataMessage['message']
         # Parse expiry
@@ -210,7 +210,7 @@ class ReceivedMessage(Message):
             print("DEBUG: %s: Started attachment decoding." % __name__)
             self.attachments = []
             for rawAttachment in dataMessage['attachments']:
-                attachment = Attachment(configPath=self._configPath, rawAttachment=rawAttachment)
+                attachment = Attachment(configPath=self._config_path, rawAttachment=rawAttachment)
                 self.attachments.append(attachment)
         # Parse mentions:
         if ('mentions' in dataMessage.keys()):
@@ -223,17 +223,17 @@ class ReceivedMessage(Message):
                                                          stickerId=stickerDict['stickerId'])
         # Parse Quote
         if ('quote' in dataMessage.keys()):
-            if (self.recipientType == 'group'):
-                self.quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+            if (self.recipient_type == 'group'):
+                self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
                                    rawQuote=dataMessage['quote'], conversation=self.recipient)
-            elif (self.recipientType == 'contact'):
-                self.quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+            elif (self.recipient_type == 'contact'):
+                self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
                                    rawQuote=dataMessage['quote'], conversation=self.sender)
         # Parse preview:
         self.previews = []
         if ('previews' in dataMessage.keys()):
             for rawPreview in dataMessage['previews']:
-                preview = Preview(configPath=self._configPath, rawPreview=rawPreview)
+                preview = Preview(configPath=self._config_path, rawPreview=rawPreview)
                 self.previews.append(preview)
 
         return
@@ -241,8 +241,8 @@ class ReceivedMessage(Message):
     #####################
     # To / From Dict:
     #####################
-    def __toDict__(self) -> dict:
-        receivedMessageDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        receivedMessageDict = super().__to_dict__()
         # Set body:
         receivedMessageDict['body'] = self.body
         # Set attachments
@@ -282,49 +282,49 @@ class ReceivedMessage(Message):
             receivedMessageDict['previews'].append(preview.__toDict__())
         return receivedMessageDict
 
-    def __fromDict__(self, fromDict: dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict: dict) -> None:
+        super().__from_dict__(from_dict)
         # Load body:
-        self.body = fromDict['body']
+        self.body = from_dict['body']
         # Load attachments:
         self.attachments = None
-        if (fromDict['attachments'] != None):
+        if (from_dict['attachments'] != None):
             self.attachments = []
-            for attachmentDict in fromDict['attachments']:
-                attachment = Attachment(configPath=self._configPath, fromDict=attachmentDict)
+            for attachmentDict in from_dict['attachments']:
+                attachment = Attachment(configPath=self._config_path, fromDict=attachmentDict)
                 self.attachments.append(attachment)
         # Load mentions:
-        self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
+        self.mentions = Mentions(contacts=self._contacts, from_dict=from_dict['mentions'])
         # Load reactions:
         # self.reactions = None
         # if (from_dict['reactions'] != None):
-        self.reactions = Reactions(commandSocket=self._commandSocket, accountId=self._accountId,
+        self.reactions = Reactions(commandSocket=self._command_socket, accountId=self._account_id,
                                    contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                   fromDict=fromDict['reactions'])
+                                   fromDict=from_dict['reactions'])
         # Load sticker:
         self.sticker = None
-        if (fromDict['sticker'] != None):
+        if (from_dict['sticker'] != None):
             self.sticker = self._stickerPacks.getSticker(
-                packId=fromDict['sticker']['packId'],
-                stickerId=fromDict['sticker']['stickerId']
+                packId=from_dict['sticker']['packId'],
+                stickerId=from_dict['sticker']['stickerId']
             )
         # Load quote
         self.quote = None
-        if (fromDict['quote'] != None):
-            self.quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                               fromDict=fromDict['quote'])
+        if (from_dict['quote'] != None):
+            self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
+                               fromDict=from_dict['quote'])
         # Load expiration:
-        self.isExpired = fromDict['isExpired']
+        self.isExpired = from_dict['isExpired']
         self.expiration = None
-        if (fromDict['expiration'] != None):
-            self.expiration = timedelta(seconds=fromDict['expiration'])
+        if (from_dict['expiration'] != None):
+            self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expirationTimestamp = None
-        if (fromDict['expirationTimestamp'] != None):
-            self.expirationTimestamp = Timestamp(fromDict=fromDict['expirationTimestamp'])
+        if (from_dict['expirationTimestamp'] != None):
+            self.expirationTimestamp = Timestamp(fromDict=from_dict['expirationTimestamp'])
         # Load previews:
         self.previews = []
-        for previewDict in fromDict['previews']:
-            self.previews.append(Preview(configPath=self._configPath, fromDict=previewDict))
+        for previewDict in from_dict['previews']:
+            self.previews.append(Preview(configPath=self._config_path, fromDict=previewDict))
         return
 
     #####################
@@ -337,7 +337,7 @@ class ReceivedMessage(Message):
             "contact_id": 0,
             "method": "sendReceipt",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "recipient": self.sender.get_id(),
                 "type": receiptType,
                 "targetTimestamp": self.timestamp.timestamp,
@@ -345,8 +345,8 @@ class ReceivedMessage(Message):
         }
         jsonCommandStr = json.dumps(sendReceiptCommandObj) + '\n'
         # Communicate with signal:
-        __socket_send__(self._commandSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._commandSocket)
+        __socket_send__(self._command_socket, jsonCommandStr)
+        responseStr = __socket_receive__(self._command_socket)
         # Parse Response:
         responseObj: dict = json.loads(responseStr)
         # Check for error:
@@ -383,37 +383,37 @@ class ReceivedMessage(Message):
     #####################
     # Methods:
     #####################
-    def markDelivered(self, when: Timestamp) -> None:
-        return super().markDelivered(when)
+    def mark_delivered(self, when: Timestamp) -> None:
+        return super().mark_delivered(when)
 
-    def markRead(self, when: Timestamp = None, sendReceipt: bool = True) -> None:
+    def mark_read(self, when: Timestamp = None, sendReceipt: bool = True) -> None:
         if (sendReceipt == True):
             when = self.__sendReceipt__('read')
         elif (when == None):
             when = Timestamp(now=True)
         self.__setExpiry__(when)
-        return super().markRead(when)
+        return super().mark_read(when)
 
-    def markViewed(self, when: Timestamp = None, sendReceipt: bool = True) -> None:
+    def mark_viewed(self, when: Timestamp = None, sendReceipt: bool = True) -> None:
         if (sendReceipt == True):
             when = self.__sendReceipt__('viewed')
         elif (when == None):
             when = Timestamp(now=True)
         self.__setExpiry__(when)
-        return super().markViewed(when)
+        return super().mark_viewed(when)
 
     def getQuote(self) -> Quote:
         quote: Quote
-        if (self.recipientType == 'contact'):
-            quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+        if (self.recipient_type == 'contact'):
+            quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.sender)
-        elif (self.recipientType == 'group'):
-            quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
+        elif (self.recipient_type == 'group'):
+            quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.recipient)
         else:
-            raise ValueError("invalid recipientType in RecievedMessage.getQuote")
+            raise ValueError("invalid recipient_type in RecievedMessage.getQuote")
         return quote
 
     def parseMentions(self) -> str:
@@ -427,18 +427,18 @@ class ReceivedMessage(Message):
             errorMessage = "emoji must be str of len 1|2"
             raise ValueError(errorMessage)
         # Create reaction
-        if (self.recipientType == 'contact'):
-            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId,
-                                configPath=self._configPath,
+        if (self.recipient_type == 'contact'):
+            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
+                                config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, recipient=self.sender, emoji=emoji,
+                                this_device=self._this_device, recipient=self.sender, emoji=emoji,
                                 targetAuthor=self.sender,
                                 targetTimestamp=self.timestamp)
-        elif (self.recipientType == 'group'):
-            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId,
-                                configPath=self._configPath,
+        elif (self.recipient_type == 'group'):
+            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
+                                config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, recipient=self.recipient, emoji=emoji,
+                                this_device=self._this_device, recipient=self.recipient, emoji=emoji,
                                 targetAuthor=self.sender, targetTimestamp=self.timestamp)
         else:
             errorMessage = "Invalid recipient type."

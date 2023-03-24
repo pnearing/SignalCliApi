@@ -22,14 +22,14 @@ def allMsgCb(account: Account, message:ReceivedMessage|Receipt|TypingMessage|Syn
 
 def receivedMsgCb(account:Account, message:ReceivedMessage):
     print("RECEIVED")
-    # message.markRead()
+    # message.mark_read()
     print(message)
     print("Received message FROM: %s AT: %s on DEVICE: %s" % (
                                                             message.sender.get_display_name(),
                                                             message.timestamp.get_display_time(),
                                                             message.device.get_display_name(),
                                                     ))
-    if message.recipientType == 'group':
+    if message.recipient_type == 'group':
         print("In GROUP: %s" % message.recipient.get_display_name())
     if (message.quote != None):
         if (message.quote.attachments != None):
@@ -45,14 +45,14 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
                 # returnValue = attachment.display()
                 # print(returnValue)
 
-        quotedMessage = account.messages.getQuoted(message.quote)
+        quotedMessage = account.messages.get_quoted(message.quote)
         if (quotedMessage == None):
             print("Quoting a message not found in history.")
         else:
             if (isinstance(quotedMessage, ReceivedMessage) == True):
                 print("Quoting received message FROM:%s AT: %s" % (quotedMessage.sender.get_display_name(),
                                                                     quotedMessage.timestamp.get_display_time()))
-                if (quotedMessage.recipientType == 'group'):
+                if (quotedMessage.recipient_type == 'group'):
                     print("in GROUP: %s" % quotedMessage.recipient.get_display_name())
             elif (isinstance(quotedMessage, SentMessage) == True):
                 print("Quoting message sent AT: %s" % quotedMessage.timestamp.get_display_time())
@@ -221,19 +221,19 @@ if __name__ == '__main__':
         preview = Preview(configPath=signalConfigPath,
                             generatePreview=True,
                             url=previewUrl)
-        account.messages.sendMessage(
+        account.messages.send_message(
                 recipients=contact,
                 body="Test message.\n%s" % previewUrl,
                 preview=preview,
             )
         stickerPack = signal.sticker_packs.getPackByName("Josh Saunders")
         sticker = stickerPack[0]
-        account.messages.sendMessage( contact, sticker=sticker)
+        account.messages.send_message(contact, sticker=sticker)
     
 
     # stickerPack = signal.stickers.get_by_name("Josh Saunders")
     # sticker = stickerPack[0]
-    # account.messages.sendMessage(recipients=[recipient], sticker=sticker)
+    # account.messages.send_message(recipients=[recipient], sticker=sticker)
     if (args.doSendGroup == True):
         marshJpg = '/home/streak/Pictures/marshmallow.jpg'
         groupId = "ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs="
@@ -243,7 +243,7 @@ if __name__ == '__main__':
         mentions = Mentions(contacts=account.contacts)
         mentions.create_from_body(messageText)
 
-        results = account.messages.sendMessage(group, messageText, mentions=mentions, attachments=marshJpg)
+        results = account.messages.send_message(group, messageText, mentions=mentions, attachments=marshJpg)
         for result in results:
             print ("Success:", result[0], "\tContact:", result[1].get_display_name(), "\tmessage:", result[2])
 

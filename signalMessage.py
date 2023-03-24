@@ -16,9 +16,8 @@ from .signalGroup import Group
 from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="Message")
-
-global DEBUG
 DEBUG: bool = True
+
 
 class Message(object):
     TYPE_NOT_SET: int = 0
@@ -31,279 +30,285 @@ class Message(object):
     TYPE_REACTION_MESSAGE: int = 7
     TYPE_GROUP_UPDATE_MESSAGE: int = 8
     TYPE_SYNC_MESSAGE: int = 9
+
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId:str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    sender: Optional[Contact] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    device: Optional[Device] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    messageType: int = TYPE_NOT_SET,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None,
-                ) -> None:
-    # Arg Type Checks:
-        if (isinstance(commandSocket, socket.socket) == False):
-            __type_error__('command_socket', 'socket', commandSocket)
-        if (isinstance(accountId, str) == False):
-            __type_error__('contact_id', 'str', accountId)
-        if (isinstance(configPath, str) == False):
-            __type_error__('config_path', 'str', configPath)
-        if (isinstance(contacts, Contacts) == False):
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 device: Optional[Device] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 message_type: int = TYPE_NOT_SET,
+                 is_delivered: bool = False,
+                 time_delivered: Optional[Timestamp] = None,
+                 is_read: bool = False,
+                 time_read: Optional[Timestamp] = None,
+                 is_viewed: bool = False,
+                 time_viewed: Optional[Timestamp] = None,
+                 ) -> None:
+        # Arg Type Checks:
+        if not isinstance(command_socket, socket.socket):
+            __type_error__('command_socket', 'socket', command_socket)
+        if not isinstance(account_id, str):
+            __type_error__('contact_id', 'str', account_id)
+        if not isinstance(config_path, str):
+            __type_error__('config_path', 'str', config_path)
+        if not isinstance(contacts, Contacts):
             __type_error__("contacts" "Contacts", contacts)
-        if (isinstance(groups, Groups) == False):
+        if not isinstance(groups, Groups):
             __type_error__("groups", "Groups", groups)
-        if (isinstance(devices, Devices) == False):
+        if not isinstance(devices, Devices):
             __type_error__("devices", "Devices", devices)
-        if (isinstance(thisDevice, Device) == False):
-            __type_error__("this_device", "Device", thisDevice)
-        if (fromDict != None and isinstance(fromDict, dict) == False):
-            __type_error__("from_dict", "dict", fromDict)
-        if (rawMessage != None and isinstance(rawMessage, dict) == False):
-            __type_error__("raw_message", "dict", rawMessage)
-        if (sender != None and isinstance(sender, Contact) == False):
+        if not isinstance(this_device, Device):
+            __type_error__("this_device", "Device", this_device)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if raw_message is not None and not isinstance(raw_message, dict):
+            __type_error__("raw_message", "dict", raw_message)
+        if sender is not None and not isinstance(sender, Contact):
             __type_error__("sender", "Contact", sender)
-        if (recipient != None and isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
+        if recipient is not None and not isinstance(recipient, Contact) and not isinstance(recipient, Group):
             __type_error__("recipient", "Contact | Group", recipient)
-        if (device != None and isinstance(device, Device) == False):
+        if device is not None and not isinstance(device, Device):
             __type_error__("device", "Device", device)
-        if (timestamp != None and isinstance(timestamp, Timestamp) == False):
+        if timestamp is not None and not isinstance(timestamp, Timestamp):
             __type_error__("timestamp", "Timestamp", timestamp)
-        if (isinstance(messageType, int) == False):
-            __type_error__("messageType", "int", messageType)
-        if (isinstance(isDelivered, bool) == False):
-            __type_error__("is_delivered", "bool", isDelivered)
-        if (timeDelivered != None and isinstance(timeDelivered, Timestamp) == False):
-            __type_error__("time_delivered", "Timestamp", timeDelivered)
-        if (isinstance(isRead, bool) == False):
-            __type_error__("is_read", "bool", isRead)
-        if (timeRead != None and isinstance(timeRead, Timestamp) == False):
-            __type_error__("time_read", "Timestamp", timeRead)
-        if (isinstance(isViewed, bool) == False):
-            __type_error__("is_viewed", "bool", isViewed)
-        if (timeViewed != None and isinstance(timeViewed, Timestamp) == False):
-            __type_error__("time_viewed", "Timestamp", timeViewed)
-    # Set internal vars:
-        self._commandSocket: socket.socket = commandSocket
-        self._accountId: str = accountId
-        self._configPath: str = configPath
+        if not isinstance(message_type, int):
+            __type_error__("message_type", "int", message_type)
+        if not isinstance(is_delivered, bool):
+            __type_error__("is_delivered", "bool", is_delivered)
+        if time_delivered is not None and not isinstance(time_delivered, Timestamp):
+            __type_error__("time_delivered", "Timestamp", time_delivered)
+        if not isinstance(is_read, bool):
+            __type_error__("is_read", "bool", is_read)
+        if time_read is not None and not isinstance(time_read, Timestamp):
+            __type_error__("time_read", "Timestamp", time_read)
+        if not isinstance(is_viewed, bool):
+            __type_error__("is_viewed", "bool", is_viewed)
+        if time_viewed is not None and not isinstance(time_viewed, Timestamp):
+            __type_error__("time_viewed", "Timestamp", time_viewed)
+        # Set internal vars:
+        self._command_socket: socket.socket = command_socket
+        self._account_id: str = account_id
+        self._config_path: str = config_path
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
         self._devices: Devices = devices
-        self._thisDevice: Device = thisDevice
-    # Set external properties:
-        self.sender:Contact = sender
+        self._this_device: Device = this_device
+        # Set external properties:
+        self.sender: Contact = sender
         self.recipient: Contact | Group = recipient
-        self.recipientType: Optional[str] = None
-        self.device:Device = device
-        self.timestamp:Timestamp = timestamp
-        self.messageType: int = messageType
-        self.isDelivered: bool = isDelivered
-        self.timeDelivered: Optional[Timestamp] = timeDelivered
-        self.isRead: bool = isRead
-        self.timeRead: Optional[Timestamp] = timeRead
-        self.isViewed: bool = isViewed
-        self.timeViewed: Optional[Timestamp] = timeViewed
-    # Parse from dict:
-        if (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Parse from raw Message:
-        elif (rawMessage != None):
-            self.__fromRawMessage__(rawMessage)
+        self.recipient_type: Optional[str] = None
+        self.device: Device = device
+        self.timestamp: Timestamp = timestamp
+        self.message_type: int = message_type
+        self.is_delivered: bool = is_delivered
+        self.time_delivered: Optional[Timestamp] = time_delivered
+        self.is_read: bool = is_read
+        self.time_read: Optional[Timestamp] = time_read
+        self.is_viewed: bool = is_viewed
+        self.time_viewed: Optional[Timestamp] = time_viewed
+        # Parse from dict:
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Parse from raw Message:
+        elif raw_message is not None:
+            self.__from_raw_message__(raw_message)
             self.sender.seen(self.timestamp)
             self.device.seen(self.timestamp)
-            if (self.recipientType == 'contact'):
+            if self.recipient_type == 'contact':
                 self.recipient.seen(self.timestamp)
-    # Set recipient type
-        if (self.recipient != None):
-            if (isinstance(self.recipient, Contact) == True):
-                self.recipientType = 'contact'
-            elif (isinstance(self.recipient, Group) == True):
-                self.recipientType = 'group'
-        return
-#######################
-# Init:
-#######################
-    def __fromRawMessage__(self, rawMessage:dict) -> None:
-        # print("Message.__fromRawMessage__")
-        # print(raw_message)
-    # Parse Sender
-        added, self.sender = self._contacts.__get_or_add__(
-                                                            name=rawMessage['sourceName'],
-                                                            number=rawMessage['sourceNumber'],
-                                                            uuid=rawMessage['sourceUuid']
-                                                        )
-        if (added == True):
-            self._contacts.__save__()
-    # Parse recipient:
-        self.recipient = None
-        if ('dataMessage' in rawMessage.keys()):
-            dataMessage:dict[str, object] = rawMessage['dataMessage']
-            if ('groupInfo' in dataMessage.keys()):
-                added, self.recipient = self._groups.__get_or_add__("<UNKNOWN-GROUP>", dataMessage['groupInfo']['groupId'])
-                self.recipientType = 'group'
-        if (self.recipient == None):
-            self.recipient = self._contacts.get_self()
-            self.recipientType = 'contact'
-    # Parse device:
-        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
-        if (added == True):
-            self._contacts.__save__()
-    # Parse Timestamp:
-        self.timestamp = Timestamp(timestamp=rawMessage['timestamp'])
+        # Set recipient type
+        if self.recipient is not None:
+            if isinstance(self.recipient, Contact):
+                self.recipient_type = 'contact'
+            elif isinstance(self.recipient, Group):
+                self.recipient_type = 'group'
         return
 
-#########################
-# Overrides:
-#########################
+    #######################
+    # Init:
+    #######################
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        # print("Message.__from_raw_message__")
+        # print(raw_message)
+        # Parse Sender
+        added, self.sender = self._contacts.__get_or_add__(
+            name=raw_message['sourceName'],
+            number=raw_message['sourceNumber'],
+            uuid=raw_message['sourceUuid']
+        )
+        if added:
+            self._contacts.__save__()
+        # Parse recipient:
+        self.recipient = None
+        if 'dataMessage' in raw_message.keys():
+            dataMessage: dict[str, object] = raw_message['dataMessage']
+            if 'groupInfo' in dataMessage.keys():
+                added, self.recipient = self._groups.__get_or_add__("<UNKNOWN-GROUP>",
+                                                                    dataMessage['groupInfo']['groupId'])
+                self.recipient_type = 'group'
+        if self.recipient is None:
+            self.recipient = self._contacts.get_self()
+            self.recipient_type = 'contact'
+        # Parse device:
+        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", raw_message['sourceDevice'])
+        if added:
+            self._contacts.__save__()
+        # Parse Timestamp:
+        self.timestamp = Timestamp(timestamp=raw_message['timestamp'])
+        return
+
+    #########################
+    # Overrides:
+    #########################
     def __eq__(self, __o: Self) -> bool:
-        if (isinstance(__o, Message) == True):
-        # Check sender:
-            if (self.sender != __o.sender):
+        if isinstance(__o, Message):
+            # Check sender:
+            if self.sender != __o.sender:
                 return False
-        # Check recipients:
-            if (self.recipientType != __o.recipientType):
+            # Check recipients:
+            if self.recipient_type != __o.recipient_type:
                 return False
-            if (self.recipient != __o.recipient):
+            if self.recipient != __o.recipient:
                 return False
-        # Check Timestamp
-            if (self.timestamp != __o.timestamp):
+            # Check Timestamp
+            if self.timestamp != __o.timestamp:
                 return False
-        # Check device:
-            if (self.device != __o.device):
+            # Check device:
+            if self.device != __o.device:
                 return False
-        # Check message type:
-            if (self.messageType != __o.messageType):
+            # Check message type:
+            if self.message_type != __o.message_type:
                 return False
-        # Check Delivered (is and time):
-            if (self.isDelivered != __o.isDelivered):
+            # Check Delivered (is and time):
+            if self.is_delivered != __o.is_delivered:
                 return False
-            if (self.timeDelivered != __o.timeDelivered):
+            if self.time_delivered != __o.time_delivered:
                 return False
-        # Check Read (is and time):
-            if (self.isRead != __o.isRead):
+            # Check Read (is and time):
+            if self.is_read != __o.is_read:
                 return False
-            if (self.timeRead != __o.timeRead):
+            if self.time_read != __o.time_read:
                 return False
-        # Check Viewed (is and time):
-            if (self.isViewed != __o.isViewed):
+            # Check Viewed (is and time):
+            if self.is_viewed != __o.is_viewed:
                 return False
-            if (self.timeViewed != __o.timeViewed):
+            if self.time_viewed != __o.time_viewed:
                 return False
         return False
 
-##################################
-# To / From dict:
-##################################
-    def __toDict__(self) -> dict:
-        messageDict = {
+    ##################################
+    # To / From dict:
+    ##################################
+    def __to_dict__(self) -> dict:
+        message_dict = {
             'sender': None,
             'recipient': None,
-            'recipientType': self.recipientType,
+            'recipient_type': self.recipient_type,
             'device': None,
             'timestamp': None,
-            'messageType': self.messageType,
-            'is_delivered': self.isDelivered,
+            'message_type': self.message_type,
+            'is_delivered': self.is_delivered,
             'time_delivered': None,
-            'is_read': self.isRead,
+            'is_read': self.is_read,
             'time_read': None,
-            'is_viewed': self.isViewed,
+            'is_viewed': self.is_viewed,
             'time_viewed': None,
         }
-        if (self.sender != None):
-            messageDict['sender'] = self.sender.get_id()
-        if (self.recipient != None):
-            messageDict['recipient'] = self.recipient.get_id()
-        if (self.device != None):
-            messageDict['device'] = self.device.id
-        if (self.timestamp != None):
-            messageDict['timestamp'] = self.timestamp.__toDict__()
-        if (self.timeDelivered != None):
-            messageDict['time_delivered'] = self.timeDelivered.__toDict__()
-        if (self.timeRead != None):
-            messageDict['time_read'] = self.timeRead.__toDict__()
-        if (self.timeViewed != None):
-            messageDict['time_viewed'] = self.timeViewed.__toDict__()
-        return messageDict
+        if self.sender is not None:
+            message_dict['sender'] = self.sender.get_id()
+        if self.recipient is not None:
+            message_dict['recipient'] = self.recipient.get_id()
+        if self.device is not None:
+            message_dict['device'] = self.device.id
+        if self.timestamp is not None:
+            message_dict['timestamp'] = self.timestamp.__toDict__()
+        if self.time_delivered is not None:
+            message_dict['time_delivered'] = self.time_delivered.__toDict__()
+        if self.time_read is not None:
+            message_dict['time_read'] = self.time_read.__toDict__()
+        if self.time_viewed is not None:
+            message_dict['time_viewed'] = self.time_viewed.__toDict__()
+        return message_dict
 
-    def __fromDict__(self, fromDict:dict) -> None:
-    # Parse sender:
-        added, self.sender = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=fromDict['sender'])
-    # Parse reciient type:
-        self.recipientType = fromDict['recipientType']
-    # Parse recipient:
-        if (fromDict['recipient'] != None):
-            if (self.recipientType == 'contact'):
-                added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=fromDict['recipient'])
-            elif (self.recipientType == 'group'):
-                added, self.recipient = self._groups.__get_or_add__(name="<UNKNOWN-GROUP>", group_id=fromDict['recipient'])
+    def __from_dict__(self, from_dict: dict) -> None:
+        # Parse sender:
+        added, self.sender = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=from_dict['sender'])
+        # Parse recipient type:
+        self.recipient_type = from_dict['recipient_type']
+        # Parse recipient:
+        if from_dict['recipient'] is not None:
+            if self.recipient_type == 'contact':
+                added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>",
+                                                                      contact_id=from_dict['recipient'])
+            elif self.recipient_type == 'group':
+                added, self.recipient = self._groups.__get_or_add__(name="<UNKNOWN-GROUP>",
+                                                                    group_id=from_dict['recipient'])
             else:
-                raise ValueError("invalid recipient type in from_dict: %s" % self.recipientType)
-    # Parse device:
+                raise ValueError("invalid recipient type in from_dict: %s" % self.recipient_type)
+        # Parse device:
 
-        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", fromDict['device'])
-        if (added == True):
+        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", from_dict['device'])
+        if added:
             self._contacts.__save__()
-    # Parse timestamp:
-        self.timestamp = Timestamp(fromDict=fromDict['timestamp'])
-    # Parse message Type:
-        self.messageType = fromDict['messageType']
-    # Parse Delivered: (is and time)
-        self.isDelivered = fromDict['is_delivered']
-        if (fromDict['time_delivered'] != None):
-            self.timeDelivered = Timestamp(fromDict=fromDict['time_delivered'])
+        # Parse timestamp:
+        self.timestamp = Timestamp(fromDict=from_dict['timestamp'])
+        # Parse message Type:
+        self.message_type = from_dict['message_type']
+        # Parse Delivered: (is and time)
+        self.is_delivered = from_dict['is_delivered']
+        if from_dict['time_delivered'] is not None:
+            self.time_delivered = Timestamp(fromDict=from_dict['time_delivered'])
         else:
-            self.timeDelivered = None
-    # Parse read (is and time):
-        self.isRead = fromDict['is_read']
-        if (fromDict['time_read'] != None):
-            self.timeRead = Timestamp(fromDict=fromDict['time_read'])
+            self.time_delivered = None
+        # Parse read (is and time):
+        self.is_read = from_dict['is_read']
+        if from_dict['time_read'] is not None:
+            self.time_read = Timestamp(fromDict=from_dict['time_read'])
         else:
-            self.timeRead = None
-    # Parse viewed (is and time):
-        self.isViewed = fromDict['is_viewed']
-        if (fromDict['time_viewed'] != None):
-            self.timeViewed = Timestamp(fromDict=fromDict['time_viewed'])
+            self.time_read = None
+        # Parse viewed (is and time):
+        self.is_viewed = from_dict['is_viewed']
+        if from_dict['time_viewed'] is not None:
+            self.time_viewed = Timestamp(fromDict=from_dict['time_viewed'])
         else:
-            self.timeViewed = None
-        return
-###############################
-# Methods:
-###############################
-    def markDelivered(self, when: Timestamp) -> None:
-        if (isinstance(when, Timestamp) == False):
-            __type_error__('when', 'Timestamp', when)
-        if (self.isDelivered == True):
-            return
-        self.isDelivered = True
-        self.timeDelivered = when
+            self.time_viewed = None
         return
 
-    def markRead(self, when: Timestamp) -> None:
-        if (isinstance(when, Timestamp) == False):
+    ###############################
+    # Methods:
+    ###############################
+    def mark_delivered(self, when: Timestamp) -> None:
+        if not isinstance(when, Timestamp):
             __type_error__('when', 'Timestamp', when)
-        if (self.isRead == True):
+        if self.is_delivered:
             return
-        self.isRead = True
-        self.timeRead = when
+        self.is_delivered = True
+        self.time_delivered = when
         return
 
-    def markViewed(self, when: Timestamp) -> None:
-        if (isinstance(when, Timestamp) == False):
+    def mark_read(self, when: Timestamp) -> None:
+        if not isinstance(when, Timestamp):
             __type_error__('when', 'Timestamp', when)
-        if (self.isViewed == True):
+        if self.is_read:
             return
-        self.isViewed = True
-        self.timeViewed = when
+        self.is_read = True
+        self.time_read = when
+        return
+
+    def mark_viewed(self, when: Timestamp) -> None:
+        if not isinstance(when, Timestamp):
+            __type_error__('when', 'Timestamp', when)
+        if self.is_viewed:
+            return
+        self.is_viewed = True
+        self.time_viewed = when
         return

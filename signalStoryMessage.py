@@ -18,23 +18,23 @@ from .signalTimestamp import Timestamp
 
 class StoryMessage(Message):
     def __init__(self,
-                        commandSocket: socket.socket,
-                        accountId: str,
-                        configPath: str,
-                        contacts: Contacts,
-                        groups: Groups,
-                        devices: Devices,
-                        thisDevice: Device,
-                        fromDict: Optional[dict] = None,
-                        rawMessage: Optional[dict] = None,
-                        sender: Optional[Contact] = None,
-                        recipient: Optional[Contact | Group] = None,
-                        device: Optional[Device] = None,
-                        timestamp: Optional[Timestamp] = None,
-                        allowsReplies: bool = True,
-                        preview: Optional[Preview] = None,
-                        attachment: Optional[Attachment|TextAttachment] = None,
-                    ) -> None:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 device: Optional[Device] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 allowsReplies: bool = True,
+                 preview: Optional[Preview] = None,
+                 attachment: Optional[Attachment|TextAttachment] = None,
+                 ) -> None:
 # Argument Checks:
     # Check allows replies:
         if (isinstance(allowsReplies, bool) == False):
@@ -55,40 +55,40 @@ class StoryMessage(Message):
         self.attachment: Attachment | TextAttachment = attachment
     
     # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, sender, recipient, device, timestamp, Message.TYPE_STORY_MESSAGE)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, sender, recipient, device, timestamp, Message.TYPE_STORY_MESSAGE)
         return
     
 ###########################
 # Init:
 ###########################
-    def __fromRawMessage__(self, rawMessage: dict) -> None:
-        super().__fromRawMessage__(rawMessage)
-        print(rawMessage)
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        super().__from_raw_message__(raw_message)
+        print(raw_message)
     # Load allows replies:
-        rawStoryMessage:dict[str,object] = rawMessage['storyMessage']
+        rawStoryMessage:dict[str,object] = raw_message['storyMessage']
         self.allowsReplies = rawStoryMessage['allowsReplies']
     # Attachment:
         self.attachment = None
         if ('fileAttachment' in rawStoryMessage.keys()):
-            self.attachment = Attachment(configPath=self._configPath, rawAttachment=rawStoryMessage['fileAttachment'])
+            self.attachment = Attachment(configPath=self._config_path, rawAttachment=rawStoryMessage['fileAttachment'])
         elif ('textAttachment' in rawStoryMessage.keys()):
             self.attachment = TextAttachment(rawAttachment=rawStoryMessage['textAttachment'])
     # Preview:
         self.preview = None
         if ('preview' in rawStoryMessage.keys()):
-            self.preview = Preview(configPath=self._configPath, rawPreview=rawStoryMessage['preview'])
+            self.preview = Preview(configPath=self._config_path, rawPreview=rawStoryMessage['preview'])
         return
     
 
 ###########################
 # To / From Dict:
 ###########################
-    def __toDict__(self) -> dict:
-        storyMessageDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        storyMessageDict = super().__to_dict__()
 
         return storyMessageDict
 
-    def __fromDict__(self, fromDict: dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict: dict) -> None:
+        super().__from_dict__(from_dict)
         return

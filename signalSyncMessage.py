@@ -28,28 +28,28 @@ class SyncMessage(Message):
     SENT_TYPE_SENT_MESSAGE: int = 1
     SENT_TYPE_GROUP_UPDATE_MESSAGE: int = 2
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    stickerPacks: StickerPacks,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    sender: Optional[Contact] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    device: Optional[Device] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None,
-                    syncType: int = Message.TYPE_NOT_SET,
-                ) -> None:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 stickerPacks: StickerPacks,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 device: Optional[Device] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 is_delivered: bool = False,
+                 time_delivered: Optional[Timestamp] = None,
+                 is_read: bool = False,
+                 time_read: Optional[Timestamp] = None,
+                 is_viewed: bool = False,
+                 time_viewed: Optional[Timestamp] = None,
+                 syncType: int = Message.TYPE_NOT_SET,
+                 ) -> None:
 # TODO: Argument checks:
 # Set internal properties:
     # Set sticker packs:
@@ -65,22 +65,22 @@ class SyncMessage(Message):
         self.blockedContacts: list[str] = []
         self.blockedGroups: list[str] = []
 # Run super Init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, sender, recipient, device, timestamp, Message.TYPE_SYNC_MESSAGE, isDelivered,
-                            timeDelivered, isRead, timeRead, isViewed, timeViewed)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, sender, recipient, device, timestamp, Message.TYPE_SYNC_MESSAGE, is_delivered,
+                         time_delivered, is_read, time_read, is_viewed, time_viewed)
 # Mark viewed delivered and read:
-        super().markDelivered(self.timestamp)
-        super().markRead(self.timestamp)
-        super().markViewed(self.timestamp)
+        super().mark_delivered(self.timestamp)
+        super().mark_read(self.timestamp)
+        super().mark_viewed(self.timestamp)
         return
 
 ######################
 # Init:
 ######################
-    def __fromRawMessage__(self, rawMessage: dict) -> None:
-        super().__fromRawMessage__(rawMessage)
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        super().__from_raw_message__(raw_message)
         # print("DEBUG: %s" % __name__)
-        rawSyncMessage: dict[str, object] = rawMessage['sync_message']
+        rawSyncMessage: dict[str, object] = raw_message['sync_message']
     ######## Read messages #########
         if ('readMessages' in rawSyncMessage.keys()):
             # print(rawSyncMessage['readMessages'])
@@ -95,7 +95,7 @@ class SyncMessage(Message):
         elif ('sentMessage' in rawSyncMessage.keys()):
             print(rawSyncMessage['sentMessage'])
             self.syncType = self.TYPE_SENT_MESSAGE_SYNC
-            self.rawSentMessage = rawMessage
+            self.rawSentMessage = raw_message
     ########## Blocked Numbers / Groups #############
         elif ('blockedNumbers' in rawSyncMessage.keys()):
             self.syncType = self.TYPE_BLOCKED_SYNC
@@ -123,8 +123,8 @@ class SyncMessage(Message):
 ###########################
 # To / From Dict:
 ###########################
-    def __toDict__(self) -> dict:
-        syncMessageDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        syncMessageDict = super().__to_dict__()
 # Store sync type:
         syncMessageDict['syncType'] = self.syncType
 # Store sent message properties:
@@ -140,21 +140,21 @@ class SyncMessage(Message):
         syncMessageDict['blockedGroups'] = self.blockedGroups
         return syncMessageDict
     
-    def __fromDict__(self, fromDict: dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict: dict) -> None:
+        super().__from_dict__(from_dict)
     # Load sync type:
-        self.syncType = fromDict['syncType']
+        self.syncType = from_dict['syncType']
 # Load sent message properties:
-        self.rawSentMessage = fromDict['rawSentMessage']
+        self.rawSentMessage = from_dict['rawSentMessage']
 # Set read messages list:
     # Load read messages:
         self.readMessages = []
-        for (contactId, timestampDict) in fromDict['readMessages']:
+        for (contactId, timestampDict) in from_dict['readMessages']:
             added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
             timestamp = Timestamp(fromDict=timestampDict)
             self.readMessages.append( (contact, timestamp) )
 # Set blocked groups and contacts:
-        self.blockedContacts = fromDict['blockedContacts']
-        self.blockedGroups = fromDict['blockedGroups']
+        self.blockedContacts = from_dict['blockedContacts']
+        self.blockedGroups = from_dict['blockedGroups']
 
         return

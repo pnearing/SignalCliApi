@@ -126,15 +126,15 @@ class ReceiveThread(threading.Thread):
                 # Create reaction Message:
                     if('reaction' in dataMessage.keys()):
                         message = Reaction(
-                                            commandSocket=self._commandSocket, accountId=self._account.number,
-                                            configPath=self._configPath, contacts=self._account.contacts,
+                                            command_socket=self._commandSocket, account_id=self._account.number,
+                                            config_path=self._configPath, contacts=self._account.contacts,
                                             groups=self._account.groups, devices=self._account.devices,
-                                            thisDevice=self._account.device, rawMessage=envelopeDict
+                                            this_device=self._account.device, raw_message=envelopeDict
                                         )
                     # Parse reaction and call the reaction callback:
                         if (DEBUG == True):
                             print("Parsing Reaction...", file=sys.stderr)
-                        self._account.messages.__parseReaction__(message)
+                        self._account.messages.__parse_reaction__(message)
                         # self._account.messages.append(message)
                         if (self._ractMsgCb != None): self._ractMsgCb(self._account, message)
             ################### GROUP UPDATES ###########################
@@ -163,11 +163,11 @@ class ReceiveThread(threading.Thread):
                         else:
                     # Create Received message:
                             message = ReceivedMessage(
-                                                        commandSocket=self._commandSocket, accountId=self._account.number,
-                                                        configPath=self._configPath, contacts=self._account.contacts,
+                                                        command_socket=self._commandSocket, account_id=self._account.number,
+                                                        config_path=self._configPath, contacts=self._account.contacts,
                                                         groups=self._account.groups, devices=self._account.devices, 
-                                                        thisDevice=self._account.device, stickerPacks=self._stickerPacks,
-                                                        rawMessage=envelopeDict,
+                                                        this_device=self._account.device, stickerPacks=self._stickerPacks,
+                                                        raw_message=envelopeDict,
                                                     )
                         # Sender is no longer typing:
                             message.sender.is_typing = False
@@ -177,15 +177,15 @@ class ReceiveThread(threading.Thread):
             #### Receipt Message ####
                 elif ('receiptMessage' in envelopeDict.keys()):
                     message = Receipt(
-                                        commandSocket=self._commandSocket, accountId=self._account.number,
-                                        configPath=self._configPath, contacts=self._account.contacts,
+                                        command_socket=self._commandSocket, account_id=self._account.number,
+                                        config_path=self._configPath, contacts=self._account.contacts,
                                         groups=self._account.groups, devices=self._account.devices,
-                                        thisDevice=self._account.device, rawMessage=envelopeDict
+                                        this_device=self._account.device, raw_message=envelopeDict
                                     )
                 # Parse receipt:
                     if (DEBUG == True):
                         print("Parsing receipt...", file=sys.stderr)
-                    self._account.messages.__parseReceipt__(message)
+                    self._account.messages.__parse_receipt__(message)
                 # Call receipt callback:
                     if (self._rcptMsgCb != None): self._rcptMsgCb(self._account, message)
             #### Sync Message #####
@@ -197,11 +197,11 @@ class ReceiveThread(threading.Thread):
                             continue
                     print(envelopeDict)
                     message = SyncMessage(
-                                        commandSocket=self._commandSocket, accountId=self._account.number,
-                                        configPath=self._configPath, contacts=self._account.contacts,
+                                        command_socket=self._commandSocket, account_id=self._account.number,
+                                        config_path=self._configPath, contacts=self._account.contacts,
                                         groups=self._account.groups, devices=self._account.devices,
-                                        thisDevice=self._account.device, stickerPacks=self._stickerPacks,
-                                        rawMessage=envelopeDict
+                                        this_device=self._account.device, stickerPacks=self._stickerPacks,
+                                        raw_message=envelopeDict
                                     )
                 # Parse the sync message based on sync type:
                     if (DEBUG == True):
@@ -241,10 +241,10 @@ class ReceiveThread(threading.Thread):
             #### Typing Message ####
                 elif ('typingMessage' in envelopeDict.keys()):
                     message = TypingMessage(
-                                            commandSocket=self._commandSocket, accountId=self._account.number,
-                                            configPath=self._configPath, contacts=self._account.contacts,
+                                            command_socket=self._commandSocket, account_id=self._account.number,
+                                            config_path=self._configPath, contacts=self._account.contacts,
                                             groups=self._account.groups, devices=self._account.devices,
-                                            thisDevice=self._account.devices.get_account_device(), rawMessage=envelopeDict
+                                            this_device=self._account.devices.get_account_device(), raw_message=envelopeDict
                                         )
                 # Parse typing message:
                     if (DEBUG == True):
@@ -261,10 +261,10 @@ class ReceiveThread(threading.Thread):
             #### Story Message ####
                 elif ('storyMessage' in envelopeDict.keys()):
                     message = StoryMessage(
-                                            commandSocket=self._commandSocket, accountId=self._account.number,
-                                            configPath=self._configPath, contacts=self._account.contacts,
+                                            command_socket=self._commandSocket, account_id=self._account.number,
+                                            config_path=self._configPath, contacts=self._account.contacts,
                                             groups=self._account.groups, devices=self._account.devices,
-                                            thisDevice=self._account.device, rawMessage=envelopeDict
+                                            this_device=self._account.device, raw_message=envelopeDict
                                         )
                     # print("DEBUG: ", envelopeDict)
                     self._account.messages.append(message)

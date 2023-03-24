@@ -74,14 +74,14 @@ class Reactions(object):
             'reactions': []
         }
         for reaction in self._reactions:
-            reactionsDict['reactions'].append(reaction.__toDict__())
+            reactionsDict['reactions'].append(reaction.__to_dict__())
         return reactionsDict
     
     def __fromDict__(self, fromDict) -> None:
         self._reactions = []
         for reactionDict in fromDict['reactions']:
-            reaction = Reaction(commandSocket=self._commandSocket, contacts=self._contacts, groups=self._groups,
-                                    device=self._devices, fromDict=reactionDict)
+            reaction = Reaction(command_socket=self._commandSocket, contacts=self._contacts, groups=self._groups,
+                                device=self._devices, from_dict=reactionDict)
             self._reactions.append(reaction)
         return
 

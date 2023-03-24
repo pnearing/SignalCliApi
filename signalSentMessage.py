@@ -28,31 +28,31 @@ Self = TypeVar("Self", bound="SentMessage")
 
 class SentMessage(Message):
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    stickerPacks: StickerPacks,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    body: Optional[str] = None,
-                    attachments: Optional[Iterable[Attachment] | Attachment] = None,
-                    mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
-                    reactions: Optional[Iterable[Reaction]] | Reactions | Reaction = None,
-                    sticker: Optional[Sticker] = None,
-                    quote: Optional[Quote] = None,
-                    expiration: Optional[timedelta] = None,
-                    expirationTimestamp: Optional[Timestamp] = None,
-                    isExpired: bool = False,
-                    isSent: bool = False,
-                    sentTo: Optional[Iterable[Contact] | Contact] = None,
-                    preview: Optional[Preview] = None,
-                ) -> None:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 stickerPacks: StickerPacks,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 body: Optional[str] = None,
+                 attachments: Optional[Iterable[Attachment] | Attachment] = None,
+                 mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
+                 reactions: Optional[Iterable[Reaction]] | Reactions | Reaction = None,
+                 sticker: Optional[Sticker] = None,
+                 quote: Optional[Quote] = None,
+                 expiration: Optional[timedelta] = None,
+                 expirationTimestamp: Optional[Timestamp] = None,
+                 isExpired: bool = False,
+                 isSent: bool = False,
+                 sentTo: Optional[Iterable[Contact] | Contact] = None,
+                 preview: Optional[Preview] = None,
+                 ) -> None:
     # Check sticker_packs:
         if (isinstance(stickerPacks, StickerPacks) == False):
             __type_error__("sticker_packs", "StickerPacks", stickerPacks)
@@ -165,11 +165,11 @@ class SentMessage(Message):
         if (isinstance(reactions, Reactions) == True):
             self.reactions = reactions
         elif (len(reactionList) == 0):
-            self.reactions = Reactions(commandSocket=commandSocket, accountId=accountId, contacts=contacts,
-                                        groups=groups, devices=devices, thisDevice=thisDevice)
+            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
+                                       groups=groups, devices=devices, thisDevice=this_device)
         else:
-            self.reactions = Reactions(commandSocket=commandSocket, accountId=accountId, contacts=contacts,
-                                        groups=groups, devices=devices, reactions=reactionList)
+            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
+                                       groups=groups, devices=devices, reactions=reactionList)
     # Set sticker:
         self.sticker: Optional[Sticker] = sticker
     # Set quote:
@@ -194,17 +194,17 @@ class SentMessage(Message):
         self.preview: Preview = preview
 # Continue init:
     # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict, rawMessage,
-                         contacts.get_self(), recipient, thisDevice, timestamp, Message.TYPE_SENT_MESSAGE)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict, raw_message,
+                         contacts.get_self(), recipient, this_device, timestamp, Message.TYPE_SENT_MESSAGE)
         return
 ##########################
 # Init:
 ##########################
-    def __fromRawMessage__(self, rawMessage: dict) -> None:
-        # super().__fromRawMessage__(raw_message)
-        print("SentMessage.__fromRawMessage__")
-        print(rawMessage)
-        rawSentMessage: dict[str, object] = rawMessage['sync_message']['sentMessage']
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        # super().__from_raw_message__(raw_message)
+        print("SentMessage.__from_raw_message__")
+        print(raw_message)
+        rawSentMessage: dict[str, object] = raw_message['sync_message']['sentMessage']
     # Load recipient and recipient type:
         if (rawSentMessage['destination'] != None):
             self.recipientType = 'contact'
@@ -217,7 +217,7 @@ class SentMessage(Message):
     # Load timestamp:
         self.timestamp = Timestamp(timestamp=rawSentMessage['timestamp'])
     # Load Device:
-        added, self.device = self._devices.__get_or_add__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
+        added, self.device = self._devices.__get_or_add__("<UNKNOWN-DEVICE>", raw_message['sourceDevice'])
     
     # Load body:
         self.body = rawSentMessage['message']
@@ -226,7 +226,7 @@ class SentMessage(Message):
         if ('attachments' in rawSentMessage.keys()):
             self.attachments = []
             for rawAttachment in rawSentMessage['attachments']:
-                self.attachments.append( Attachment(configPath=self._configPath, rawAttachment=rawAttachment) )
+                self.attachments.append(Attachment(configPath=self._config_path, rawAttachment=rawAttachment))
     # Load sticker: 
         self.sticker = None
         if ('sticker' in rawSentMessage.keys()):
@@ -239,8 +239,8 @@ class SentMessage(Message):
     # Load quote:
         self.quote = None
         if ('quote' in rawSentMessage.keys()):
-            self.quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                                rawQuote=rawSentMessage['quote'])
+            self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
+                               rawQuote=rawSentMessage['quote'])
     # Load expiry:
         if (rawSentMessage['expiresInSeconds'] == 0):
             self.expiration = None
@@ -253,7 +253,7 @@ class SentMessage(Message):
     # Load preview:
         self.preview = None
         if ('preview' in rawSentMessage.keys()):
-            self.preview = Preview(configPath=self._configPath, rawPreview=rawSentMessage['preview'])
+            self.preview = Preview(configPath=self._config_path, rawPreview=rawSentMessage['preview'])
     # Set sent
         self.isSent = True
     # Set sent to, If group, assume sent to all current members.
@@ -267,8 +267,8 @@ class SentMessage(Message):
 ###########################
 # To / From Dict:
 ###########################
-    def __toDict__(self) -> dict:
-        sentMessageDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        sentMessageDict = super().__to_dict__()
     # Set body:
         sentMessageDict['body'] = self.body
     # Set attachments:
@@ -313,85 +313,85 @@ class SentMessage(Message):
     # Set deliveryReceipts list:
         sentMessageDict['deliveryReceipts'] = []
         for receipt in self.deliveryReceipts:
-            sentMessageDict['deliveryReceipts'].append(receipt.__toDict__())
+            sentMessageDict['deliveryReceipts'].append(receipt.__to_dict__())
     # Set readReceipts list:
         sentMessageDict['readReceipts'] = []
         for receipt in self.readReceipts:
-            sentMessageDict['readReceipts'].append(receipt.__toDict__())
+            sentMessageDict['readReceipts'].append(receipt.__to_dict__())
     # Set viewedReceipts list:
         sentMessageDict['viewedReceipts'] = []
         for receipt in self.viewedReceipts:
-            sentMessageDict['viewedReceipts'].append(receipt.__toDict__())
+            sentMessageDict['viewedReceipts'].append(receipt.__to_dict__())
         return sentMessageDict
     
-    def __fromDict__(self, fromDict:dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict:dict) -> None:
+        super().__from_dict__(from_dict)
     # Load Body:
-        self.body = fromDict['body']
+        self.body = from_dict['body']
     # Load attachments:
         self.attachments = None
-        if (fromDict['attachments'] != None):
+        if (from_dict['attachments'] != None):
             self.attachments = []
-            for attachmentDict in fromDict['attachments']:
-                attachment = Attachment(configPath=self._configPath, fromDict=attachmentDict)
+            for attachmentDict in from_dict['attachments']:
+                attachment = Attachment(configPath=self._config_path, fromDict=attachmentDict)
                 self.attachments.append(attachment)
     # Load mentions:
         self.mentions = None
-        if (fromDict['mentions'] != None):
-            self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
+        if (from_dict['mentions'] != None):
+            self.mentions = Mentions(contacts=self._contacts, from_dict=from_dict['mentions'])
     # Load reactions:        
         self.reactions = None
-        if (fromDict['reactions'] != None):
-            self.reactions = Reactions(commandSocket=self._commandSocket, accountId=self._accountId,
-                                        contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                        fromDict=fromDict['reactions'])
+        if (from_dict['reactions'] != None):
+            self.reactions = Reactions(commandSocket=self._command_socket, accountId=self._account_id,
+                                       contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                       fromDict=from_dict['reactions'])
     # Load sticker
         self.sticker = None
-        if (fromDict['sticker'] != None):
+        if (from_dict['sticker'] != None):
             self.sticker = self._stickerPacks.getSticker(
-                                                    packId=fromDict['sticker']['packId'],
-                                                    stickerId=fromDict['sticker']['stickerId']
+                                                    packId=from_dict['sticker']['packId'],
+                                                    stickerId=from_dict['sticker']['stickerId']
                                                 )
     # Load Quote:
         self.quote == None
-        if (fromDict['quote'] != None):
-            self.quote = Quote( fromDict=fromDict['quote'] )
+        if (from_dict['quote'] != None):
+            self.quote = Quote(fromDict=from_dict['quote'])
     # Load expiration:
         self.expiration = None
-        if (fromDict['expiration'] != None):
-            self.expiration = timedelta(seconds=fromDict['expiration'])
+        if (from_dict['expiration'] != None):
+            self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expirationTimestamp = None
-        if (fromDict['expirationTimestamp'] != None):
-            self.expirationTimestamp = Timestamp(fromDict=fromDict['expirationTimestamp'])
-        self.isExpired = fromDict['isExpired']
+        if (from_dict['expirationTimestamp'] != None):
+            self.expirationTimestamp = Timestamp(fromDict=from_dict['expirationTimestamp'])
+        self.isExpired = from_dict['isExpired']
     # Load isSent:
-        self.isSent = fromDict['isSent']
+        self.isSent = from_dict['isSent']
     # Load sentTo:
         self.sentTo = []
-        if (fromDict['sentTo'] != None):
-            for contactId in fromDict['sentTo']:
+        if (from_dict['sentTo'] != None):
+            for contactId in from_dict['sentTo']:
                 added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
                 self.sentTo.append(contact)
     # Load deliveryReceipts:
         self.deliveryReceipts = []
-        for receiptDict in fromDict['deliveryReceipts']:
-            receipt = Receipt(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
-                                contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, fromDict=receiptDict)
+        for receiptDict in from_dict['deliveryReceipts']:
+            receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id, config_path=self._config_path,
+                              contacts=self._contacts, groups=self._groups, devices=self._devices,
+                              this_device=self._this_device, from_dict=receiptDict)
             self.deliveryReceipts.append(receipt)
     # Load readReceipts:
         self.readReceipts = []
-        for receiptDict in fromDict['readReceipts']:
-            receipt = Receipt(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
-                                contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, fromDict=receiptDict)
+        for receiptDict in from_dict['readReceipts']:
+            receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id, config_path=self._config_path,
+                              contacts=self._contacts, groups=self._groups, devices=self._devices,
+                              this_device=self._this_device, from_dict=receiptDict)
             self.readReceipts.append(receipt)
     # Load viewedReceipts:
         self.viewedReceipts = []
-        for receiptDict in fromDict['viewedReceipts']:
-            receipt = Receipt(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
-                                contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, fromDict=receiptDict)
+        for receiptDict in from_dict['viewedReceipts']:
+            receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id, config_path=self._config_path,
+                              contacts=self._contacts, groups=self._groups, devices=self._devices,
+                              this_device=self._this_device, from_dict=receiptDict)
 
         return
 ###########################
@@ -399,16 +399,16 @@ class SentMessage(Message):
 ###########################
     def __parseReceipt__(self, receipt:Receipt) -> None:
         if (receipt.receiptType == Receipt.TYPE_DELIVERY):
-            self.markDelivered(receipt.when)
+            self.mark_delivered(receipt.when)
             self.deliveryReceipts.append(receipt)
         elif( receipt.receiptType == Receipt.TYPE_READ):
-            self.markRead(receipt.when)
+            self.mark_read(receipt.when)
             self.readReceipts.append(receipt)
         elif (receipt.receiptType == Receipt.TYPE_VIEWED):
-            self.markViewed(receipt.when)
+            self.mark_viewed(receipt.when)
             self.viewedReceipts.append(receipt)
         else:
-            errorMessage = "FATAL: Invalid receipt type, cannot parse. SentMessage.__parseReceipt__"
+            errorMessage = "FATAL: Invalid receipt type, cannot parse. SentMessage.__parse_receipt__"
             raise RuntimeError(errorMessage)
         return
     
@@ -420,25 +420,25 @@ class SentMessage(Message):
 ###########################
 # Methods:
 ###########################
-    def markDelivered(self, when: Optional[Timestamp]=None) -> None:
+    def mark_delivered(self, when: Optional[Timestamp]=None) -> None:
         if (when == None):
             when = Timestamp(now=True)
-        return super().markDelivered(when)
+        return super().mark_delivered(when)
     
-    def markRead(self, when: Optional[Timestamp]=None) -> None:
+    def mark_read(self, when: Optional[Timestamp]=None) -> None:
         if (when == None):
             when = Timestamp(now=True)
-        return super().markRead(when)
+        return super().mark_read(when)
     
-    def markViewed(self, when: Optional[Timestamp]=None) -> None:
+    def mark_viewed(self, when: Optional[Timestamp]=None) -> None:
         if (when == None):
             when = Timestamp(now=True)
-        return super().markViewed(when)
+        return super().mark_viewed(when)
 
     def getQuote(self) -> Quote:
-        quote = Quote(configPath=self._configPath, contacts=self._contacts, groups=self._groups,
-                        timestamp=self.timestamp, author=self.sender, mentions=self.mentions, 
-                        conversation=self.recipient)
+        quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
+                      timestamp=self.timestamp, author=self.sender, mentions=self.mentions,
+                      conversation=self.recipient)
         return quote
     
     def parseMentions(self) -> str:
@@ -455,14 +455,14 @@ class SentMessage(Message):
             raise ValueError(errorMessage)
     # Create reaction
         if (self.recipientType == 'contact'):
-            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
+            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id, config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                thisDevice=self._thisDevice, recipient=self.sender, emoji=emoji, targetAuthor=self.sender,
+                                this_device=self._this_device, recipient=self.sender, emoji=emoji, targetAuthor=self.sender,
                                 targetTimestamp=self.timestamp)
         elif (self.recipientType == 'group'):
-            reaction = Reaction(commandSocket=self._commandSocket, accountId=self._accountId, configPath=self._configPath,
-                                contacts=self._contacts, groups=self._groups, devices=self._devices, 
-                                thisDevice=self._thisDevice, recipient=self.recipient, emoji=emoji,
+            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id, config_path=self._config_path,
+                                contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                this_device=self._this_device, recipient=self.recipient, emoji=emoji,
                                 targetAuthor=self.sender, targetTimestamp=self.timestamp)
         else:
             errorMessage = "Invalid recipient type."

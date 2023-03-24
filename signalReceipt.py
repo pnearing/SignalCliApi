@@ -18,28 +18,28 @@ class Receipt(Message):
     TYPE_READ: int = 2
     TYPE_VIEWED: int = 3
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups, devices:
-                    Devices, thisDevice: Device,
-                    fromDict: Optional[dict] = None,
-                    rawMessage: Optional[dict] = None,
-                    sender: Optional[Contact] = None,
-                    recipient: Optional[Contact | Group] = None,
-                    device: Optional[Device] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    isDelivered: bool = False,
-                    timeDelivered: Optional[Timestamp] = None,
-                    isRead: bool = False,
-                    timeRead: Optional[Timestamp] = None,
-                    isViewed: bool = False,
-                    timeViewed: Optional[Timestamp] = None,
-                    when: Optional[Timestamp] = None,
-                    receiptType: int = Message.TYPE_NOT_SET,
-                    timestamps: Optional[Iterable[Timestamp]] = None,
-                ) -> None:
+                 command_socket: socket.socket,
+                 account_id: str,
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups, devices:
+                    Devices, this_device: Device,
+                 from_dict: Optional[dict] = None,
+                 raw_message: Optional[dict] = None,
+                 sender: Optional[Contact] = None,
+                 recipient: Optional[Contact | Group] = None,
+                 device: Optional[Device] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 is_delivered: bool = False,
+                 time_delivered: Optional[Timestamp] = None,
+                 is_read: bool = False,
+                 time_read: Optional[Timestamp] = None,
+                 is_viewed: bool = False,
+                 time_viewed: Optional[Timestamp] = None,
+                 when: Optional[Timestamp] = None,
+                 receiptType: int = Message.TYPE_NOT_SET,
+                 timestamps: Optional[Iterable[Timestamp]] = None,
+                 ) -> None:
 # Argument Checks:
     # Check when:
         if (when != None and isinstance(when, Timestamp) == False):
@@ -68,14 +68,14 @@ class Receipt(Message):
     # Set body:
         self.body: str = ''
 # Run super init:
-        super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, sender, recipient, device, timestamp, Message.TYPE_RECEIPT_MESSAGE, isDelivered,
-                            timeDelivered, isRead, timeRead, isViewed, timeViewed)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
+                         raw_message, sender, recipient, device, timestamp, Message.TYPE_RECEIPT_MESSAGE, is_delivered,
+                         time_delivered, is_read, time_read, is_viewed, time_viewed)
 # Mark as read, viewed and delivered:
         if (self.timestamp != None):
-            super().markDelivered(self.timestamp)
-            super().markRead(self.timestamp)
-            super().markViewed(self.timestamp)
+            super().mark_delivered(self.timestamp)
+            super().mark_read(self.timestamp)
+            super().mark_viewed(self.timestamp)
 # Update the body:
         self.__updateBody__()
         return
@@ -83,9 +83,9 @@ class Receipt(Message):
 ##########################
 # Init:
 #########################
-    def __fromRawMessage__(self, rawMessage: dict) -> None:
-        super().__fromRawMessage__(rawMessage)
-        receiptMessage: dict[str, object] = rawMessage['receiptMessage']
+    def __from_raw_message__(self, raw_message: dict) -> None:
+        super().__from_raw_message__(raw_message)
+        receiptMessage: dict[str, object] = raw_message['receiptMessage']
     # Load when:
         self.when = Timestamp(timestamp=receiptMessage['when'])
     # Load receipt type:
@@ -107,8 +107,8 @@ class Receipt(Message):
 ##########################
 # To / From Dict:
 ##########################
-    def __toDict__(self) -> dict:
-        receiptDict = super().__toDict__()
+    def __to_dict__(self) -> dict:
+        receiptDict = super().__to_dict__()
     # Store when:
         receiptDict['when'] = None
         if (self.when != None):
@@ -121,17 +121,17 @@ class Receipt(Message):
             receiptDict['timestamps'].append( timestamp.__toDict__() )
         return receiptDict
     
-    def __fromDict__(self, fromDict: dict) -> None:
-        super().__fromDict__(fromDict)
+    def __from_dict__(self, from_dict: dict) -> None:
+        super().__from_dict__(from_dict)
     # Load when:
         self.when = None
-        if (fromDict['when'] != None):
-            self.when = Timestamp(fromDict=fromDict['when'])
+        if (from_dict['when'] != None):
+            self.when = Timestamp(fromDict=from_dict['when'])
     # Load receipt Type:
-        self.receiptType = fromDict['receiptType']
+        self.receiptType = from_dict['receiptType']
     # Load target timestamps:
         self.timestamps = []
-        for timestampDict in fromDict['timestamps']:
+        for timestampDict in from_dict['timestamps']:
             self.timestamps.append( Timestamp(fromDict=timestampDict) )
         return
 #########################
