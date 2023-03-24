@@ -27,7 +27,7 @@ class Mentions(object):
             i = 0
             for rawMention in rawMentions:
                 if (isinstance(rawMention, dict) == False):
-                    __type_error__("rawMention[%i]" % i, "dict", rawMention)
+                    __type_error__("raw_mention[%i]" % i, "dict", rawMention)
                 i = i + 1
     # Argument Check mentions:
         mentionsList: list[Mention] = []
@@ -59,7 +59,7 @@ class Mentions(object):
     def __fromRawMentions__(self, rawMentions:list[dict]) -> None:
         self._mentions = []
         for rawMention in rawMentions:
-            mention = Mention(contacts=self._contacts, rawMention=rawMention)
+            mention = Mention(contacts=self._contacts, raw_mention=rawMention)
             self._mentions.append(mention)
         return
 #######################################
@@ -90,13 +90,13 @@ class Mentions(object):
             "mentions": [],
         }
         for mention in self._mentions:
-            mentionsDict['mentions'].append(mention.__toDict__())
+            mentionsDict['mentions'].append(mention.__to_dict__())
         return mentionsDict
     
     def __fromDict__(self, fromDict:dict[str, object]) -> None:
         self._mentions = []
         for mentionDict in fromDict['mentions']:
-            self._mentions.append(Mention(contacts=self._contacts, fromDict=mentionDict))
+            self._mentions.append(Mention(contacts=self._contacts, from_dict=mentionDict))
         return
 #########################################
 # Helpers:
