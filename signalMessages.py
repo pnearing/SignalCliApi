@@ -58,7 +58,7 @@ class Messages(object):
         self._account_id: str = account_id
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
-        self._devices: Device = devices
+        self._devices: Devices = devices
         self._this_device: Device = this_device
         self._sticker_packs: StickerPacks = sticker_packs
         self._file_path: str = os.path.join(account_path, "messages.json")
