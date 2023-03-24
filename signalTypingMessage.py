@@ -88,11 +88,11 @@ class TypingMessage(Message):
         if (self.sender != None and self.action != None and self.timeChanged != None ):
             if (self.recipient !=None and self.recipientType != None):
                 if (self.recipientType == 'contact'):
-                    self.body = "At %s, %s %s typing." % (self.timeChanged.get_display_time(), self.sender.getDisplayName(),
+                    self.body = "At %s, %s %s typing." % (self.timeChanged.get_display_time(), self.sender.get_display_name(),
                                                           self.action.lower())
                 elif (self.recipientType == 'group'):
-                    self.body = "At %s, %s %s typing in group %s." %(self.timeChanged.get_display_time(), self.sender.getDisplayName(),
-                                                                     self.action.lower(), self.recipient.getDisplayName())
+                    self.body = "At %s, %s %s typing in group %s." %(self.timeChanged.get_display_time(), self.sender.get_display_name(),
+                                                                     self.action.lower(), self.recipient.get_display_name())
                 else:
                     raise ValueError("invalid recipientType: %s" % self.recipientType)
         else:

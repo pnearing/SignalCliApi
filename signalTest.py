@@ -25,12 +25,12 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
     # message.markRead()
     print(message)
     print("Received message FROM: %s AT: %s on DEVICE: %s" % (
-                                                            message.sender.getDisplayName(),
+                                                            message.sender.get_display_name(),
                                                             message.timestamp.get_display_time(),
                                                             message.device.getDisplayName(),
                                                     ))
     if message.recipientType == 'group':
-        print("In GROUP: %s" % message.recipient.getDisplayName())
+        print("In GROUP: %s" % message.recipient.get_display_name())
     if (message.quote != None):
         if (message.quote.attachments != None):
             for attachment in message.quote.attachments:
@@ -50,14 +50,14 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
             print("Quoting a message not found in history.")
         else:
             if (isinstance(quotedMessage, ReceivedMessage) == True):
-                print("Quoting received message FROM:%s AT: %s" % (quotedMessage.sender.getDisplayName(),
+                print("Quoting received message FROM:%s AT: %s" % (quotedMessage.sender.get_display_name(),
                                                                     quotedMessage.timestamp.get_display_time()))
                 if (quotedMessage.recipientType == 'group'):
-                    print("in GROUP: %s" % quotedMessage.recipient.getDisplayName())
+                    print("in GROUP: %s" % quotedMessage.recipient.get_display_name())
             elif (isinstance(quotedMessage, SentMessage) == True):
                 print("Quoting message sent AT: %s" % quotedMessage.timestamp.get_display_time())
                 if (quotedMessage.recipientType == 'group'):
-                    print("In GROUP: %s" % quotedMessage.recipient.getDisplayName())
+                    print("In GROUP: %s" % quotedMessage.recipient.get_display_name())
         quotedText = message.quote.parseMentions()
         print("Quoted TEXT: %s" % quotedText)
 
@@ -195,7 +195,7 @@ if __name__ == '__main__':
         print ("Id: ", group.id, "Name: ", group.name)
     print("CONTACTS:")
     for contact in account.contacts:
-        print(contact.getDisplayName())
+        print(contact.get_display_name())
 
     if (args.account == '+16134548055'):
         print("Updating profile given name...")
@@ -245,7 +245,7 @@ if __name__ == '__main__':
 
         results = account.messages.sendMessage(group, messageText, mentions=mentions, attachments=marshJpg)
         for result in results:
-            print ("Success:",result[0], "\tContact:", result[1].getDisplayName(), "\tmessage:", result[2])
+            print ("Success:", result[0], "\tContact:", result[1].get_display_name(), "\tmessage:", result[2])
 
     try:
         while (True):

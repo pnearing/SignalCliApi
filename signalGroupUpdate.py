@@ -47,8 +47,8 @@ class GroupUpdate(Message):
         if (self.sender != None and self.recipient != None):
             self.body = "At %s, %s updated the group %s." % (
                                                             self.timestamp.get_display_time(),
-                                                            self.sender.getDisplayName(),
-                                                            self.recipient.getDisplayName()
+                                                            self.sender.get_display_name(),
+                                                            self.recipient.get_display_name()
                                                         )
         else:
             self.body = "Invalid group update."
