@@ -64,9 +64,9 @@ class Accounts(object):
         count = 0
         for raw_account in accounts_dict['accounts']:
             count = count + 1
-            account = Account(syncSocket=self._sync_socket, commandSocket=self._command_socket,
-                              configPath=self._config_path,
-                              stickerPacks=self._sticker_packs, signalAccountPath=raw_account['path'], doLoad=True)
+            account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                              config_path=self._config_path,
+                              sticker_packs=self._sticker_packs, signal_account_path=raw_account['path'], do_load=True)
             ACCOUNTS.append(account)
         return
 
@@ -82,9 +82,9 @@ class Accounts(object):
                 if account.number == raw_account['number']:
                     account_found = True
             if not account_found:
-                new_account = Account(syncSocket=self._sync_socket, commandSocket=self._command_socket,
-                                     configPath=self._config_path, stickerPacks=self._sticker_packs,
-                                     signalAccountPath=raw_account['path'], doLoad=True)
+                new_account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                      config_path=self._config_path, sticker_packs=self._sticker_packs,
+                                      signal_account_path=raw_account['path'], do_load=True)
                 ACCOUNTS.append(new_account)
                 # newAccounts.append(newAccount)
         return new_account

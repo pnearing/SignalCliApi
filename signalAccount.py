@@ -22,15 +22,15 @@ class Account(object):
     supportedAccountFileVersion: int = 6
 
     def __init__(self,
-                 syncSocket: socket.socket,
-                 commandSocket: socket.socket,
-                 configPath: str,
-                 stickerPacks: StickerPacks,
-                 signalAccountPath: str = None,
-                 doLoad: bool = False,
+                 sync_socket: socket.socket,
+                 command_socket: socket.socket,
+                 config_path: str,
+                 sticker_packs: StickerPacks,
+                 signal_account_path: str = None,
+                 do_load: bool = False,
                  number: Optional[str] = None,
                  uuid: Optional[str] = None,
-                 deviceId: Optional[int] = None,
+                 device_id: Optional[int] = None,
                  device: Optional[Device] = None,
                  registered: bool = False,
                  config: Optional[dict] = None,
@@ -41,16 +41,16 @@ class Account(object):
                  ) -> None:
         # TODO: Argument checks:
         # Set internal Vars:
-        self._syncSocket: socket.socket = syncSocket
-        self._commandSocket: socket.socket = commandSocket
-        self.configPath: str = configPath
-        self._stickerPacks: StickerPacks = stickerPacks
-        self._accountPath: str = os.path.join(configPath, 'data', signalAccountPath + '.d')
-        self._accountFilePath: str = os.path.join(configPath, 'data', signalAccountPath)
+        self._sync_socket: socket.socket = sync_socket
+        self._command_socket: socket.socket = command_socket
+        self.config_path: str = config_path
+        self._sticker_packs: StickerPacks = sticker_packs
+        self._account_path: str = os.path.join(config_path, 'data', signal_account_path + '.d')
+        self._account_file_path: str = os.path.join(config_path, 'data', signal_account_path)
         # Set external properties:
         self.number: str = number
         self.uuid: str = uuid
-        self.deviceId: int = deviceId
+        self.device_id: int = device_id
         self.device: Device = device
         self.registered: bool = registered
         self.config: Optional[dict] = config
@@ -59,33 +59,33 @@ class Account(object):
         self.groups: Optional[Groups] = groups
         self.profile: Optional[Profile] = profile
         # Do load:
-        if (doLoad == True):
-            self.__doLoad__()
+        if do_load:
+            self.__do_load__()
         # If the account is registered load account data from signal:
-        if (self.registered == True):
+        if self.registered:
             # Load devices from signal:
-            self.devices = Devices(syncSocket=self._syncSocket, accountId=self.number, accountDevice=self.deviceId,
+            self.devices = Devices(syncSocket=self._sync_socket, accountId=self.number, accountDevice=self.device_id,
                                    doSync=True)
             # Set this device:
             self.device = self.devices.getAccountDevice()
             # Load contacts from signal:
-            self.contacts = Contacts(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
-                                     accountPath=self._accountPath, doLoad=True, doSync=True)
+            self.contacts = Contacts(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
+                                     accountPath=self._account_path, doLoad=True, doSync=True)
             # Load groups from signal:
-            self.groups = Groups(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
+            self.groups = Groups(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
                                  accountContacts=self.contacts, doSync=True)
             # Load messages from file:
-            self.messages = Messages(commandSocket=self._commandSocket, configPath=self.configPath,
-                                     accountId=self.number, accountPath=self._accountPath, contacts=self.contacts,
+            self.messages = Messages(commandSocket=self._command_socket, configPath=self.config_path,
+                                     accountId=self.number, accountPath=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
                                      thisDevice=self.devices.getAccountDevice(),
-                                     stickerPacks=self._stickerPacks, doLoad=True)
+                                     stickerPacks=self._sticker_packs, doLoad=True)
             # Load profile from file and merge self contact.
-            self.profile = Profile(syncSocket=self._syncSocket, configPath=self.configPath, accountId=self.number,
-                                   contactId=self.number, accountPath=self._accountPath, doLoad=True,
+            self.profile = Profile(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
+                                   contactId=self.number, accountPath=self._account_path, doLoad=True,
                                    isAccountProfile=True)
-            selfContact = self.contacts.getSelf()
-            self.profile.__merge__(selfContact.profile)
+            self_contact = self.contacts.getSelf()
+            self.profile.__merge__(self_contact.profile)
         else:
             # Set devices to None:
             self.devices = None
@@ -101,29 +101,29 @@ class Account(object):
             self.profile = None
         return
 
-    def __doLoad__(self) -> None:
+    def __do_load__(self) -> None:
         # Try to open the file for reading:
         try:
-            fileHandle = open(self._accountFilePath, 'r')
+            file_handle = open(self._account_file_path, 'r')
         except Exception as e:
-            errorMessage = "FATAL: Couldn't open '%s' for reading: %s" % (self._accountFilePath, str(e.args))
-            raise RuntimeError(errorMessage)
+            error_message = "FATAL: Couldn't open '%s' for reading: %s" % (self._account_file_path, str(e.args))
+            raise RuntimeError(error_message)
         # Try to load the json from the file:
         try:
-            rawAccount: dict = json.loads(fileHandle.read())
+            raw_account: dict = json.loads(file_handle.read())
         except json.JSONDecodeError as e:
-            errorMessage = "FATAL: Failed to load json from '%s': %s" % (self._accountFilePath, e.msg)
-            raise RuntimeError(errorMessage)
+            error_message = "FATAL: Failed to load json from '%s': %s" % (self._account_file_path, e.msg)
+            raise RuntimeError(error_message)
         # Version check account file:
-        if (rawAccount['version'] > 6):
-            errorMessage = "WARNING: Account detail file %s is of a different supported version. This may cause things to break."
-            print(errorMessage, file=sys.stderr, flush=True)
+        if (raw_account['version'] > 6):
+            error_message = "WARNING: Account detail file %s is of a different supported version. This may cause things to break."
+            print(error_message, file=sys.stderr, flush=True)
         # Set the properties from the account json:
-        self.number = rawAccount['username']
-        self.uuid = rawAccount['uuid']
-        self.deviceId = rawAccount['deviceId']
-        self.registered = rawAccount['registered']
-        self.config = rawAccount['configurationStore']
+        self.number = raw_account['username']
+        self.uuid = raw_account['uuid']
+        self.device_id = raw_account['device_id']
+        self.registered = raw_account['registered']
+        self.config = raw_account['configurationStore']
         return
 
     ##########################
@@ -131,7 +131,7 @@ class Account(object):
     ##########################
     def verify(self, code: str, pin: str | None = None) -> tuple[bool, str]:
         # Create verify command object:
-        verifyCommandObj = {
+        verify_command_obj = {
             "jsonrpc": "2.0",
             "id": 0,
             "method": "verify",
@@ -140,21 +140,21 @@ class Account(object):
                 "verificationCode": code,
             }
         }
-        if (pin != None):
-            verifyCommandObj['params']['pin'] = pin
-        jsonCommandStr = json.dumps(verifyCommandObj) + '\n'
+        if pin is not None:
+            verify_command_obj['params']['pin'] = pin
+        json_command_str = json.dumps(verify_command_obj) + '\n'
         # Communicate with signal:
-        __socketSend__(self._syncSocket, jsonCommandStr)
-        responseStr = __socketReceive__(self._syncSocket)
+        __socketSend__(self._sync_socket, json_command_str)
+        response_str = __socketReceive__(self._sync_socket)
         # Parse response:
-        responseObj: dict = json.loads(responseStr)
+        response_obj: dict = json.loads(response_str)
         # Check for error:
-        if ('error' in responseObj.keys()):
-            errorMessage = "ERROR: Signal error, code: %i, message: %s" % (
-            responseObj['error']['code'], responseObj['error']['message'])
-            if (DEBUG == True):
-                print(errorMessage, file=sys.stderr)
-            return (False, errorMessage)
-        print(responseObj)
+        if 'error' in response_obj.keys():
+            error_message = "ERROR: Signal error, code: %i, message: %s" % (
+                response_obj['error']['code'], response_obj['error']['message'])
+            if DEBUG:
+                print(error_message, file=sys.stderr)
+            return False, error_message
+        print(response_obj)
 
-        return (True, "verification successful")
+        return True, "verification successful"

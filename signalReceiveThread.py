@@ -61,7 +61,7 @@ class ReceiveThread(threading.Thread):
 
     def run(self):
     # Do send sync request if we're not the primary device.
-        if (self._account.deviceId != 1):
+        if (self._account.device_id != 1):
         # Create sync request object and json command string:
             syncRequestCommandObj = {
                 "jsonrpc": "2.0",
