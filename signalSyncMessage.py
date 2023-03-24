@@ -80,7 +80,7 @@ class SyncMessage(Message):
     def __fromRawMessage__(self, rawMessage: dict) -> None:
         super().__fromRawMessage__(rawMessage)
         # print("DEBUG: %s" % __name__)
-        rawSyncMessage: dict[str, object] = rawMessage['syncMessage']
+        rawSyncMessage: dict[str, object] = rawMessage['sync_message']
     ######## Read messages #########
         if ('readMessages' in rawSyncMessage.keys()):
             # print(rawSyncMessage['readMessages'])
@@ -88,7 +88,7 @@ class SyncMessage(Message):
             readMessageList: list[dict[str, object]] = rawSyncMessage['readMessages']
             self.readMessages: list[tuple[Contact, Timestamp]] = []
             for readMessageDict in readMessageList:
-                added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", readMessageDict['sender'])
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", readMessageDict['sender'])
                 timestamp = Timestamp(timestamp=readMessageDict['timestamp'])
                 self.readMessages.append( (contact, timestamp) )
     ######### Sent message ########
@@ -150,7 +150,7 @@ class SyncMessage(Message):
     # Load read messages:
         self.readMessages = []
         for (contactId, timestampDict) in fromDict['readMessages']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
             timestamp = Timestamp(fromDict=timestampDict)
             self.readMessages.append( (contact, timestamp) )
 # Set blocked groups and contacts:

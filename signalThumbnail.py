@@ -43,7 +43,7 @@ class Thumbnail(object):
         # print(rawThumbnail)
         self.contentType = rawThumbnail['contentType']
         self.filename = rawThumbnail['filename']
-        self.localPath = os.path.join(self._configPath, 'attachments', rawThumbnail['id'])
+        self.localPath = os.path.join(self._configPath, 'attachments', rawThumbnail['contact_id'])
         self.exists = os.path.exists(self.localPath)
         self.size = rawThumbnail['size']
         return

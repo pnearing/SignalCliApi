@@ -48,7 +48,7 @@ class Device(object):
 
     def __fromRawDevice__(self, rawDevice:dict) -> None:
         # print(rawDevice)
-        self.id = rawDevice['id']
+        self.id = rawDevice['contact_id']
         self.name = rawDevice['name']
         if (rawDevice['createdTimestamp'] != None):
             self.created = Timestamp(timestamp=rawDevice['createdTimestamp'])
@@ -76,7 +76,7 @@ class Device(object):
 ##########################
     def __toDict__(self) -> dict:
         deviceDict = {
-            'id': self.id,
+            'contact_id': self.id,
             'name': self.name,
             'created': None,
             'last_seen': None,
@@ -90,7 +90,7 @@ class Device(object):
         return deviceDict
     
     def __fromDict__(self, fromDict:dict) -> None:
-        self.id = fromDict['id']
+        self.id = fromDict['contact_id']
         self.name = fromDict['name']
         if (fromDict['created'] != None):
             self.created = Timestamp(fromDict=fromDict['created'])

@@ -27,7 +27,7 @@ class Reactions(object):
         if (isinstance(commandSocket, socket.socket) == False):
             __type_error__("command_socket", "socket.socket", commandSocket)
         if (isinstance(accountId, str) == False):
-            __type_error__("account_id", "str", accountId)
+            __type_error__("contact_id", "str", accountId)
         if (isinstance(contacts, Contacts) == False):
             __type_error__("contacts", "Contacts", contacts)
         if (isinstance(groups, Groups) == False):

@@ -69,8 +69,8 @@ class Account(object):
             # Set this device:
             self.device = self.devices.getAccountDevice()
             # Load contacts from signal:
-            self.contacts = Contacts(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
-                                     accountPath=self._account_path, doLoad=True, doSync=True)
+            self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
+                                     account_path=self._account_path, do_load=True, do_sync=True)
             # Load groups from signal:
             self.groups = Groups(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
                                  accountContacts=self.contacts, doSync=True)
@@ -84,7 +84,7 @@ class Account(object):
             self.profile = Profile(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
                                    contactId=self.number, accountPath=self._account_path, doLoad=True,
                                    isAccountProfile=True)
-            self_contact = self.contacts.getSelf()
+            self_contact = self.contacts.get_self()
             self.profile.__merge__(self_contact.profile)
         else:
             # Set devices to None:
@@ -133,7 +133,7 @@ class Account(object):
         # Create verify command object:
         verify_command_obj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "verify",
             "params": {
                 "account": self.number,

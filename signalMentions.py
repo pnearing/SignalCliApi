@@ -151,7 +151,7 @@ class Mentions(object):
         lastFind = 0
         returnValue = []
         for (match, contactId) in matchList:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
             start = body.find(match,lastFind)
             length = len(match)
             lastFind = start

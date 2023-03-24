@@ -334,7 +334,7 @@ class ReceivedMessage(Message):
         # Create send receipt command object and json command string.
         sendReceiptCommandObj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "sendReceipt",
             "params": {
                 "account": self._accountId,
@@ -366,11 +366,11 @@ class ReceivedMessage(Message):
                     print(errorMessage, file=sys.stderr)
             else:
                 if (result['recipientAddress']['number'] != None):
-                    added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>",
-                                                                 result['recipientAddress']['number'])
+                    added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
+                                                                   result['recipientAddress']['number'])
                 else:
-                    added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>",
-                                                                 result['recipientAddress']['uuid'])
+                    added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
+                                                                   result['recipientAddress']['uuid'])
                 contact.seen(when)
         return when
 

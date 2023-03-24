@@ -246,7 +246,7 @@ class Profile(object):
     # Create set given name object and json command string:
         setGivenNameObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,
@@ -283,7 +283,7 @@ class Profile(object):
     # Create command object and json command string:
         setFamilyNameCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,
@@ -319,7 +319,7 @@ class Profile(object):
     # Create command object and json command string:
         setAboutCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,
@@ -355,7 +355,7 @@ class Profile(object):
     # Create command object and json command string:
         setEmojiCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,
@@ -391,7 +391,7 @@ class Profile(object):
     # Create command object and json command string:
         setCoinAddressCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,
@@ -427,7 +427,7 @@ class Profile(object):
     # Create command object and json command string:
         setAvatarCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._accountId,

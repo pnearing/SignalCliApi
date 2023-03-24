@@ -57,7 +57,7 @@ class Message(object):
         if (isinstance(commandSocket, socket.socket) == False):
             __type_error__('command_socket', 'socket', commandSocket)
         if (isinstance(accountId, str) == False):
-            __type_error__('account_id', 'str', accountId)
+            __type_error__('contact_id', 'str', accountId)
         if (isinstance(configPath, str) == False):
             __type_error__('config_path', 'str', configPath)
         if (isinstance(contacts, Contacts) == False):
@@ -139,7 +139,7 @@ class Message(object):
         # print("Message.__fromRawMessage__")
         # print(rawMessage)
     # Parse Sender
-        added, self.sender = self._contacts.__getOrAdd__(
+        added, self.sender = self._contacts.__get_or_add__(
                                                             name=rawMessage['sourceName'],
                                                             number=rawMessage['sourceNumber'],
                                                             uuid=rawMessage['sourceUuid']
@@ -154,10 +154,10 @@ class Message(object):
                 added, self.recipient = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", dataMessage['groupInfo']['groupId'])
                 self.recipientType = 'group'
         if (self.recipient == None):
-            self.recipient = self._contacts.getSelf()
+            self.recipient = self._contacts.get_self()
             self.recipientType = 'contact'
     # Parse device:
-        added, self.device = self.sender.devices.__getOrAdd__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
+        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", rawMessage['sourceDevice'])
         if (added == True):
             self._contacts.__save__()
     # Parse Timestamp:
@@ -239,20 +239,20 @@ class Message(object):
 
     def __fromDict__(self, fromDict:dict) -> None:
     # Parse sender:
-        added, self.sender = self._contacts.__getOrAdd__(name="<UNKNOWN-CONTACT>", id=fromDict['sender'])
+        added, self.sender = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=fromDict['sender'])
     # Parse reciient type:
         self.recipientType = fromDict['recipientType']
     # Parse recipient:
         if (fromDict['recipient'] != None):
             if (self.recipientType == 'contact'):
-                added, self.recipient = self._contacts.__getOrAdd__(name="<UNKNOWN-CONTACT>", id=fromDict['recipient'])
+                added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=fromDict['recipient'])
             elif (self.recipientType == 'group'):
                 added, self.recipient = self._groups.__getOrAdd__(name="<UNKNOWN-GROUP>", id=fromDict['recipient'])
             else:
                 raise ValueError("invalid recipient type in from_dict: %s" % self.recipientType)
     # Parse device:
 
-        added, self.device = self.sender.devices.__getOrAdd__("<UNKNOWN-DEVICE>", fromDict['device'])
+        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", fromDict['device'])
         if (added == True):
             self._contacts.__save__()
     # Parse timestamp:

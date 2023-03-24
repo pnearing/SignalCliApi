@@ -56,7 +56,7 @@ class Devices(object):
     # Create list devices command Obj:
         listDevicesCommandObj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "listDevices",
         }
         listDevicesCommandObj['params'] = { 'account': self._accountId }

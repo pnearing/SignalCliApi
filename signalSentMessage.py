@@ -195,7 +195,7 @@ class SentMessage(Message):
 # Continue init:
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict, rawMessage,
-                            contacts.getSelf(), recipient, thisDevice, timestamp, Message.TYPE_SENT_MESSAGE)
+                         contacts.get_self(), recipient, thisDevice, timestamp, Message.TYPE_SENT_MESSAGE)
         return
 ##########################
 # Init:
@@ -204,13 +204,13 @@ class SentMessage(Message):
         # super().__fromRawMessage__(rawMessage)
         print("SentMessage.__fromRawMessage__")
         print(rawMessage)
-        rawSentMessage: dict[str, object] = rawMessage['syncMessage']['sentMessage']
+        rawSentMessage: dict[str, object] = rawMessage['sync_message']['sentMessage']
     # Load recipient and recipient type:
         if (rawSentMessage['destination'] != None):
             self.recipientType = 'contact'
-            added, self.recipient = self._contacts.__getOrAdd__(name="<UNKNOWN-CONTACT>",
-                                                                number=rawSentMessage['destinationNumber'],
-                                                                uuid=rawSentMessage['destinationUuid'])
+            added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>",
+                                                                  number=rawSentMessage['destinationNumber'],
+                                                                  uuid=rawSentMessage['destinationUuid'])
         elif ('groupInfo' in rawSentMessage.keys()):
             self.recipientType = 'group'
             added, self.recipient = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", rawSentMessage['groupInfo']['groupId'])
@@ -370,7 +370,7 @@ class SentMessage(Message):
         self.sentTo = []
         if (fromDict['sentTo'] != None):
             for contactId in fromDict['sentTo']:
-                added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
                 self.sentTo.append(contact)
     # Load deliveryReceipts:
         self.deliveryReceipts = []

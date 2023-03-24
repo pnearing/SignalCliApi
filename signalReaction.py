@@ -59,8 +59,8 @@ class Reaction(Message):
         self.previousEmoji: Optional[str] = None
     # Run super init:
         super().__init__(commandSocket, accountId, configPath, contacts, groups, devices, thisDevice, fromDict,
-                            rawMessage, contacts.getSelf(), recipient, thisDevice, None,
-                            Message.TYPE_REACTION_MESSAGE)#, isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
+                         rawMessage, contacts.get_self(), recipient, thisDevice, None,
+                         Message.TYPE_REACTION_MESSAGE)#, isDelivered, timeDelivered, isRead, timeRead, isViewed, timeViewed)
 
     # Set body:
         self.__updateBody__()
@@ -74,7 +74,7 @@ class Reaction(Message):
         reactionDict:dict = rawMessage['dataMessage']['reaction']
         # print(reactionDict)
         self.emoji = reactionDict['emoji']
-        added, self.targetAuthor = self._contacts.__getOrAdd__(
+        added, self.targetAuthor = self._contacts.__get_or_add__(
                                                                 name="<UNKNOWN-CONTACT>",
                                                                 number=reactionDict['targetAuthorNumber'],
                                                                 uuid=reactionDict['targetAuthorUuid'],
@@ -114,7 +114,7 @@ class Reaction(Message):
         self.emoji = fromDict['emoji']
     # Parse target author:
         if (fromDict['targetAuthorId'] != None):
-            added, self.targetAuthor = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['targetAuthorId'])
+            added, self.targetAuthor = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['targetAuthorId'])
         else:
             self.targetAuthor = None
     # Parse target timestamp:
@@ -134,7 +134,7 @@ class Reaction(Message):
 # Create reaction command object and json command string:
         sendReactionCommandObj = {
             "jsonrpc": "2.0",
-            "id": 10,
+            "contact_id": 10,
             "method": "sendReaction",
             "params": {
                 "account": self._accountId,

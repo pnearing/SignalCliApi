@@ -204,7 +204,7 @@ class SignalCli(object):
         # Create register account command object and json command string:
         register_account_command_obj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "register",
             "params": {
                 "account": number,
@@ -225,7 +225,7 @@ class SignalCli(object):
             # Delete local account data, since signal-cli creates data for the account.
             delete_local_data_command_obj = {
                 "jsonrpc": "2.0",
-                "id": 1,
+                "contact_id": 1,
                 "method": "deleteLocalAccountData",
                 "params": {
                     "account": number

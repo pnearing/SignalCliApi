@@ -217,7 +217,7 @@ if __name__ == '__main__':
     
 
     if (args.doSend != None):
-        contact = account.contacts.getById(args.doSend)
+        contact = account.contacts.get_by_id(args.doSend)
         preview = Preview(configPath=signalConfigPath,
                             generatePreview=True,
                             url=previewUrl)
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     if (args.doSendGroup == True):
         marshJpg = '/home/streak/Pictures/marshmallow.jpg'
         groupId = "ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs="
-        group = account.groups.getById(groupId)
+        group = account.groups.get_by_id(groupId)
         messageText = "This is a test.\n@<+16134548055>Please ignore.\n@<53bfafdc-9b22-4559-a7a6-1c8029f599d7>Also ignore."
 
         mentions = Mentions(contacts=account.contacts)

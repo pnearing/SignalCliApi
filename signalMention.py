@@ -34,7 +34,7 @@ class Mention(object):
 ########################
     def __fromRawMention__(self, rawMention:dict) -> None:
         print(rawMention)
-        added, self.contact = self._contacts.__getOrAdd__(
+        added, self.contact = self._contacts.__get_or_add__(
                                                             name=rawMention['name'],
                                                             number=rawMention['number'],
                                                             uuid=rawMention['uuid']
@@ -69,7 +69,7 @@ class Mention(object):
         return mentionDict
     
     def __fromDict__(self, fromDict:dict) -> None:
-        added, self.contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['contactId'])
+        added, self.contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['contactId'])
         self.start = fromDict['start']
         self.length = fromDict['length']
         return

@@ -278,7 +278,7 @@ class Messages(object):
     def getConversation(self, target:Contact|Group) -> list[Message]:
         returnMessages = []
         if (isinstance(target, Contact) == True):
-            selfContact = self._contacts.getSelf()
+            selfContact = self._contacts.get_self()
             for message in self.messages:
                 if (message.sender == selfContact and message.recipient == target):
                     returnMessages.append(message)
@@ -462,7 +462,7 @@ class Messages(object):
     # Create send message command object:
         sendCommandObj = {
             "jsonrpc": "2.0",
-            "id": 2,
+            "contact_id": 2,
             "method": "send",
             "params": {
                 "account": self._accountId,
@@ -560,7 +560,7 @@ class Messages(object):
                 contactId = result['recipientAddress']['number']
                 if (contactId == None):
                     contactId = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
             # Message sent successfully
                 if (result['type'] == "SUCCESS"):
                     for message in sentMessages:
@@ -578,7 +578,7 @@ class Messages(object):
                 contactId = result['recipientAddress']['number']
                 if (contactId == None):
                     contactId = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
 
             # Message Sent successfully:
                 if (result['type'] == 'SUCCESS'):

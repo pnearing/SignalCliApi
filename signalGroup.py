@@ -83,7 +83,7 @@ class Group(object):
 
     def __fromRawGroup__(self, rawGroup:dict) -> None:
         # print(rawGroup)
-        self.id = rawGroup['id']
+        self.id = rawGroup['contact_id']
         if (rawGroup['name'] == ''):
             self.name = None
         else:
@@ -105,7 +105,7 @@ class Group(object):
     # Parse members:
         self.members = []
         for contactDict in rawGroup['members']:
-            added, contact = self._contacts.__getOrAdd__(
+            added, contact = self._contacts.__get_or_add__(
                                                             "<UNKNOWN-CONTACT>",
                                                             number=contactDict['number'],
                                                             uuid=contactDict['uuid']
@@ -114,7 +114,7 @@ class Group(object):
     # Parse pending:
         self.pending = []
         for contactDict in rawGroup['pendingMembers']:
-            added, contact = self._contacts.__getOrAdd__(
+            added, contact = self._contacts.__get_or_add__(
                                                             "<UNKNOWN-CONTACT>",
                                                             number=contactDict['number'],
                                                             uuid=contactDict['uuid']
@@ -123,7 +123,7 @@ class Group(object):
     # Parse requesting:
         self.requesting = []
         for contactDict in rawGroup['requestingMembers']:
-            added, contact = self._contacts.__getOrAdd__(
+            added, contact = self._contacts.__get_or_add__(
                                                             "<UNKNOWN-CONTACT>",
                                                             number=contactDict['number'],
                                                             uuid=contactDict['uuid']
@@ -132,7 +132,7 @@ class Group(object):
     # Parse admins:
         self.admins = []
         for contactDict in rawGroup['admins']:
-            added, contact = self._contacts.__getOrAdd__(
+            added, contact = self._contacts.__get_or_add__(
                                                             "<UNKNOWN-CONTACT>",
                                                             number=contactDict['number'],
                                                             uuid=contactDict['uuid']
@@ -141,7 +141,7 @@ class Group(object):
     # Parse banned:
         self.banned = []
         for contactDict in rawGroup['banned']:
-            added, contact = self._contacts.__getOrAdd__(
+            added, contact = self._contacts.__get_or_add__(
                                                             "<UNKNOWN-CONTACT>",
                                                             number=contactDict['number'],
                                                             uuid=contactDict['uuid']
@@ -162,7 +162,7 @@ class Group(object):
 ###################################
     def __toDict__(self) -> dict:
         groupDict = {
-            'id' : self.id,
+            'contact_id' : self.id,
             'name': self.name,
             'description': self.description,
             'is_blocked': self.isBlocked,
@@ -191,7 +191,7 @@ class Group(object):
         return groupDict
     
     def __fromDict__(self, fromDict:dict) -> None:
-        self.id = fromDict['id']
+        self.id = fromDict['contact_id']
         self.name = fromDict['name']
         self.description = fromDict['description']
         self.isBlocked = fromDict['is_blocked']
@@ -204,27 +204,27 @@ class Group(object):
     # Parse members:
         self.members = []
         for contactId in fromDict['members']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contactId)
             self.members.append(contact)
     # Parse Pending:
         self.pending = []
         for contactId in fromDict['pending']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contactId)
             self.pending.append(contact)
     # Parse requesting:
         self.requesting = []
         for contactId in fromDict['requesting']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contactId)
             self.requesting.append(contact)
     # Parse admins:
         self.admins = []
         for contactId in fromDict['admins']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contactId)
             self.admins.append(contact)
     # Parse banned:
         self.banned = []
         for contactId in fromDict['banned']:
-            added, contact = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=contactId)
+            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contactId)
             self.banned.append(contact)
         return
 
@@ -255,7 +255,7 @@ class Group(object):
     # Create command object and json command string:
         listGroupCommandObj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "listGroups",
             "params": {
                 "account": self._accountId,

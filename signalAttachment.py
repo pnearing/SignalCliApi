@@ -85,8 +85,8 @@ class Attachment(object):
             self.size = rawAttachment['size']
         else:
             self.size = None
-        if ('id' in rawAttachment.keys()):
-            self.localPath = os.path.join(self._configPath, 'attachments', rawAttachment['id'])
+        if ('contact_id' in rawAttachment.keys()):
+            self.localPath = os.path.join(self._configPath, 'attachments', rawAttachment['contact_id'])
             self.exists = os.path.exists(self.localPath)
         else:
             self.localPath = None
@@ -113,7 +113,7 @@ class Attachment(object):
 
     def __fromDict__(self, fromDict:dict) -> None:
         self.contentType = fromDict['contentType']
-        self.id = fromDict['id']
+        self.id = fromDict['contact_id']
         self.fileName = fromDict['fileName']
         self.size = fromDict['size']
         self.localPath = fromDict['localPath']

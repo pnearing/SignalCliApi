@@ -68,7 +68,7 @@ class Groups(object):
     # Create command object and json command string:
         listGroupsCommandObj = {
             "jsonrpc": "2.0",
-            "id":0,
+            "contact_id":0,
             "method": "listGroups",
             "params": {
                 "account": self._accountId,
@@ -100,7 +100,7 @@ class Groups(object):
 ##############################
 # Helpers:
 ##############################
-    def __parseSyncMessage__(self, syncMessage) -> None: # syncMessage type SyncMessage
+    def __parseSyncMessage__(self, syncMessage) -> None: # sync_message type SyncMessage
         if (syncMessage.syncType == 5): # SyncMessage.TYPE_BLOCKED_SYNC
             for groupId in syncMessage.blockedGroups:
                 added, group = self.__getOrAdd__("<UNKNOWN-GROUP>", groupId)

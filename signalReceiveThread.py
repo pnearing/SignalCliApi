@@ -65,7 +65,7 @@ class ReceiveThread(threading.Thread):
         # Create sync request object and json command string:
             syncRequestCommandObj = {
                 "jsonrpc": "2.0",
-                "id": 10,
+                "contact_id": 10,
                 "method": "sendSyncRequest",
                 "params": {
                     "account": self._account.number,
@@ -88,7 +88,7 @@ class ReceiveThread(threading.Thread):
     # Create receive object and json command string:
         startReceiveCommandObject = {
             "jsonrpc": "2.0",
-            "id": 1,
+            "contact_id": 1,
             "method": "subscribeReceive",
             "params": {
                 "account": self._account.number,
@@ -189,8 +189,8 @@ class ReceiveThread(threading.Thread):
                 # Call receipt callback:
                     if (self._rcptMsgCb != None): self._rcptMsgCb(self._account, message)
             #### Sync Message #####
-                elif ('syncMessage' in envelopeDict.keys()):
-                    if (envelopeDict['syncMessage'] == {}):
+                elif ('sync_message' in envelopeDict.keys()):
+                    if (envelopeDict['sync_message'] == {}):
                         if (DEBUG == True):
                             infoMessage = "INFO: Got empty sync message, skipping."
                             print(infoMessage, file=sys.stderr)
@@ -210,7 +210,7 @@ class ReceiveThread(threading.Thread):
                                                                 message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
                         if (DEBUG == True):
                             print("Read messages.", file=sys.stderr)
-                        self._account.messages.__parseSyncMessage__(message)
+                        self._account.messages.__parse_sync_message__(message)
                     elif (message.syncType == SyncMessage.TYPE_CONTACT_SYNC):
                         if (DEBUG == True):
                             print("Contact sync", file=sys.stderr)
@@ -222,12 +222,12 @@ class ReceiveThread(threading.Thread):
                     elif (message.syncType == SyncMessage.TYPE_BLOCKED_SYNC):
                         if (DEBUG == True):
                             print("Blocked sync", file=sys.stderr)
-                        self._account.contacts.__parseSyncMessage__(message)
-                        self._account.groups.__parseSyncMessage__(message)
+                        self._account.contacts.__parse_sync_message__(message)
+                        self._account.groups.__parse_sync_message__(message)
                     elif (message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
                         if (DEBUG == True):
                             print("Sent message sync", file=sys.stderr)
-                        self._account.messages.__parseSyncMessage__(message)
+                        self._account.messages.__parse_sync_message__(message)
                     else:
                         print(envelopeDict, file=sys.stderr, flush=True)
                         print(message.syncType, file=sys.stderr, flush=True)
@@ -296,7 +296,7 @@ class ReceiveThread(threading.Thread):
     # build stop recieve command Obj and json command string:
         # stopReceiveCommandObj = {
         #     "jsonrpc": "2.0",
-        #     "id": 0,
+        #     "contact_id": 0,
         #     "method": "unsubscribeReceive",
         #     "params": {
         #         "subscriptionId": self._subscriptionId,

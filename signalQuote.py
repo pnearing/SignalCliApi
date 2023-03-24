@@ -131,10 +131,10 @@ class Quote(object):
     def __fromRawQuote__(self, rawQuote:dict[str, object]) -> None:
         # print(rawQuote)
     # Load timestamp
-        self.timestamp = Timestamp(timestamp=rawQuote['id'])
+        self.timestamp = Timestamp(timestamp=rawQuote['contact_id'])
     # Load author
 # 'authorNumber': '+16134548055', 'authorUuid'
-        added, self.author = self._contacts.__getOrAdd__(
+        added, self.author = self._contacts.__get_or_add__(
                                                             name="<UNKNOWN-CONTACT>",
                                                             number=rawQuote['authorNumber'],
                                                             uuid=rawQuote['authorUuid']
@@ -186,7 +186,7 @@ class Quote(object):
     # Set author
         self.author = None
         if (fromDict['author'] != None):
-            added, self.author = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['author'])
+            added, self.author = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['author'])
     # Set text
         self.text = fromDict['text']
     # Set attachments:
@@ -200,7 +200,7 @@ class Quote(object):
     # Set conversation:
         self.conversation = None
         if (fromDict["conversationType"] == 'contact'):
-            added, self.conversation = self._contacts.__getOrAdd__("<UNKNOWN-CONTACT>", id=fromDict['conversation'])
+            added, self.conversation = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['conversation'])
         elif (fromDict["conversationType"] == 'group'):
             added, self.conversation = self._groups.__getOrAdd__("<UNKNOWN-GROUP>", fromDict['conversation'])
         return

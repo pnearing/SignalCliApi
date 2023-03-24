@@ -39,7 +39,7 @@ class Sticker(object):
 # Init:
 ##########################
     def __fromManifest__(self, fromManifest:dict[str, str]) -> None:
-        self.id = fromManifest['id']
+        self.id = fromManifest['contact_id']
         self.emoji = fromManifest['emoji']
         fileName = fromManifest['file']
         self.filePath = os.path.join(self._packPath, fileName)
@@ -66,7 +66,7 @@ class Sticker(object):
     def __toDict__(self) -> dict[str, object]:
         stickerDict = {
             "_packId": self._packId,
-            "id": self.id,
+            "contact_id": self.id,
             "emoji": self.emoji,
             "filePath": self.filePath,
             "contentType": self.contentType
@@ -75,7 +75,7 @@ class Sticker(object):
     
     def __fromDict__(self, fromDict:dict[str, object]) -> None:
         self._packId = fromDict['_packId']
-        self.id = fromDict['id']
+        self.id = fromDict['contact_id']
         self.emoji = fromDict['emoji']
         self.filePath = fromDict['filePath']
         self.contentType = fromDict['contentType']
@@ -205,7 +205,7 @@ class StickerPacks(object):
                 errorMessage = "FATAL: sticker path '%s' doesn't exist." % stickersPath
                 print(errorMessage, file=sys.stderr)
             return
-    # Get the pack id's and verify len is not 0:
+    # Get the pack contact_id's and verify len is not 0:
         packIds: list[str] = os.listdir(stickersPath)
         if (len(packIds) == 0):
             if (DEBUG == True):
@@ -249,13 +249,13 @@ class StickerPacks(object):
                 errorMessage = "DEBUG: sticker path '%s' doesn't exist." % stickersPath
                 print(errorMessage, file=sys.stderr)
             return
-    # Get the pack id's and verify len is not 0:
+    # Get the pack contact_id's and verify len is not 0:
         packIds: list[str] = os.listdir(stickersPath)
         if (len(packIds) == 0):
             errorMessage = "FATAL: no stickers sync'd"
             raise RuntimeError(errorMessage)
-    # Check to see if there is a new id:
-        knownPackIds = [pack.packId for pack in self.packs] # Gather old id's
+    # Check to see if there is a new contact_id:
+        knownPackIds = [pack.packId for pack in self.packs] # Gather old contact_id's
         for packId in packIds:
             if (packId not in knownPackIds):
                 packPath = os.path.join(stickersPath, packId)

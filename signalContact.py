@@ -203,7 +203,7 @@ class Contact(object):
         # create command object and json command string:
         set_name_command_obj = {
             "jsonrpc": "2.0",
-            "id": 0,
+            "contact_id": 0,
             "method": "updateContact",
             "params": {
                 "account": self._account_id,
