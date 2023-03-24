@@ -167,7 +167,7 @@ class Quote(object):
             quoteDict['timestamp'] = self.timestamp.__toDict__()
     # Store author:
         if (self.author != None):
-            quoteDict['author'] = self.author.getId()
+            quoteDict['author'] = self.author.get_id()
     # Store attachments:
         for attachment in self.attachments:
             quoteDict['attachments'].append(attachment.__toDict__())
@@ -175,7 +175,7 @@ class Quote(object):
         quoteDict['mentions'] = self.mentions.__toDict__()
     # Store conversation:
         if (self.conversation != None):
-            quoteDict['conversation'] = self.conversation.getId()
+            quoteDict['conversation'] = self.conversation.get_id()
         return quoteDict
     
     def __fromDict__(self, fromDict:dict[str, object]) -> None:

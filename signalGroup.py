@@ -62,7 +62,7 @@ class Group(object):
         self.permissionAddMember: str = permissionAddMember
         self.permissionEditDetails: str = permissionEditDetails
         self.permissionSendMessage: str = permissionSendMessage
-        # self.lastSeen: Optional[Timestamp] = lastSeen
+        # self.last_seen: Optional[Timestamp] = last_seen
     # Parse from_dict:
         if (fromDict != None):
             self.__fromDict__(fromDict)
@@ -92,7 +92,7 @@ class Group(object):
             self.description = None
         else:
             self.description = rawGroup['description']
-        self.isBlocked = rawGroup['isBlocked']
+        self.isBlocked = rawGroup['is_blocked']
         self.isMember = rawGroup['isMember']
         if (rawGroup['messageExpirationTime'] == 0):
             self.expiration = None
@@ -165,7 +165,7 @@ class Group(object):
             'id' : self.id,
             'name': self.name,
             'description': self.description,
-            'isBlocked': self.isBlocked,
+            'is_blocked': self.isBlocked,
             'isMember': self.isMember,
             'expiration': self.expiration,
             'link': self.link,
@@ -179,22 +179,22 @@ class Group(object):
             'banned': [],
         }
         for contact in self.members:
-            groupDict['members'].append(contact.getId())
+            groupDict['members'].append(contact.get_id())
         for contact in self.pending:
-            groupDict['pending'].append(contact.getId())
+            groupDict['pending'].append(contact.get_id())
         for contact in self.requesting:
-            groupDict['requesting'].append(contact.getId())
+            groupDict['requesting'].append(contact.get_id())
         for contact in self.admins:
-            groupDict['admins'].append(contact.getId())
+            groupDict['admins'].append(contact.get_id())
         for contact in self.banned:
-            groupDict['banned'].append(contact.getId())
+            groupDict['banned'].append(contact.get_id())
         return groupDict
     
     def __fromDict__(self, fromDict:dict) -> None:
         self.id = fromDict['id']
         self.name = fromDict['name']
         self.description = fromDict['description']
-        self.isBlocked = fromDict['isBlocked']
+        self.isBlocked = fromDict['is_blocked']
         self.isMember = fromDict['isMember']
         self.expiration = fromDict['expiration']
         self.link = fromDict['link']
@@ -293,7 +293,7 @@ class Group(object):
             displayName = self.name
         else:
             for contact in self.members:
-                displayName = displayName + contact.getDisplayName() + ', '
+                displayName = displayName + contact.get_display_name() + ', '
             displayName = displayName[:-2]
         if (maxLen != None and len(displayName) > maxLen):
                 displayName = displayName[:maxLen]

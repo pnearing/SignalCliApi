@@ -103,7 +103,7 @@ class Reaction(Message):
         reactionDict['isChange'] = self.isChange
         reactionDict['previousEmoji'] = self.previousEmoji
         if (self.targetAuthor != None):
-            reactionDict['targetAuthorId'] = self.targetAuthor.getId()
+            reactionDict['targetAuthorId'] = self.targetAuthor.get_id()
         if (self.targetTimestamp != None):
             reactionDict['targetTimestamp'] = self.targetTimestamp.__toDict__()
         return reactionDict
@@ -139,14 +139,14 @@ class Reaction(Message):
             "params": {
                 "account": self._accountId,
                 "emoji": self.emoji,
-                "targetAuthor": self.targetAuthor.getId(),
+                "targetAuthor": self.targetAuthor.get_id(),
                 "targetTimestamp": self.targetTimestamp.timestamp,
             }
         }
         if (self.recipientType == 'contact'):
-            sendReactionCommandObj['params']['recipient'] = self.sender.getId()
+            sendReactionCommandObj['params']['recipient'] = self.sender.get_id()
         elif (self.recipientType == 'group'):
-            sendReactionCommandObj['params']['groupId'] = self.recipient.getId()
+            sendReactionCommandObj['params']['groupId'] = self.recipient.get_id()
         else:
             raise ValueError("recipent type = %s" % self.recipientType)
         jsonCommandStr = json.dumps(sendReactionCommandObj) + '\n'
@@ -184,18 +184,18 @@ class Reaction(Message):
             if (self.isRemove == True):
                 if (self.recipientType == 'contact'):
                     self.body = "%s removed the reaction %s from %s's message %i." % ( 
-                                                                                    self.sender.getDisplayName(),
+                                                                                    self.sender.get_display_name(),
                                                                                     self.emoji,
-                                                                                    self.targetAuthor.getDisplayName(),
+                                                                                    self.targetAuthor.get_display_name(),
                                                                                     self.targetTimestamp.timestamp
                                                                                 )
                 elif (self.recipientType == 'group'):
                     self.body = "%s removed the reaction %s from %s's message %i in group %s" % (
-                                                                                    self.sender.getDisplayName(),
+                                                                                    self.sender.get_display_name(),
                                                                                     self.emoji,
-                                                                                    self.targetAuthor.getDisplayName(),
+                                                                                    self.targetAuthor.get_display_name(),
                                                                                     self.targetTimestamp.timestamp,
-                                                                                    self.recipient.getDisplayName()
+                                                                                    self.recipient.get_display_name()
                                                                                 )
                 else:
                     raise ValueError("recipientType invalid value: %s" % self.recipientType)
@@ -203,18 +203,18 @@ class Reaction(Message):
             elif(self.isChange == True):
                 if (self.recipientType == 'contact'):
                     self.body = "%s changed their reaction to %s's message %i, from %s to %s" % (
-                                                                                    self.sender.getDisplayName(),
-                                                                                    self.targetAuthor.getDisplayName(),
+                                                                                    self.sender.get_display_name(),
+                                                                                    self.targetAuthor.get_display_name(),
                                                                                     self.targetTimestamp.timestamp,
                                                                                     self.previousEmoji,
                                                                                     self.emoji
                                                                                 )
                 elif (self.recipientType == 'group'):
                     self.body = "%s changed their reaction to %s's message %i in group %s, from %s to %s" % (
-                                                                                    self.sender.getDisplayName(),
-                                                                                    self.targetAuthor.getDisplayName(),
+                                                                                    self.sender.get_display_name(),
+                                                                                    self.targetAuthor.get_display_name(),
                                                                                     self.targetTimestamp.timestamp,
-                                                                                    self.recipient.getDisplayName(),
+                                                                                    self.recipient.get_display_name(),
                                                                                     self.previousEmoji,
                                                                                     self.emoji
                                                                                 )
@@ -224,16 +224,16 @@ class Reaction(Message):
             # Added new reaction:
                 if (self.recipientType == 'contact'):
                     self.body = "%s reacted to %s's message with %s" % (
-                                                                            self.sender.getDisplayName(),
-                                                                            self.targetAuthor.getDisplayName(),
+                                                                            self.sender.get_display_name(),
+                                                                            self.targetAuthor.get_display_name(),
                                                                             self.emoji
                                                                         )
                 elif (self.recipientType == 'group'):
                     self.body = "%s reacted to %s's message %i in group %s with %s" % (
-                                                                            self.sender.getDisplayName(),
-                                                                            self.targetAuthor.getDisplayName(),
+                                                                            self.sender.get_display_name(),
+                                                                            self.targetAuthor.get_display_name(),
                                                                             self.targetTimestamp.timestamp,
-                                                                            self.recipient.getDisplayName(),
+                                                                            self.recipient.get_display_name(),
                                                                             self.emoji
                                                                         )
                 else:

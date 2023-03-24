@@ -170,7 +170,7 @@ class ReceiveThread(threading.Thread):
                                                         rawMessage=envelopeDict,
                                                     )
                         # Sender is no longer typing:
-                            message.sender.isTyping = False
+                            message.sender.is_typing = False
                         # Append the message and call the data message callback:
                             self._account.messages.append(message)
                             if (self._recvMsgCb != None): self._recvMsgCb(self._account, message)
@@ -250,9 +250,9 @@ class ReceiveThread(threading.Thread):
                     if (DEBUG == True):
                         print("DEBUG: parsing typing message...", file=sys.stderr)
                     if (message.action == "STARTED"):
-                        message.sender.isTyping = True
+                        message.sender.is_typing = True
                     elif (message.action == "STOPPED"):
-                        message.sender.isTyping = False
+                        message.sender.is_typing = False
                     else:
                         raise ValueError("invalid typing action: %s" % message.action)
                 # Append the typing message and call the typing call back:

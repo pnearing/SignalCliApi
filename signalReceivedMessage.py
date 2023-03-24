@@ -338,7 +338,7 @@ class ReceivedMessage(Message):
             "method": "sendReceipt",
             "params": {
                 "account": self._accountId,
-                "recipient": self.sender.getId(),
+                "recipient": self.sender.get_id(),
                 "type": receiptType,
                 "targetTimestamp": self.timestamp.timestamp,
             }

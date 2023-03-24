@@ -47,7 +47,7 @@ class Mention(object):
 # Overrides:
 ######################
     def __str__(self) -> str:
-        mentionStr = "%i:%i:%s" % (self.start, self.length, self.contact.getId())
+        mentionStr = "%i:%i:%s" % (self.start, self.length, self.contact.get_id())
         return mentionStr
     
     def __eq__(self, __o: Self) -> bool:
@@ -62,7 +62,7 @@ class Mention(object):
 ######################
     def __toDict__(self) -> dict[str, object]:
         mentionDict = {
-            "contactId": self.contact.getId(),
+            "contactId": self.contact.get_id(),
             "start": self.start,
             "length": self.length,
         }

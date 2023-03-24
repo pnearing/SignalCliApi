@@ -78,7 +78,7 @@ class Mentions(object):
             for mention in self._mentions:
                 if (mention.contact == index):
                     return mention
-            raise IndexError("Mention with contactId: %s not found." % index.getId())
+            raise IndexError("Mention with contactId: %s not found." % index.get_id())
         else:
             __type_error__("index", "int | Contact", index)
 
@@ -105,7 +105,7 @@ class Mentions(object):
         for mention in self._mentions:
             bodyStart = body[:mention.start]
             bodyEnd = body[mention.start + mention.length:]
-            body = bodyStart + mention.contact.getDisplayName() + bodyEnd
+            body = bodyStart + mention.contact.get_display_name() + bodyEnd
         return body
 
 #######################################

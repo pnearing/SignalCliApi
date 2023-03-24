@@ -133,7 +133,7 @@ class SyncMessage(Message):
     # Store the list as a list of tuples[contactID:str, timestampDict:dict]
         syncMessageDict['readMessages'] = []
         for (contact, timestamp) in self.readMessages:
-            targetMessageTuple = ( contact.getId(), timestamp.__toDict__() )
+            targetMessageTuple = (contact.get_id(), timestamp.__to_dict__())
             syncMessageDict['readMessages'].append(targetMessageTuple)
 # Store Blocked contacts and groups lists:
         syncMessageDict['blockedContacts'] = self.blockedContacts

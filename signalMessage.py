@@ -57,7 +57,7 @@ class Message(object):
         if (isinstance(commandSocket, socket.socket) == False):
             __type_error__('command_socket', 'socket', commandSocket)
         if (isinstance(accountId, str) == False):
-            __type_error__('accountId', 'str', accountId)
+            __type_error__('account_id', 'str', accountId)
         if (isinstance(configPath, str) == False):
             __type_error__('config_path', 'str', configPath)
         if (isinstance(contacts, Contacts) == False):
@@ -222,9 +222,9 @@ class Message(object):
             'timeViewed': None,
         }
         if (self.sender != None):
-            messageDict['sender'] = self.sender.getId()
+            messageDict['sender'] = self.sender.get_id()
         if (self.recipient != None):
-            messageDict['recipient'] = self.recipient.getId()
+            messageDict['recipient'] = self.recipient.get_id()
         if (self.device != None):
             messageDict['device'] = self.device.id
         if (self.timestamp != None):

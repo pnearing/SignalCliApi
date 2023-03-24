@@ -48,7 +48,7 @@ class Contacts(object):
             self.add("Note-To-Self", self._accountId)
             self.__save__()
         else:
-            selfContact.setName("Note-To-Self")
+            selfContact.set_name("Note-To-Self")
             self.__save__()
         return
 ##########################
@@ -88,14 +88,14 @@ class Contacts(object):
             "contacts": [],
         }
         for contact in self._contacts:
-            contactsDict['contacts'].append(contact.__toDict__())
+            contactsDict['contacts'].append(contact.__to_dict__())
         return contactsDict
     
     def __fromDict__(self, fromDict:dict) -> None:
         self._contacts = []
         for contactDict in fromDict['contacts']:
-            contact = Contact(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self._accountId,
-                                accountPath=self._accountPath, fromDict=contactDict)
+            contact = Contact(sync_socket=self._syncSocket, config_path=self._configPath, account_id=self._accountId,
+                              account_path=self._accountPath, from_dict=contactDict)
             self._contacts.append(contact)
         return
 
@@ -170,12 +170,12 @@ class Contacts(object):
         newContacts = []
         for rawContact in responseObj['result']:
         # Create new contact:
-            newContact = Contact(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self._accountId,
-                                    accountPath=self._accountPath, rawContact=rawContact)
+            newContact = Contact(sync_socket=self._syncSocket, config_path=self._configPath, account_id=self._accountId,
+                                 account_path=self._accountPath, raw_contact=rawContact)
         # Check for existing contact:
             contactFound = False
             for contact in self._contacts:
-                if (contact.getId() == newContact.getId()):
+                if (contact.get_id() == newContact.get_id()):
                     contact.__merge__(newContact)
                     contactFound = True
         # If contact not found add the new contact.
@@ -190,7 +190,7 @@ class Contacts(object):
         if (syncMessage.syncType == 5): # SyncMessage.TYPE_BLOCKED_SYNC
             for contactId in syncMessage.blockedContacts:
                 added, contact = self.__getOrAdd__("<UNKNOWN-CONTACT>", contactId)
-                contact.isBlocked = True
+                contact.is_blocked = True
             self.__save__()
         else:
             errorMessage = "Contacts can only parse messages of type: SyncMessage.TYPE_BLOCKED_SYNC."
@@ -274,7 +274,7 @@ class Contacts(object):
 
     def getSelf(self) -> Contact:
         for contact in self._contacts:
-            if (contact.isSelf == True):
+            if (contact.is_self == True):
                 return contact
         raise RuntimeError("FATAL: Couldn't find self contact, should never get here.")
 #########################
@@ -312,11 +312,11 @@ class Contacts(object):
             numberMatch = phone_number_regex.match(id)
             uuidMatch = uuid_regex.match(id)
             if (numberMatch != None):
-                newContact = Contact(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self._accountId,
-                                    accountPath=self._accountPath, name=name, number=id)
+                newContact = Contact(sync_socket=self._syncSocket, config_path=self._configPath, account_id=self._accountId,
+                                     account_path=self._accountPath, name=name, number=id)
             elif (uuidMatch != None):
-                newContact = Contact(syncSocket=self._syncSocket, configPath=self._configPath, accountId=self._accountId,
-                                        accountPath=self._accountPath, name=name, uuid=id)
+                newContact = Contact(sync_socket=self._syncSocket, config_path=self._configPath, account_id=self._accountId,
+                                     account_path=self._accountPath, name=name, uuid=id)
             else:
                 errorMessage = "id must be in format '+nnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 raise ValueError(errorMessage)

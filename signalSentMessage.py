@@ -309,7 +309,7 @@ class SentMessage(Message):
     # Set sentTo list:
         sentMessageDict['sentTo'] = []
         for contact in self.sentTo:
-            sentMessageDict['sentTo'].append(contact.getId())
+            sentMessageDict['sentTo'].append(contact.get_id())
     # Set deliveryReceipts list:
         sentMessageDict['deliveryReceipts'] = []
         for receipt in self.deliveryReceipts:

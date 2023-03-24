@@ -133,7 +133,7 @@ class Messages(object):
                                         devices=self._devices, thisDevice=self._thisDevice,
                                         stickerPacks=self._stickerPacks,fromDict=messageDict)
             else:
-                errorMessage = "FATAL: Invalid message type in for sync messages in Messges.__fromDict__"
+                errorMessage = "FATAL: Invalid message type in for sync messages in Messges.__from_dict__"
                 raise RuntimeError(errorMessage)
             self.sync.append(message)
     # Load typing messages:
@@ -472,11 +472,11 @@ class Messages(object):
         if (recipientType == 'group'):
             sendCommandObj['params']['groupId'] = []
             for group in targetRecipients:
-                sendCommandObj['params']['groupId'].append(group.getId())
+                sendCommandObj['params']['groupId'].append(group.get_id())
         elif (recipientType == 'contact'):
             sendCommandObj['params']['recipient'] = []
             for contact in targetRecipients:
-                sendCommandObj['params']['recipient'].append(contact.getId())
+                sendCommandObj['params']['recipient'].append(contact.get_id())
         else:
             raise ValueError("recipientType must be either 'contact' or 'group'")
     # Add body:
@@ -495,7 +495,7 @@ class Messages(object):
     # Add quote:
         if (quote != None):
             sendCommandObj['params']['quoteTimestamp'] = quote.timestamp.timestamp
-            sendCommandObj['params']['quoteAuthor'] = quote.author.getId()
+            sendCommandObj['params']['quoteAuthor'] = quote.author.get_id()
             sendCommandObj['params']['quoteMessage'] = quote.text
             if (quote.mentions != None):
                 sendCommandObj['params']['quoteMention'] = []

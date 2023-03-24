@@ -79,14 +79,14 @@ class Device(object):
             'id': self.id,
             'name': self.name,
             'created': None,
-            'lastSeen': None,
+            'last_seen': None,
             'isAccountDevice': self.isAccountDevice,
             'isPrimaryDevice': self.isPrimaryDevice,
         }
         if (self.created != None):
             deviceDict['created'] = self.created.__toDict__()
         if (self.lastSeen != None):
-            deviceDict['lastSeen'] = self.lastSeen.__toDict__()
+            deviceDict['last_seen'] = self.lastSeen.__toDict__()
         return deviceDict
     
     def __fromDict__(self, fromDict:dict) -> None:
@@ -96,8 +96,8 @@ class Device(object):
             self.created = Timestamp(fromDict=fromDict['created'])
         else:
             self.created = None
-        if (fromDict['lastSeen'] != None):
-            self.lastSeen = Timestamp(fromDict=fromDict['lastSeen'])
+        if (fromDict['last_seen'] != None):
+            self.lastSeen = Timestamp(fromDict=fromDict['last_seen'])
         else:
             self.lastSeen = None
         self.isAccountDevice = fromDict['isAccountDevice']
