@@ -12,149 +12,153 @@ from .signalMention import Mention
 from .signalMentions import Mentions
 from .signalTimestamp import Timestamp
 
-global DEBUG
 DEBUG: bool = True
+
 
 class Quote(object):
     def __init__(self,
-                    configPath: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    fromDict:Optional[dict[str, object]] = None,
-                    rawQuote:Optional[dict[str, object]] = None,
-                    timestamp: Optional[Timestamp] = None,
-                    author: Optional[Contact] = None,
-                    text: Optional[str] = None,
-                    attachments: Optional[Iterable[Attachment] | Attachment] = None,
-                    mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
-                    conversation: Optional[Contact|Group] = None,
-                ) -> None:
-    # Check config_path:
-        if (isinstance(configPath, str) == False):
-            __type_error__("config_path", "str", configPath)
-    # Check contacts:
-        if (isinstance(contacts, Contacts) == False):
+                 config_path: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 from_dict: Optional[dict[str, object]] = None,
+                 raw_quote: Optional[dict[str, object]] = None,
+                 timestamp: Optional[Timestamp] = None,
+                 author: Optional[Contact] = None,
+                 text: Optional[str] = None,
+                 attachments: Optional[Iterable[Attachment] | Attachment] = None,
+                 mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
+                 conversation: Optional[Contact | Group] = None,
+                 ) -> None:
+        # Check config_path:
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        # Check contacts:
+        if not isinstance(contacts, Contacts):
             __type_error__("contacts", "Contacts", contacts)
-    # Check groups:
-        if (isinstance(groups, Groups) == False):
+        # Check groups:
+        if not isinstance(groups, Groups):
             __type_error__("groups", "Groups", groups)
-    # Check from_dict:
-        if (fromDict != None and isinstance(fromDict, dict) == None):
-            __type_error__("from_dict", "dict[str, object]", fromDict)
-    # Check rawQuote:
-        if (rawQuote != None and isinstance(rawQuote, dict) == False):
-            __type_error__("rawQuote", "dict[str, object]", rawQuote)
-    # Check timestamp:
-        if (timestamp != None and isinstance(timestamp, Timestamp) == False):
+        # Check from_dict:
+        if from_dict is not None and isinstance(from_dict, dict) is None:
+            __type_error__("from_dict", "dict[str, object]", from_dict)
+        # Check raw_quote:
+        if raw_quote is not None and not isinstance(raw_quote, dict):
+            __type_error__("raw_quote", "dict[str, object]", raw_quote)
+        # Check timestamp:
+        if timestamp is not None and not isinstance(timestamp, Timestamp):
             __type_error__("timestamp", "Timestamp", timestamp)
-    # Check author: 
-        if (author != None and isinstance(author, Contact) == False):
+        # Check author:
+        if author is not None and not isinstance(author, Contact):
             __type_error__("author", "Contact", author)
-    # Check text:
-        if (text != None and isinstance(text, str) == False):
+        # Check text:
+        if text is not None and not isinstance(text, str):
             __type_error__("text", "str", text)
-    # Check attachments:
-        attachmentList: list[Attachment] = []
-        if (attachments != None):
-            if (isinstance(attachments, Attachment) == True):
-                attachmentList.append(attachments)
-            elif (isinstance(attachments, Iterable) == True):
-                i = 0
+        # Check attachments:
+        attachment_list: list[Attachment] = []
+        if attachments is not None:
+            if isinstance(attachments, Attachment):
+                attachment_list.append(attachments)
+            elif isinstance(attachments, Iterable):
+                i: int = 0
                 for attachment in attachments:
-                    if (isinstance(attachment, Attachment) == False):
+                    if not isinstance(attachment, Attachment):
                         __type_error__("attachments[%i]" % i, "Attachment", attachment)
-                    attachmentList.append(attachment)
-                    i = i + 1
+                    attachment_list.append(attachment)
+                    i += 1
             else:
                 __type_error__("attachments", "Iterable[Attachment] | Attachment")
-    # Check mentions:
-        mentionList: list[Mention] = []
-        if (mentions != None):
-            if (isinstance(mentions, Mentions) == True):
+        # Check mentions:
+        mention_list: list[Mention] = []
+        if mentions is not None:
+            if isinstance(mentions, Mentions):
                 pass
-            elif (isinstance(mentions, Mention) == True):
-                mentionList.append(mentions)
-            elif (isinstance(mentions, Iterable) == True):
-                i = 0
+            elif isinstance(mentions, Mention):
+                mention_list.append(mentions)
+            elif isinstance(mentions, Iterable):
+                i: int = 0
                 for mention in mentions:
-                    if (isinstance(mention, Mention) == False):
+                    if not isinstance(mention, Mention):
                         __type_error__("mentions[%i]" % i, "Mention", mention)
-                    mentionList.append(mention)
-                    i = i + 1
+                    mention_list.append(mention)
+                    i += 1
             else:
                 __type_error__("mentions", "Iterable[Mention] | Mentions | Mention", mentions)
-    # Check conversation:
-        if (conversation != None):
-            if (isinstance(conversation, Contact) == False and isinstance(conversation, Group) == False):
+        # Check conversation:
+        if conversation is not None:
+            if not isinstance(conversation, Contact) and not isinstance(conversation, Group):
                 __type_error__("conversation", "Contact | Group", conversation)
-# Set internal vars:
-        self._configPath: str = configPath
+        # Set internal vars:
+        self._config_path: str = config_path
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
-# Set external properties:
-    # Set timestamp:
+        # Set external properties:
+        # Set timestamp:
         self.timestamp: Timestamp = timestamp
-    # Set author:
+        # Set author:
         self.author: Contact = author
-    # Set text:
+        # Set text:
         self.text: str
-        if (text == None):
+        if text is None:
             self.text = ''
         else:
             self.text = text
-    # Set attachements
-        self.attachments: list[Attachment] = attachmentList
-    # Set mentions:
+        # Set attachments
+        self.attachments: list[Attachment] = attachment_list
+        # Set mentions:
         self.mentions: Mentions
-        if (isinstance(mentions, Mentions) == True):
+        if isinstance(mentions, Mentions):
             self.mentions = mentions
-        elif (len(mentionList) == 0):
+        elif len(mention_list) == 0:
             self.mentions = Mentions(contacts=contacts)
         else:
-            self.mentions = Mentions(contacts=contacts, mentions=mentionList)
-    # Set conversation:
+            self.mentions = Mentions(contacts=contacts, mentions=mention_list)
+        # Set conversation:
         self.conversation: Optional[Contact | Group] = conversation
-# Load from dict or rawQuote:
-    # Parse from dict:
-        if (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Parse raw quote
-        elif (rawQuote != None):
-            if (self.conversation == None):
-                raise RuntimeError("conversation must be defined if using rawQuote")
-            self.__fromRawQuote__(rawQuote)
+        # Load from dict or raw_quote:
+        # Parse from dict:
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Parse raw quote
+        elif raw_quote is not None:
+            if self.conversation is None:
+                raise RuntimeError("conversation must be defined if using raw_quote")
+            self.__from_raw_quote__(raw_quote)
         return
 
-#################
-# Init:
-#################
-    def __fromRawQuote__(self, rawQuote:dict[str, object]) -> None:
-        # print(rawQuote)
-    # Load timestamp
-        self.timestamp = Timestamp(timestamp=rawQuote['contact_id'])
-    # Load author
-# 'authorNumber': '+16134548055', 'authorUuid'
+    #################
+    # Init:
+    #################
+    def __from_raw_quote__(self, raw_quote: dict[str, object]) -> None:
+        # print(raw_quote)
+        # Load timestamp
+        # TODO: Look into this:
+        self.timestamp = Timestamp(timestamp=raw_quote['contact_id'])
+        # Load author
+        # 'authorNumber': '+16134548055', 'authorUuid'
+        author_number: str = raw_quote['authorNumber']
+        author_uuid: str = raw_quote['authorUuid']
         added, self.author = self._contacts.__get_or_add__(
-                                                            name="<UNKNOWN-CONTACT>",
-                                                            number=rawQuote['authorNumber'],
-                                                            uuid=rawQuote['authorUuid']
-                                                        )
-    # Load text
-        self.text = rawQuote['text']
-    # Load attachments
+            name="<UNKNOWN-CONTACT>",
+            number=author_number,
+            uuid=author_uuid,
+        )
+        # Load text
+        self.text = raw_quote['text']
+        # Load attachments
         self.attachments = []
-        for rawAttachment in rawQuote['attachments']:
-            self.attachments.append(Attachment(config_path=self._configPath, raw_attachment=rawAttachment))
-    # Load Mentions:
-        if ('mentions' in rawQuote.keys()):
-            self.mentions = Mentions(contacts=self._contacts, raw_mentions=rawQuote['mentions'])
+        raw_attachments: list[dict[str, object]] = raw_quote['attachments']
+        for raw_attachment in raw_attachments:
+            self.attachments.append(Attachment(config_path=self._config_path, raw_attachment=raw_attachment))
+        # Load Mentions:
+        if 'mentions' in raw_quote.keys():
+            self.mentions = Mentions(contacts=self._contacts, raw_mentions=raw_quote['mentions'])
         return
 
-#################
-# To / From dict:
-#################
-    def __toDict__(self) -> dict[str, object]:
-        quoteDict = {
+    #################
+    # To / From dict:
+    #################
+    def __to_dict__(self) -> dict[str, object]:
+        quote_dict = {
             'timestamp': None,
             'author': None,
             'text': self.text,
@@ -162,51 +166,55 @@ class Quote(object):
             'mentions': None,
             'conversation': None,
         }
-    # Store timestamp
-        if (self.timestamp != None):
-            quoteDict['timestamp'] = self.timestamp.__toDict__()
-    # Store author:
-        if (self.author != None):
-            quoteDict['author'] = self.author.get_id()
-    # Store attachments:
+        # Store timestamp
+        if self.timestamp is not None:
+            quote_dict['timestamp'] = self.timestamp.__toDict__()
+        # Store author:
+        if self.author is not None:
+            quote_dict['author'] = self.author.get_id()
+        # Store attachments:
         for attachment in self.attachments:
-            quoteDict['attachments'].append(attachment.__to_dict__())
-    # Store mentions:
-        quoteDict['mentions'] = self.mentions.__to_dict__()
-    # Store conversation:
-        if (self.conversation != None):
-            quoteDict['conversation'] = self.conversation.get_id()
-        return quoteDict
-    
-    def __fromDict__(self, fromDict:dict[str, object]) -> None:
-    # Set timestamp:
+            quote_dict['attachments'].append(attachment.__to_dict__())
+        # Store mentions:
+        quote_dict['mentions'] = self.mentions.__to_dict__()
+        # Store conversation:
+        if self.conversation is not None:
+            quote_dict['conversation'] = self.conversation.get_id()
+        return quote_dict
+
+    def __from_dict__(self, from_dict: dict[str, object]) -> None:
+        # Set timestamp:
         self.timestamp = None
-        if (fromDict['timestamp'] != None):
-            self.timestamp = Timestamp(fromDict=fromDict['timestamp'])
-    # Set author
+        if from_dict['timestamp'] is not None:
+            timestamp_dict: dict[str, object] = from_dict['timestamp']
+            self.timestamp = Timestamp(fromDict=timestamp_dict)
+        # Set author
         self.author = None
-        if (fromDict['author'] != None):
-            added, self.author = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['author'])
-    # Set text
-        self.text = fromDict['text']
-    # Set attachments:
+        if from_dict['author'] is not None:
+            added, self.author = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['author'])
+        # Set text
+        self.text = from_dict['text']
+        # Set attachments:
         self.attachments = []
-        for attachmentDict in fromDict['attachments']:
-            self.attachments.append(Attachment(config_path=self._configPath, from_dict=attachmentDict))
-    # Set mentions:
+        attachment_dicts: list[dict[str, object]] = from_dict['attachments']
+        for attachment_dict in attachment_dicts:
+            self.attachments.append(Attachment(config_path=self._config_path, from_dict=attachment_dict))
+        # Set mentions:
         self.mentions = None
-        if (fromDict['mentions'] != None):
-            self.mentions = Mentions(contacts=self._contacts, from_dict=fromDict['mentions'])
-    # Set conversation:
+        if from_dict['mentions'] != None:
+            mentions_dict: dict[str, object] = from_dict['mentions']
+            self.mentions = Mentions(contacts=self._contacts, from_dict=mentions_dict)
+        # Set conversation:
         self.conversation = None
-        if (fromDict["conversationType"] == 'contact'):
-            added, self.conversation = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=fromDict['conversation'])
-        elif (fromDict["conversationType"] == 'group'):
-            added, self.conversation = self._groups.__get_or_add__("<UNKNOWN-GROUP>", fromDict['conversation'])
+        if from_dict["conversationType"] == 'contact':
+            added, self.conversation = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
+                                                                     contact_id=from_dict['conversation'])
+        elif from_dict["conversationType"] == 'group':
+            added, self.conversation = self._groups.__get_or_add__("<UNKNOWN-GROUP>", from_dict['conversation'])
         return
 
-##########################
-# Methods:
-##########################
-    def parseMentions(self) -> str:
+    ##########################
+    # Methods:
+    ##########################
+    def parse_mentions(self) -> str:
         return self.mentions.__parse_mentions__(self.text)

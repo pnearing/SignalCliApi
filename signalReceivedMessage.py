@@ -224,11 +224,11 @@ class ReceivedMessage(Message):
         # Parse Quote
         if ('quote' in dataMessage.keys()):
             if (self.recipient_type == 'group'):
-                self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
-                                   rawQuote=dataMessage['quote'], conversation=self.recipient)
+                self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                   raw_quote=dataMessage['quote'], conversation=self.recipient)
             elif (self.recipient_type == 'contact'):
-                self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
-                                   rawQuote=dataMessage['quote'], conversation=self.sender)
+                self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                   raw_quote=dataMessage['quote'], conversation=self.sender)
         # Parse preview:
         self.previews = []
         if ('previews' in dataMessage.keys()):
@@ -267,7 +267,7 @@ class ReceivedMessage(Message):
         # Set quote:
         receivedMessageDict['quote'] = None
         if (self.quote != None):
-            receivedMessageDict['quote'] = self.quote.__toDict__()
+            receivedMessageDict['quote'] = self.quote.__to_dict__()
         # Set expiration:
         receivedMessageDict['isExpired'] = self.isExpired
         receivedMessageDict['expiration'] = None
@@ -311,8 +311,8 @@ class ReceivedMessage(Message):
         # Load quote
         self.quote = None
         if (from_dict['quote'] != None):
-            self.quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
-                               fromDict=from_dict['quote'])
+            self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                               from_dict=from_dict['quote'])
         # Load expiration:
         self.isExpired = from_dict['isExpired']
         self.expiration = None
@@ -340,7 +340,7 @@ class ReceivedMessage(Message):
                 "account": self._account_id,
                 "recipient": self.sender.get_id(),
                 "type": receiptType,
-                "targetTimestamp": self.timestamp.timestamp,
+                "target_timestamp": self.timestamp.timestamp,
             }
         }
         jsonCommandStr = json.dumps(sendReceiptCommandObj) + '\n'
@@ -405,11 +405,11 @@ class ReceivedMessage(Message):
     def getQuote(self) -> Quote:
         quote: Quote
         if (self.recipient_type == 'contact'):
-            quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
+            quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.sender)
         elif (self.recipient_type == 'group'):
-            quote = Quote(configPath=self._config_path, contacts=self._contacts, groups=self._groups,
+            quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.recipient)
         else:
@@ -432,14 +432,14 @@ class ReceivedMessage(Message):
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
                                 this_device=self._this_device, recipient=self.sender, emoji=emoji,
-                                targetAuthor=self.sender,
-                                targetTimestamp=self.timestamp)
+                                target_author=self.sender,
+                                target_timestamp=self.timestamp)
         elif (self.recipient_type == 'group'):
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
                                 this_device=self._this_device, recipient=self.recipient, emoji=emoji,
-                                targetAuthor=self.sender, targetTimestamp=self.timestamp)
+                                target_author=self.sender, target_timestamp=self.timestamp)
         else:
             errorMessage = "Invalid recipient type."
             return (False, errorMessage)

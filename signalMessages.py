@@ -212,8 +212,8 @@ class Messages(object):
         # Find the message that was reacted to:
         reactedMessage = None
         for message in search_messages:
-            if message.sender == reaction.targetAuthor:
-                if message.timestamp == reaction.targetTimestamp:
+            if message.sender == reaction.target_author:
+                if message.timestamp == reaction.target_timestamp:
                     reactedMessage = message
         # If the message isn't in history do nothing:
         if reactedMessage is None:

@@ -90,7 +90,7 @@ class Reactions(object):
 ####################
     def __parse__(self, reaction:Reaction) -> None:
     # Parse a remove request:
-        if (reaction.isRemove == True):
+        if (reaction.is_remove == True):
             self.__remove__(reaction)
             return
     # Try to find a previous reaction:
@@ -121,8 +121,8 @@ class Reactions(object):
 
     def __replace__(self, oldReaction:Reaction, newReaction:Reaction) -> None:
         self.__remove__(oldReaction)
-        newReaction.isChange = True
-        newReaction.__updateBody__()
+        newReaction.is_change = True
+        newReaction.__update_body__()
         self.__add__(newReaction)
         return
 
