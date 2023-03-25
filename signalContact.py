@@ -91,8 +91,8 @@ class Contact(object):
             self.expiration = None
         else:
             self.expiration = raw_contact['messageExpirationTime']
-        self.profile = Profile(syncSocket=self._sync_socket, configPath=self._config_path, accountId=self._account_id,
-                               contactId=self.get_id(), rawProfile=raw_contact['profile'])
+        self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
+                               contact_id=self.get_id(), raw_profile=raw_contact['profile'])
         return
 
     ##########################
@@ -126,7 +126,7 @@ class Contact(object):
             'color': self.color,
         }
         if self.profile is not None:
-            contact_dict['profile'] = self.profile.__toDict__()
+            contact_dict['profile'] = self.profile.__to_dict__()
         if self.devices is not None:
             contact_dict['devices'] = self.devices.__to_dict__()
         if self.last_typing_change is not None:
@@ -146,13 +146,13 @@ class Contact(object):
         # Load Profile:
         if from_dict['profile'] is not None:
             if self.number == self._account_id:
-                self.profile = Profile(syncSocket=self._sync_socket, configPath=self._config_path,
-                                       accountId=self._account_id,
-                                       contactId=self.get_id(), fromDict=from_dict['profile'])
+                self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path,
+                                       account_id=self._account_id,
+                                       contact_id=self.get_id(), from_dict=from_dict['profile'])
             else:
-                self.profile = Profile(syncSocket=self._sync_socket, configPath=self._config_path,
-                                       accountId=self._account_id,
-                                       contactId=self.get_id(), fromDict=from_dict['profile'])
+                self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path,
+                                       account_id=self._account_id,
+                                       contact_id=self.get_id(), from_dict=from_dict['profile'])
         else:
             self.profile = None
         # Load Devices:

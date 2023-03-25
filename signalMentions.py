@@ -81,7 +81,7 @@ class Mentions(object):
             for mention in self._mentions:
                 if mention.contact == index:
                     return mention
-            raise IndexError("Mention with contactId: %s not found." % index.get_id())
+            raise IndexError("Mention with contact_id: %s not found." % index.get_id())
         else:
             __type_error__("index", "int | Contact", index)
 

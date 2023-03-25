@@ -81,9 +81,9 @@ class Account(object):
                                      this_device=self.devices.get_account_device(),
                                      sticker_packs=self._sticker_packs, do_load=True)
             # Load profile from file and merge self contact.
-            self.profile = Profile(syncSocket=self._sync_socket, configPath=self.config_path, accountId=self.number,
-                                   contactId=self.number, accountPath=self._account_path, doLoad=True,
-                                   isAccountProfile=True)
+            self.profile = Profile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
+                                   contact_id=self.number, account_path=self._account_path, do_load=True,
+                                   is_account_profile=True)
             self_contact = self.contacts.get_self()
             self.profile.__merge__(self_contact.profile)
         else:

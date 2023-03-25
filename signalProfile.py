@@ -9,446 +9,445 @@ import socket
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalTimestamp import Timestamp
 
-global DEBUG
-DEBUG:bool = True
+DEBUG: bool = True
 
 Self = TypeVar("Self", bound="Profile")
 
+
 class Profile(object):
     def __init__(self,
-                    syncSocket: socket.socket,
-                    configPath: str,
-                    accountId: str,
-                    contactId: str,
-                    accountPath:str|None = None,
-                    fromDict:dict|None = None,
-                    rawProfile:dict|None = None,
-                    givenName:str|None = None,
-                    familyName:str|None = None,
-                    about:str|None = None,
-                    emoji:str|None = None,
-                    coinAddress:str|None = None,
-                    avatar:str|None = None,
-                    lastUpdate:Timestamp|None = None,
-                    isAccountProfile:bool = False,
-                    doLoad:bool = False,
-                ) -> None:
-    # TODO: Check args:
+                 sync_socket: socket.socket,
+                 config_path: str,
+                 account_id: str,
+                 contact_id: str,
+                 account_path: Optional[str] = None,
+                 from_dict: dict | None = None,
+                 raw_profile: dict | None = None,
+                 given_name: Optional[str] = None,
+                 family_name: Optional[str] = None,
+                 about: Optional[str] = None,
+                 emoji: Optional[str] = None,
+                 coin_address: Optional[str] = None,
+                 avatar: Optional[str] = None,
+                 last_update: Timestamp | None = None,
+                 is_account_profile: bool = False,
+                 do_load: bool = False,
+                 ) -> None:
+        # TODO: Check args:
 
-    # Set internal vars:
-        self._syncSocket: socket.socket = syncSocket
-        self._configPath: str = configPath
-        self._accountId: str = accountId
-        self._contactId: str = contactId
-        self._profileFilePath: Optional[str]
-        if (accountPath != None):
-            self._profileFilePath = os.path.join(accountPath, 'profile.json')
+        # Set internal vars:
+        self._sync_socket: socket.socket = sync_socket
+        self._config_path: str = config_path
+        self._account_id: str = account_id
+        self._contact_id: str = contact_id
+        self._profile_file_path: Optional[str]
+        if account_path is not None:
+            self._profile_file_path = os.path.join(account_path, 'profile.json')
         else:
-            self._profileFilePath = None
-        self._fromSignal: bool = False
-        self._isAccountProfile: bool = isAccountProfile
-    # Set external vars:
-        self.givenName: Optional[str] = givenName
-        self.familyName: Optional[str] = familyName
+            self._profile_file_path = None
+        self._from_signal: bool = False
+        self._is_account_profile: bool = is_account_profile
+        # Set external vars:
+        self.given_name: Optional[str] = given_name
+        self.family_name: Optional[str] = family_name
         self.name: str = ''
         self.about: Optional[str] = about
         self.emoji: Optional[str] = emoji
-        self.coinAddress: Optional[str] = coinAddress
+        self.coin_address: Optional[str] = coin_address
         self.avatar: Optional[str] = avatar
-        self.lastUpdate: Optional[Timestamp] = lastUpdate
-    # Parse from dict:
-        if (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Parse from raw profile:
-        elif (rawProfile != None):
-            self._fromSignal = True
-            self.__fromRawProfile__(rawProfile)
-    # Do load from file:
-        elif (doLoad == True):
+        self.last_update: Optional[Timestamp] = last_update
+        # Parse from dict:
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Parse from raw profile:
+        elif raw_profile is not None:
+            self._from_signal = True
+            self.__from_raw_profile__(raw_profile)
+        # Do load from file:
+        elif do_load:
             try:
                 self.__load__()
             except RuntimeError:
-                if (DEBUG == True):
-                    print("INFO: Creating empty profile for account: %s" % self._accountId, file=sys.stderr)
+                if DEBUG:
+                    print("INFO: Creating empty profile for account: %s" % self._account_id, file=sys.stderr)
                 self.__save__()
-    # Find avatar:
-        self.__findAvatar__()
-        if (self._isAccountProfile == True):
+        # Find avatar:
+        self.__find_avatar__()
+        if self._is_account_profile:
             self.__save__()
         return
 
-    def __fromRawProfile__(self, rawProfile:dict) -> None:
-        # print (rawProfile)
-        self.givenName = rawProfile['givenName']
-        self.familyName = rawProfile['familyName']
-        self.__setName__()
-        self.about = rawProfile['about']
-        self.emoji = rawProfile['aboutEmoji']
-        self.coinAddress = rawProfile['mobileCoinAddress']
-        if (rawProfile['lastUpdateTimestamp'] == 0):
-            self.lastUpdate = None
+    def __from_raw_profile__(self, raw_profile: dict) -> None:
+        # print (raw_profile)
+        self.given_name = raw_profile['given_name']
+        self.family_name = raw_profile['family_name']
+        self.__set_name__()
+        self.about = raw_profile['about']
+        self.emoji = raw_profile['aboutEmoji']
+        self.coin_address = raw_profile['mobileCoinAddress']
+        if raw_profile['lastUpdateTimestamp'] == 0:
+            self.last_update = None
         else:
-            self.lastUpdate = Timestamp(timestamp=rawProfile['lastUpdateTimestamp'])
-        self.__findAvatar__()
+            self.last_update = Timestamp(timestamp=raw_profile['lastUpdateTimestamp'])
+        self.__find_avatar__()
         return
 
-######################
-# To / From Dict:
-######################
+    ######################
+    # To / From Dict:
+    ######################
 
-    def __toDict__(self) -> dict:
-        profileDict = {
-            'givenName': self.givenName,
-            'familyName': self.familyName,
+    def __to_dict__(self) -> dict:
+        profile_dict = {
+            'given_name': self.given_name,
+            'family_name': self.family_name,
             'about': self.about,
             'emoji': self.emoji,
-            'coinAddress': self.coinAddress,
+            'coin_address': self.coin_address,
             'avatar': self.avatar,
-            'lastUpdate': None,
+            'last_update': None,
         }
-        if (self.lastUpdate != None):
-            profileDict['lastUpdate'] = self.lastUpdate.__toDict__()
-        return profileDict
+        if self.last_update is not None:
+            profile_dict['last_update'] = self.last_update.__toDict__()
+        return profile_dict
 
-    def __fromDict__(self, fromDict:dict) -> None:
-    # Set properties:
-        self.givenName = fromDict['givenName']
-        self.familyName = fromDict['familyName']
-        self.__setName__()
-        self.about = fromDict['about']
-        self.emoji = fromDict['emoji']
-        self.coinAddress = fromDict['coinAddress']
-        self.avatar = fromDict['avatar']
-        self.__findAvatar__()
-        if (fromDict['lastUpdate'] != None):
-            self.lastUpdate = Timestamp(fromDict=fromDict['lastUpdate'])
+    def __from_dict__(self, from_dict: dict) -> None:
+        # Set properties:
+        self.given_name = from_dict['given_name']
+        self.family_name = from_dict['family_name']
+        self.__set_name__()
+        self.about = from_dict['about']
+        self.emoji = from_dict['emoji']
+        self.coin_address = from_dict['coin_address']
+        self.avatar = from_dict['avatar']
+        self.__find_avatar__()
+        if from_dict['last_update'] is not None:
+            self.last_update = Timestamp(fromDict=from_dict['last_update'])
         else:
-            self.lastUpdate = fromDict['lastUpdate']
+            self.last_update = from_dict['last_update']
         return
 
-#####################################
-# Save / Load:
-####################################
+    #####################################
+    # Save / Load:
+    ####################################
     def __save__(self) -> bool:
-    # Checks:
-        if (self._isAccountProfile == False):
-            if (DEBUG == True):
+        # Checks:
+        if not self._is_account_profile:
+            if DEBUG:
                 errorMessage = "WARNING: Not account profile cannot save."
                 print(errorMessage, file=sys.stderr)
             return False
-        if (self._profileFilePath == None):
-            if (DEBUG == True):
+        if self._profile_file_path is None:
+            if DEBUG:
                 errorMessage = "WARNING: File path not set, cannot save."
                 print(errorMessage, file=sys.stderr)
             return False
-    # Create json string to save:
-        profileDict:dict = self.__toDict__()
-        profileJson:str = json.dumps(profileDict)
-    # Open the file:
+        # Create json string to save:
+        profileDict: dict = self.__to_dict__()
+        profileJson: str = json.dumps(profileDict)
+        # Open the file:
         try:
-            fileHandle = open(self._profileFilePath, 'w')
+            fileHandle = open(self._profile_file_path, 'w')
         except Exception as e:
-            errorMessage = "FATAL: Couldn't open '%s' for writing: %s" % (self._profileFilePath, str(e.args))
+            errorMessage = "FATAL: Couldn't open '%s' for writing: %s" % (self._profile_file_path, str(e.args))
             raise RuntimeError(errorMessage)
-    # Write to the file and close it.
+        # Write to the file and close it.
         fileHandle.write(profileJson)
         fileHandle.close()
         return True
 
-
     def __load__(self) -> bool:
-    # Do checks:
-        if (self._profileFilePath == None):
-            if (DEBUG == True):
-                errorMessage = "WARNING: Profile file path not set, cannot load."
-                print(errorMessage, file=sys.stderr)
+        # Do checks:
+        if self._profile_file_path is None:
+            if DEBUG:
+                error_message = "WARNING: Profile file path not set, cannot load."
+                print(error_message, file=sys.stderr)
             return False
-        if (self._isAccountProfile == False):
-            if (DEBUG == True):
-                errorMessage = "WARNING: Not account profile, cannot load."
-                print(errorMessage, file=sys.stderr)
+        if not self._is_account_profile:
+            if DEBUG:
+                error_message = "WARNING: Not account profile, cannot load."
+                print(error_message, file=sys.stderr)
             return False
-    # Try to open file:
+        # Try to open file:
         try:
-            fileHandle = open(self._profileFilePath, 'r')
+            file_handle = open(self._profile_file_path, 'r')
         except Exception as e:
-            errorMessage = "FATAL: Couldn't open file '%s' for reading: %s" % (self._profileFilePath, str(e.args))
-            raise RuntimeError(errorMessage)
-    # Try to load the json:
+            error_message = "FATAL: Couldn't open file '%s' for reading: %s" % (self._profile_file_path, str(e.args))
+            raise RuntimeError(error_message)
+        # Try to load the json:
         try:
-            profileDict = json.loads(fileHandle.read())
+            profile_dict: dict[str, object] = json.loads(file_handle.read())
         except json.JSONDecodeError as e:
-            errorMessage = "FATAL: Couldnt load json from '%s': %s" % (self._profileFilePath, e.msg)
-            raise RuntimeError(errorMessage)
-    # Load from dict:
-        self.__fromDict__(profileDict)
+            error_message = "FATAL: Couldn't load json from '%s': %s" % (self._profile_file_path, e.msg)
+            raise RuntimeError(error_message)
+        # Load from dict:
+        self.__from_dict__(profile_dict)
         return True
 
-#######################
-# Helper methods:
-#######################
-    def __findAvatar__(self) -> bool:
-        if (self.avatar != None):
-            if (os.path.exists(self.avatar) == False):
-                if (DEBUG == True):
-                    errorMessage = "WARNIING: Couldn't find avatar: '%s', searching..." % self.avatar
+    #######################
+    # Helper methods:
+    #######################
+    def __find_avatar__(self) -> bool:
+        if self.avatar is not None:
+            if not os.path.exists(self.avatar):
+                if DEBUG:
+                    errorMessage = "WARNING: Couldn't find avatar: '%s', searching..." % self.avatar
                     print(errorMessage, file=sys.stderr)
                 self.avatar = None
-    # Try profile avatar:
-        if (self.avatar == None):
-            avatarFileName = 'profile-' + self._contactId
-            avatarFilePath = os.path.join(self._configPath, 'avatars', avatarFileName)
-            if (os.path.exists(avatarFilePath) == True):
+        # Try profile avatar:
+        if self.avatar is None:
+            avatarFileName = 'profile-' + self._contact_id
+            avatarFilePath = os.path.join(self._config_path, 'avatars', avatarFileName)
+            if os.path.exists(avatarFilePath):
                 self.avatar = avatarFilePath
-    # Try contact avatar:
-        if (self.avatar == None):
-            avatarFileName = 'contact-' + self._contactId
-            avatarFilePath = os.path.join(self._configPath, 'avatars', avatarFileName)
-            if (os.path.exists(avatarFilePath) == True):
+        # Try contact avatar:
+        if self.avatar is None:
+            avatarFileName = 'contact-' + self._contact_id
+            avatarFilePath = os.path.join(self._config_path, 'avatars', avatarFileName)
+            if os.path.exists(avatarFilePath):
                 self.avatar = avatarFilePath
-        if (self.avatar != None):
+        if self.avatar is not None:
             return True
         return False
 
-    def __setName__(self) -> None:
-        if (self.givenName == None and self.familyName == None):
+    def __set_name__(self) -> None:
+        if self.given_name is None and self.family_name is None:
             self.name = ''
-        elif (self.givenName !=None and self.familyName != None):
-            self.name = ' '.join([self.givenName, self.familyName])
-        elif (self.givenName != None):
-            self.name = self.givenName
-        elif (self.familyName != None):
-            self.name = self.familyName
+        elif self.given_name is not None and self.family_name is not None:
+            self.name = ' '.join([self.given_name, self.family_name])
+        elif self.given_name is not None:
+            self.name = self.given_name
+        elif self.family_name is not None:
+            self.name = self.family_name
         return
 
-    def __merge__(self, __o:Self) -> None:
-    # TODO: rewrite to be more mergey
-        self.givenName = __o.givenName
-        self.familyName = __o.familyName
+    def __merge__(self, __o: Self) -> None:
+        # TODO: rewrite to be more mergey
+        self.given_name = __o.given_name
+        self.family_name = __o.family_name
         self.about = __o.about
         self.emoji = __o.emoji
-        self.coinAddress = __o.coinAddress
-        self.lastUpdate = __o.lastUpdate
-        if (self._isAccountProfile == True):
+        self.coin_address = __o.coin_address
+        self.last_update = __o.last_update
+        if self._is_account_profile:
             self.__save__()
         return
 
-###############################
-# Setters:
-###############################
-    def setGivenName(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+    ###############################
+    # Setters:
+    ###############################
+    def set_given_name(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.givenName == value):
+        if self.given_name == value:
             return False
-    # Create set given name object and json command string:
-        setGivenNameObj = {
+        # Create set given name object and json command string:
+        set_given_name_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
-                "givenName": value,
+                "account": self._account_id,
+                "given_name": value,
             }
         }
-        jsonCommandStr = json.dumps(setGivenNameObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
+        json_command_str = json.dumps(set_given_name_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
         # print(responseObj)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG:
                 errorMessage = "DEBUG: Signal error while setting given name. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
                 print(errorMessage, file=sys.stderr)
             return False
-    # Set the property
-        self.givenName = value
+        # Set the property
+        self.given_name = value
         return True
 
-    def setFamilyName(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+    def set_family_name(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.familyName == value):
+        if self.family_name == value:
             return False
-    # Create command object and json command string:
-        setFamilyNameCommandObj = {
+        # Create command object and json command string:
+        set_family_name_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
-                "familyName": value,
+                "account": self._account_id,
+                "family_name": value,
             }
         }
-        jsonCommandStr = json.dumps(setFamilyNameCommandObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
-                errorMessage = "DEBUG: Signal error while setting family name. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
-                print(errorMessage, file=sys.stderr)
+        json_command_str = json.dumps(set_family_name_command_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG == True:
+                error_message = "DEBUG: Signal error while setting family name. Code: %i Message: %s" % (
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
+                print(error_message, file=sys.stderr)
             return False
-    # Set the property
-        self.familyName = value
+        # Set the property
+        self.family_name = value
         return True
-    
-    def setAbout(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+
+    def set_about(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.about == value):
+        if self.about == value:
             return False
-    # Create command object and json command string:
-        setAboutCommandObj = {
+        # Create command object and json command string:
+        set_about_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "about": value,
             }
         }
-        jsonCommandStr = json.dumps(setAboutCommandObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
-                errorMessage = "DEBUG: Signal error while setting about. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
-                print(errorMessage, file=sys.stderr)
+        json_command_str = json.dumps(set_about_command_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG == True:
+                error_message = "DEBUG: Signal error while setting about. Code: %i Message: %s" % (
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
+                print(error_message, file=sys.stderr)
             return False
-    # Set the property
+        # Set the property
         self.about = value
         return True
 
-    def setEmoji(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+    def set_emoji(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.emoji == value):
+        if self.emoji == value:
             return False
-    # Create command object and json command string:
-        setEmojiCommandObj = {
+        # Create command object and json command string:
+        set_emoji_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "aboutEmoji": value,
             }
         }
-        jsonCommandStr = json.dumps(setEmojiCommandObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
-                errorMessage = "DEBUG: Signal error while setting emoji. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
-                print(errorMessage, file=sys.stderr)
+        json_command_str = json.dumps(set_emoji_command_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG:
+                error_message = "DEBUG: Signal error while setting emoji. Code: %i Message: %s" % (
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
+                print(error_message, file=sys.stderr)
             return False
-    # Set the property
+        # Set the property
         self.emoji = value
         return True
 
-    def setCoinAddress(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+    def set_coin_address(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.coinAddress == value):
+        if self.coin_address == value:
             return False
-    # Create command object and json command string:
-        setCoinAddressCommandObj = {
+        # Create command object and json command string:
+        set_coin_address_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "mobileCoinAddress": value,
             }
         }
-        jsonCommandStr = json.dumps(setCoinAddressCommandObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
-                errorMessage = "DEBUG: Signal error while setting coin address. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
-                print(errorMessage, file=sys.stderr)
+        json_command_str = json.dumps(set_coin_address_command_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG:
+                error_message = "DEBUG: Signal error while setting coin address. Code: %i Message: %s" % (
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
+                print(error_message, file=sys.stderr)
             return False
-    # Set the property
-        self.coinAddress = value
+        # Set the property
+        self.coin_address = value
         return True
-    
-    def setAvatar(self, value:str) -> bool:
-        if (isinstance(value, str) == False):
+
+    def set_avatar(self, value: str) -> bool:
+        if not isinstance(value, str):
             __type_error__("value", "str", value)
-        if (self._isAccountProfile == False):
+        if not self._is_account_profile:
             return False
-        if (self.avatar == value):
+        if self.avatar == value:
             return False
-    # Create command object and json command string:
-        setAvatarCommandObj = {
+        # Create command object and json command string:
+        set_avatar_command_obj = {
             "jsonrpc": "2.0",
             "contact_id": 2,
             "method": "updateProfile",
             "params": {
-                "account": self._accountId,
+                "account": self._account_id,
                 "avatar": value,
             }
         }
-        jsonCommandStr = json.dumps(setAvatarCommandObj) + '\n'
-    # Communicate with signal:
-        __socket_send__(self._syncSocket, jsonCommandStr)
-        responseStr = __socket_receive__(self._syncSocket)
-    # Parse response:
-        responseObj: dict[str, object] = json.loads(responseStr)
-    # Check for error:
-        if ('error' in responseObj.keys()):
-            if (DEBUG == True):
-                errorMessage = "DEBUG: Signal error while setting avatar. Code: %i Message: %s" % (
-                                                                                            responseObj['error']['code'],
-                                                                                            responseObj['error']['message']
-                                                                                        )
-                print(errorMessage, file=sys.stderr)
+        json_command_str = json.dumps(set_avatar_command_obj) + '\n'
+        # Communicate with signal:
+        __socket_send__(self._sync_socket, json_command_str)
+        response_str = __socket_receive__(self._sync_socket)
+        # Parse response:
+        response_obj: dict[str, object] = json.loads(response_str)
+        # Check for error:
+        if 'error' in response_obj.keys():
+            if DEBUG:
+                error_message = "DEBUG: Signal error while setting avatar. Code: %i Message: %s" % (
+                    response_obj['error']['code'],
+                    response_obj['error']['message']
+                )
+                print(error_message, file=sys.stderr)
             return False
-    # Set the property
+        # Set the property
         self.avatar = value
         return True

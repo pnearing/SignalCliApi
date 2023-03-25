@@ -199,16 +199,16 @@ if __name__ == '__main__':
 
     if (args.account == '+16134548055'):
         print("Updating profile given name...")
-        updated = account.profile.setGivenName("Peter's")
+        updated = account.profile.set_given_name("Peter's")
         print("Updated=", updated)
         print("Updating family name...")
-        updated = account.profile.setFamilyName("Bot")
+        updated = account.profile.set_family_name("Bot")
         print("Updated=", updated)
         print("updating about...")
-        updated = account.profile.setAbout("Peter's bot account.")
+        updated = account.profile.set_about("Peter's bot account.")
         print("Updated=", updated)
         print("updateing about emoji to 🤖...")
-        update = account.profile.setEmoji('🤖')
+        update = account.profile.set_emoji('🤖')
         print("Updated=", updated)
 
     signal.start_receive(account, allMsgCb, receivedMsgCb, receiptMsgCb, syncMsgCb, typeMsgCb, storyMsgCb, paymentMsgCb,
