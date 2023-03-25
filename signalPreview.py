@@ -114,7 +114,7 @@ class Preview(object):
             except Exception as e:
                 error_message = "FATAL: Failed to create preview directory '%s': %s" % (preview_path, str(e.args))
                 raise RuntimeError(error_message)
-        # Create the filename by hashing the url, and create the absolute path:
+        # Create the file_name by hashing the url, and create the absolute path:
         hash_result = hashlib.md5(preview.image.encode())
         preview_image_file_name = hash_result.hexdigest()
         preview_image_file_path = os.path.join(preview_path, preview_image_file_name)

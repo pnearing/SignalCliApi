@@ -17,7 +17,7 @@ class Attachment(object):
                  from_dict: Optional[dict] = None,
                  raw_attachment: Optional[dict] = None,
                  content_type: Optional[str] = None,
-                 filename: Optional[str] = None,
+                 file_name: Optional[str] = None,
                  size: Optional[int] = None,
                  local_path: Optional[str] = None,
                  thumbnail: Optional[Thumbnail] = None,
@@ -34,9 +34,9 @@ class Attachment(object):
         # Check content type:
         if content_type is not None and not isinstance(content_type, str):
             __type_error__("content_type", "str", content_type)
-        # Check filename:
-        if filename is not None and not isinstance(filename, str):
-            __type_error__("filename", "str", filename)
+        # Check file_name:
+        if file_name is not None and not isinstance(file_name, str):
+            __type_error__("file_name", "str", file_name)
         # Check size:
         if size is not None and  not isinstance(size, int):
             __type_error__("size", "int", size)
@@ -52,7 +52,7 @@ class Attachment(object):
         self._xdgopen_path: Optional[str] = find_xdg_open()
         # Set external vars:
         self.content_type: Optional[str] = content_type
-        self.file_name: Optional[str] = filename
+        self.file_name: Optional[str] = file_name
         self.size: Optional[int] = size
         self.local_path: Optional[str] = local_path
         self.exists: bool = False
@@ -81,7 +81,7 @@ class Attachment(object):
         print(raw_attachment.keys())
         # raise NotImplemented
         self.content_type = raw_attachment['content_type']
-        self.file_name = raw_attachment['filename']
+        self.file_name = raw_attachment['file_name']
         if 'size' in raw_attachment.keys():
             self.size = raw_attachment['size']
         else:

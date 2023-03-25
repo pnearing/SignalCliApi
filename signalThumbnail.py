@@ -42,7 +42,7 @@ class Thumbnail(object):
     def __fromRawThumbnail__(self, rawThumbnail:dict[str, object]) -> None:
         # print(rawThumbnail)
         self.contentType = rawThumbnail['content_type']
-        self.filename = rawThumbnail['filename']
+        self.filename = rawThumbnail['file_name']
         self.localPath = os.path.join(self._configPath, 'attachments', rawThumbnail['contact_id'])
         self.exists = os.path.exists(self.localPath)
         self.size = rawThumbnail['size']
@@ -54,7 +54,7 @@ class Thumbnail(object):
     def __toDict__(self) -> dict[str, object]:
         thumbnailDict = {
             'content_type': self.contentType,
-            'filename': self.filename,
+            'file_name': self.filename,
             'local_path': self.localPath,
             'size': self.size,
         }
@@ -62,7 +62,7 @@ class Thumbnail(object):
     
     def __fromDict__(self, fromDict:dict[str, object]) -> None:
         self.contentType = fromDict['content_type']
-        self.filename = fromDict['filename']
+        self.filename = fromDict['file_name']
         self.localPath = fromDict['local_path']
         self.exists = False
         if (self.localPath != None):
