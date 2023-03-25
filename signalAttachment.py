@@ -10,142 +10,151 @@ from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
 
+
 class Attachment(object):
     def __init__(self,
-                    configPath: str,
-                    fromDict: Optional[dict] = None,
-                    rawAttachment: Optional[dict] = None,
-                    contentType: Optional[str] = None,
-                    filename: Optional[str] = None,
-                    size: Optional[int] = None,
-                    localPath: Optional[str] = None,
-                    thumbnail: Optional[Thumbnail] = None,
-                ) -> None:
-    # Check config_path:
-        if (isinstance(configPath, str) == False):
-            __type_error__("config_path", "str", configPath)
-    # Check from_dict:
-        if (fromDict != None and isinstance(fromDict, dict) == False):
-            __type_error__("from_dict", "dict[str, object]", fromDict)
-    # Check raw Attachment:
-        if (rawAttachment != None and isinstance(rawAttachment, dict) == False):
-            __type_error__("rawAttachment", "dict[str, object]", rawAttachment)
-    # Check content type:
-        if (contentType != None and isinstance(contentType, str) == False):
-            __type_error__("contentType", "str", contentType)
-    # Check filename:
-        if (filename != None and isinstance(filename, str) == False):
+                 config_path: str,
+                 from_dict: Optional[dict] = None,
+                 raw_attachment: Optional[dict] = None,
+                 content_type: Optional[str] = None,
+                 filename: Optional[str] = None,
+                 size: Optional[int] = None,
+                 local_path: Optional[str] = None,
+                 thumbnail: Optional[Thumbnail] = None,
+                 ) -> None:
+        # Check config_path:
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        # Check from_dict:
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict[str, object]", from_dict)
+        # Check raw Attachment:
+        if raw_attachment is not None and  not isinstance(raw_attachment, dict):
+            __type_error__("raw_attachment", "dict[str, object]", raw_attachment)
+        # Check content type:
+        if content_type is not None and not isinstance(content_type, str):
+            __type_error__("content_type", "str", content_type)
+        # Check filename:
+        if filename is not None and not isinstance(filename, str):
             __type_error__("filename", "str", filename)
-    # Check size:
-        if (size != None and isinstance(size, int) == False):
+        # Check size:
+        if size is not None and  not isinstance(size, int):
             __type_error__("size", "int", size)
-    # Check localPath:
-        if (localPath != None and isinstance(localPath, str) == False):
-            __type_error__("localPath", "str", localPath)
-    # Check thumbnail:
-        if (thumbnail != None and isinstance(thumbnail, Thumbnail) == False):
+        # Check local_path:
+        if local_path is not None and not isinstance(local_path, str):
+            __type_error__("local_path", "str", local_path)
+        # Check thumbnail:
+        if thumbnail is not None and not isinstance(thumbnail, Thumbnail):
             __type_error__("thumbnail", "Thumbnail", thumbnail)
 
-    # Set internal vars:
-        self._configPath: str = configPath
-        self._xdgopenPath: Optional[str] = find_xdg_open()
-    # Set external vars:
-        self.contentType: Optional[str] = contentType
-        self.fileName: Optional[str] = filename
+        # Set internal vars:
+        self._config_path: str = config_path
+        self._xdgopen_path: Optional[str] = find_xdg_open()
+        # Set external vars:
+        self.content_type: Optional[str] = content_type
+        self.file_name: Optional[str] = filename
         self.size: Optional[int] = size
-        self.localPath: Optional[str] = localPath
+        self.local_path: Optional[str] = local_path
         self.exists: bool = False
-        if (localPath != None):
-            self.exists = os.path.exists(localPath)
+        if local_path is not None:
+            self.exists = os.path.exists(local_path)
         self.thumbnail: Thumbnail = thumbnail
-    # Parse fromdict:
-        if (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Parse from raw Attachemnt
-        elif (rawAttachment != None):
-            self.__fromRawAttachment__(rawAttachment)
-    # Set properties from local path:
+        # Parse from_dict:
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Parse from raw Attachment
+        elif raw_attachment is not None:
+            self.__from_raw_attachment__(raw_attachment)
+        # Set properties from local path:
         else:
-            if (self.localPath != None):
-                self.exists = os.path.exists(self.localPath)
-                if (self.exists == True):
-                    self.contentType = mimetypes.guess_type(localPath)
-                    self.fileName = os.path.split(localPath)[-1]
-                    self.size = os.path.getsize(localPath)
+            if self.local_path is not None:
+                self.exists = os.path.exists(self.local_path)
+                if self.exists:
+                    self.content_type = mimetypes.guess_type(local_path)
+                    self.file_name = os.path.split(local_path)[-1]
+                    self.size = os.path.getsize(local_path)
             else:
                 self.exists = False
         return
 
-    def __fromRawAttachment__(self, rawAttachment:dict) -> None:
-        print(rawAttachment.keys())
+    def __from_raw_attachment__(self, raw_attachment: dict) -> None:
+        print(raw_attachment.keys())
         # raise NotImplemented
-        self.contentType = rawAttachment['contentType']
-        self.fileName = rawAttachment['filename']
-        if ('size' in rawAttachment.keys()):
-            self.size = rawAttachment['size']
+        self.content_type = raw_attachment['content_type']
+        self.file_name = raw_attachment['filename']
+        if 'size' in raw_attachment.keys():
+            self.size = raw_attachment['size']
         else:
             self.size = None
-        if ('contact_id' in rawAttachment.keys()):
-            self.localPath = os.path.join(self._configPath, 'attachments', rawAttachment['contact_id'])
-            self.exists = os.path.exists(self.localPath)
+        if 'contact_id' in raw_attachment.keys():
+            self.local_path = os.path.join(self._config_path, 'attachments', raw_attachment['contact_id'])
+            self.exists = os.path.exists(self.local_path)
         else:
-            self.localPath = None
+            self.local_path = None
             self.exists = False
         self.thumbnail = None
-        if ('thumbnail' in rawAttachment.keys()):
-            self.thumbnail = Thumbnail(configPath=self._configPath, rawThumbnail=rawAttachment['thumbnail'])
+        if 'thumbnail' in raw_attachment.keys():
+            self.thumbnail = Thumbnail(configPath=self._config_path, rawThumbnail=raw_attachment['thumbnail'])
         return
 
-#########################
-# To / From Dict:
-#########################
-    def __toDict__(self) -> dict:
-        attachmentDict = {
-            'contentType': self.contentType,
-            'fileName': self.fileName,
+    #########################
+    # To / From Dict:
+    #########################
+    def __to_dict__(self) -> dict:
+        attachment_dict = {
+            'content_type': self.content_type,
+            'file_name': self.file_name,
             'size': self.size,
-            'localPath': self.localPath,
+            'local_path': self.local_path,
             'thumbnail': None,
         }
-        if (self.thumbnail != None):
-            attachmentDict['thumbnail'] = self.thumbnail.__toDict__()
-        return attachmentDict
+        if self.thumbnail is not None:
+            attachment_dict['thumbnail'] = self.thumbnail.__toDict__()
+        return attachment_dict
 
-    def __fromDict__(self, fromDict:dict) -> None:
-        self.contentType = fromDict['contentType']
-        self.id = fromDict['contact_id']
-        self.fileName = fromDict['fileName']
-        self.size = fromDict['size']
-        self.localPath = fromDict['localPath']
-        if (self.localPath != None):
-            self.exists = os.path.exists(self.localPath)
+    def __from_dict__(self, from_dict: dict) -> None:
+        self.content_type = from_dict['content_type']
+        self.id = from_dict['contact_id']
+        self.file_name = from_dict['file_name']
+        self.size = from_dict['size']
+        self.local_path = from_dict['local_path']
+        if self.local_path is not None:
+            self.exists = os.path.exists(self.local_path)
         else:
             self.exists = False
         self.thumbnail = None
-        if (fromDict['thumbnail'] != None):
-            self.thumbnail = Thumbnail(configPath=self._configPath, fromDict=fromDict['thumbnail'])
+        if from_dict['thumbnail'] is not None:
+            self.thumbnail = Thumbnail(configPath=self._config_path, fromDict=from_dict['thumbnail'])
         return
-########################
-# Getters:
-########################
-    def getFilePath(self) -> Optional[str]:
-        if (self.localPath != None):
-            return self.localPath
-        if (self.thumbnail != None and self.thumbnail.localPath != None):
+
+    ########################
+    # Getters:
+    ########################
+    def get_file_path(self) -> Optional[str]:
+        """
+        Get the local path.
+        """
+        if self.local_path is not None:
+            return self.local_path
+        if self.thumbnail is not None and self.thumbnail.localPath is not None:
             return self.thumbnail.localPath
         return None
-########################
-# Methods:
-########################
+
+    ########################
+    # Methods:
+    ########################
     def display(self) -> bool:
-        if (self._xdgopenPath == None):
+        """
+        call xdg open on the local file.
+        """
+        if self._xdgopen_path is None:
             return False
-        if (self.localPath != None and self.exists == True):
+        if self.local_path is not None and self.exists:
             try:
-                check_call([self._xdgopenPath, self.localPath])
+                check_call([self._xdgopen_path, self.local_path])
                 return True
             except CalledProcessError:
                 return False
-        elif(self.thumbnail != None):
+        elif self.thumbnail is not None:
             return self.thumbnail.display()
         return False

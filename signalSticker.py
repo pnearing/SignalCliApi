@@ -43,7 +43,7 @@ class Sticker(object):
         self.emoji = fromManifest['emoji']
         fileName = fromManifest['file']
         self.filePath = os.path.join(self._packPath, fileName)
-        self.contentType = fromManifest['contentType']
+        self.contentType = fromManifest['content_type']
         return
 
 #######################
@@ -69,7 +69,7 @@ class Sticker(object):
             "contact_id": self.id,
             "emoji": self.emoji,
             "filePath": self.filePath,
-            "contentType": self.contentType
+            "content_type": self.contentType
         }
         return stickerDict
     
@@ -78,7 +78,7 @@ class Sticker(object):
         self.id = fromDict['contact_id']
         self.emoji = fromDict['emoji']
         self.filePath = fromDict['filePath']
-        self.contentType = fromDict['contentType']
+        self.contentType = fromDict['content_type']
         return
 
 #############################################################################################

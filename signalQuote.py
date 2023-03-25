@@ -144,7 +144,7 @@ class Quote(object):
     # Load attachments
         self.attachments = []
         for rawAttachment in rawQuote['attachments']:
-            self.attachments.append( Attachment(configPath=self._configPath, rawAttachment=rawAttachment))
+            self.attachments.append(Attachment(config_path=self._configPath, raw_attachment=rawAttachment))
     # Load Mentions:
         if ('mentions' in rawQuote.keys()):
             self.mentions = Mentions(contacts=self._contacts, raw_mentions=rawQuote['mentions'])
@@ -170,7 +170,7 @@ class Quote(object):
             quoteDict['author'] = self.author.get_id()
     # Store attachments:
         for attachment in self.attachments:
-            quoteDict['attachments'].append(attachment.__toDict__())
+            quoteDict['attachments'].append(attachment.__to_dict__())
     # Store mentions:
         quoteDict['mentions'] = self.mentions.__to_dict__()
     # Store conversation:
@@ -192,7 +192,7 @@ class Quote(object):
     # Set attachments:
         self.attachments = []
         for attachmentDict in fromDict['attachments']:
-            self.attachments.append( Attachment( configPath=self._configPath, fromDict=attachmentDict ) )
+            self.attachments.append(Attachment(config_path=self._configPath, from_dict=attachmentDict))
     # Set mentions:
         self.mentions = None
         if (fromDict['mentions'] != None):

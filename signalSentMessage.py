@@ -226,7 +226,7 @@ class SentMessage(Message):
         if ('attachments' in rawSentMessage.keys()):
             self.attachments = []
             for rawAttachment in rawSentMessage['attachments']:
-                self.attachments.append(Attachment(configPath=self._config_path, rawAttachment=rawAttachment))
+                self.attachments.append(Attachment(config_path=self._config_path, raw_attachment=rawAttachment))
     # Load sticker: 
         self.sticker = None
         if ('sticker' in rawSentMessage.keys()):
@@ -253,7 +253,7 @@ class SentMessage(Message):
     # Load preview:
         self.preview = None
         if ('preview' in rawSentMessage.keys()):
-            self.preview = Preview(configPath=self._config_path, rawPreview=rawSentMessage['preview'])
+            self.preview = Preview(config_path=self._config_path, raw_preview=rawSentMessage['preview'])
     # Set sent
         self.isSent = True
     # Set sent to, If group, assume sent to all current members.
@@ -276,7 +276,7 @@ class SentMessage(Message):
         if (self.attachments != None):
             sentMessageDict["attachments"] = []
             for attacment in self.attachments:
-                sentMessageDict["attachments"].append(attacment.__toDict__())
+                sentMessageDict["attachments"].append(attacment.__to_dict__())
     # Set Mentions:
         sentMessageDict['mentions'] = None
         if (self.mentions != None):
@@ -333,7 +333,7 @@ class SentMessage(Message):
         if (from_dict['attachments'] != None):
             self.attachments = []
             for attachmentDict in from_dict['attachments']:
-                attachment = Attachment(configPath=self._config_path, fromDict=attachmentDict)
+                attachment = Attachment(config_path=self._config_path, from_dict=attachmentDict)
                 self.attachments.append(attachment)
     # Load mentions:
         self.mentions = None

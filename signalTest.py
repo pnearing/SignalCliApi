@@ -35,10 +35,10 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
         if (message.quote.attachments != None):
             for attachment in message.quote.attachments:
                 displayName = "<UNKNOWN-ATTACHMENT>"
-                if (attachment.fileName != None and attachment.fileName != ''):
-                    displayName = attachment.fileName
-                elif (attachment.localPath != None and attachment.exists == True):
-                    displayName = attachment.localPath
+                if (attachment.file_name != None and attachment.file_name != ''):
+                    displayName = attachment.file_name
+                elif (attachment.local_path != None and attachment.exists == True):
+                    displayName = attachment.local_path
                 elif (attachment.thumbnail != None and attachment.thumbnail.exists == True):
                     displayName = "Thumbnail: %s" % attachment.thumbnail.localPath
                 print("Trying to display attachment: %s...\n    Success=" % displayName, end='', flush=True)
@@ -70,12 +70,12 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
     if (message.attachments != None):
         for attachment in message.attachments:
             displayName = "<UNKNOWN-ATTACHMENT>"
-            if (attachment.fileName != None and attachment.fileName != ''):
-                displayName = attachment.fileName
-            elif (attachment.localPath != None and attachment.exists == True):
-                displayName = attachment.localPath
+            if (attachment.file_name != None and attachment.file_name != ''):
+                displayName = attachment.file_name
+            elif (attachment.local_path != None and attachment.exists == True):
+                displayName = attachment.local_path
             elif (attachment.thumbnail != None and attachment.thumbnail.exists == True):
-                displayName = "Thumbnail: %s" % attachment.thumbnail.localPath
+                displayName = "Thumbnail: %s" % attachment.thumbnail.local_path
             print("Trying to display attachment: %s...\n    Success=" % displayName, end='', flush=True)
             # returnValue = attachment.display()
             # print(returnValue)
@@ -218,9 +218,9 @@ if __name__ == '__main__':
 
     if (args.doSend != None):
         contact = account.contacts.get_by_id(args.doSend)
-        preview = Preview(configPath=signalConfigPath,
-                            generatePreview=True,
-                            url=previewUrl)
+        preview = Preview(config_path=signalConfigPath,
+                          generate_preview=True,
+                          url=previewUrl)
         account.messages.send_message(
                 recipients=contact,
                 body="Test message.\n%s" % previewUrl,

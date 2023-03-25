@@ -413,7 +413,7 @@ class Messages(object):
             if isinstance(attachments, Attachment):
                 target_attachments = [attachments]
             elif isinstance(attachments, str):
-                target_attachments = [Attachment(configPath=self._config_path, localPath=attachments)]
+                target_attachments = [Attachment(config_path=self._config_path, local_path=attachments)]
             elif isinstance(attachments, Iterable):
                 target_attachments = []
                 i = 0
@@ -423,7 +423,7 @@ class Messages(object):
                     if isinstance(attachment, Attachment):
                         target_attachments.append(attachment)
                     else:
-                        target_attachments.append(Attachment(configPath=self._config_path, localPath=attachment))
+                        target_attachments.append(Attachment(config_path=self._config_path, local_path=attachment))
             else:
                 __type_error__("attachments", "Iterable[Attachment | str] | Attachment | str", attachments)
         if target_attachments is not None and len(target_attachments) == 0:
@@ -498,7 +498,7 @@ class Messages(object):
         if target_attachments is not None:
             send_command_obj['params']['attachments'] = []
             for attachment in target_attachments:
-                send_command_obj['params']['attachments'].append(attachment.localPath)
+                send_command_obj['params']['attachments'].append(attachment.local_path)
         # Add mentions:
         if target_mentions is not None:
             send_command_obj['params']['mention'] = []
@@ -522,7 +522,7 @@ class Messages(object):
             send_command_obj['params']['previewTitle'] = preview.title
             send_command_obj['params']['previewDescription'] = preview.description
             if preview.image is not None:
-                send_command_obj['params']['previewImage'] = preview.image.localPath
+                send_command_obj['params']['previewImage'] = preview.image.local_path
         # Create json command string:
         json_command_str = json.dumps(send_command_obj) + '\n'
         # Mark system as sending:

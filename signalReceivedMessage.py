@@ -210,7 +210,7 @@ class ReceivedMessage(Message):
             print("DEBUG: %s: Started attachment decoding." % __name__)
             self.attachments = []
             for rawAttachment in dataMessage['attachments']:
-                attachment = Attachment(configPath=self._config_path, rawAttachment=rawAttachment)
+                attachment = Attachment(config_path=self._config_path, raw_attachment=rawAttachment)
                 self.attachments.append(attachment)
         # Parse mentions:
         if ('mentions' in dataMessage.keys()):
@@ -233,7 +233,7 @@ class ReceivedMessage(Message):
         self.previews = []
         if ('previews' in dataMessage.keys()):
             for rawPreview in dataMessage['previews']:
-                preview = Preview(configPath=self._config_path, rawPreview=rawPreview)
+                preview = Preview(config_path=self._config_path, raw_preview=rawPreview)
                 self.previews.append(preview)
 
         return
@@ -250,7 +250,7 @@ class ReceivedMessage(Message):
         if (self.attachments != None):
             receivedMessageDict["attachments"] = []
             for attachment in self.attachments:
-                receivedMessageDict["attachments"].append(attachment.__toDict__())
+                receivedMessageDict["attachments"].append(attachment.__to_dict__())
         # Set mentions:
         receivedMessageDict['mentions'] = self.mentions.__to_dict__()
         # Set reactions:
@@ -279,7 +279,7 @@ class ReceivedMessage(Message):
         # Set previews:
         receivedMessageDict['previews'] = []
         for preview in self.previews:
-            receivedMessageDict['previews'].append(preview.__toDict__())
+            receivedMessageDict['previews'].append(preview.__to_dict__())
         return receivedMessageDict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -291,7 +291,7 @@ class ReceivedMessage(Message):
         if (from_dict['attachments'] != None):
             self.attachments = []
             for attachmentDict in from_dict['attachments']:
-                attachment = Attachment(configPath=self._config_path, fromDict=attachmentDict)
+                attachment = Attachment(config_path=self._config_path, from_dict=attachmentDict)
                 self.attachments.append(attachment)
         # Load mentions:
         self.mentions = Mentions(contacts=self._contacts, from_dict=from_dict['mentions'])
@@ -324,7 +324,7 @@ class ReceivedMessage(Message):
         # Load previews:
         self.previews = []
         for previewDict in from_dict['previews']:
-            self.previews.append(Preview(configPath=self._config_path, fromDict=previewDict))
+            self.previews.append(Preview(config_path=self._config_path, from_dict=previewDict))
         return
 
     #####################
