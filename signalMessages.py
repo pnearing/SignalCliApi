@@ -6,10 +6,6 @@ import os
 import socket
 import json
 
-from signalContact import Contact
-from signalGroup import Group
-from signalSentMessage import SentMessage
-
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContact import Contact
