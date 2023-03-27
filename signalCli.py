@@ -8,7 +8,6 @@ from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
 from time import sleep
 from typing import Optional, Callable, Tuple, List
 
-from signalAccount import Account
 from .signalAccount import Account
 from .signalAccounts import Accounts
 from .signalCommon import __type_error__, find_signal, find_qrencode, parse_signal_return_code, __socket_create__, \
