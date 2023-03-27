@@ -4,7 +4,7 @@ from typing import Optional
 import os
 from subprocess import check_call, CalledProcessError
 
-from .signalCommon import __type_error__, find_xdg_open
+from .signalCommon import __type_error__, find_xdgopen
 
 
 class Thumbnail(object):
@@ -20,7 +20,7 @@ class Thumbnail(object):
         # TODO Argument checks
         # Set internal vars:
         self._config_path: str = config_path
-        self._xdgopen_path: Optional[str] = find_xdg_open()
+        self._xdgopen_path: Optional[str] = find_xdgopen()
         # Set external properties:
         self.content_type: str = content_type
         self.filename: str = filename

@@ -5,13 +5,16 @@ import mimetypes
 import os
 from subprocess import check_call, CalledProcessError
 
-from .signalCommon import __type_error__, find_xdg_open
+from .signalCommon import __type_error__, find_xdgopen
 from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
 
 
 class Attachment(object):
+    """
+    Class to store an attachment.
+    """
     def __init__(self,
                  config_path: str,
                  from_dict: Optional[dict] = None,
@@ -49,7 +52,7 @@ class Attachment(object):
 
         # Set internal vars:
         self._config_path: str = config_path
-        self._xdgopen_path: Optional[str] = find_xdg_open()
+        self._xdgopen_path: Optional[str] = find_xdgopen()
         # Set external vars:
         self.content_type: Optional[str] = content_type
         self.file_name: Optional[str] = file_name
@@ -78,10 +81,10 @@ class Attachment(object):
         return
 
     def __from_raw_attachment__(self, raw_attachment: dict) -> None:
-        print(raw_attachment.keys())
-        # raise NotImplemented
-        self.content_type = raw_attachment['content_type']
-        self.file_name = raw_attachment['file_name']
+        print(raw_attachment)
+        raise NotImplemented
+        self.content_type = raw_attachment['contentType']
+        self.file_name = raw_attachment['filename']
         if 'size' in raw_attachment.keys():
             self.size = raw_attachment['size']
         else:
@@ -103,9 +106,9 @@ class Attachment(object):
     def __to_dict__(self) -> dict:
         attachment_dict = {
             'content_type': self.content_type,
-            'file_name': self.file_name,
+            'filename': self.file_name,
             'size': self.size,
-            'local_path': self.local_path,
+            'localPath': self.local_path,
             'thumbnail': None,
         }
         if self.thumbnail is not None:
@@ -113,11 +116,11 @@ class Attachment(object):
         return attachment_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
-        self.content_type = from_dict['content_type']
-        self.id = from_dict['contact_id']
-        self.file_name = from_dict['file_name']
+        self.content_type = from_dict['contentType']
+        # self.id = from_dict['contact_id']
+        self.file_name = from_dict['filename']
         self.size = from_dict['size']
-        self.local_path = from_dict['local_path']
+        self.local_path = from_dict['localPath']
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)
         else:

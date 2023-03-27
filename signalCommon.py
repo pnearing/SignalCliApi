@@ -23,15 +23,15 @@ NUMBER_FORMAT_STR = "+nnnnnnn..."
 ####################################
 # xdg-open helper:
 ####################################
-def find_xdg_open() -> Optional[str]:
+def find_xdgopen() -> Optional[str]:
     """Use which to find xdg-open"""
-    xdg_open_path: Optional[str]
+    xdgopen_path: Optional[str]
     try:
-        xdg_open_path = check_output(['which', 'xdg-open'])
-        xdg_open_path = xdg_open_path.rstrip()
+        xdgopen_path = check_output(['which', 'xdg-open'])
+        xdgopen_path = xdgopen_path.rstrip()
     except CalledProcessError:
-        xdg_open_path = None
-    return xdg_open_path
+        xdgopen_path = None
+    return xdgopen_path
 
 
 ####################################

@@ -118,11 +118,11 @@ class Contact(object):
             'uuid': self.uuid,
             'profile': None,
             'devices': None,
-            'is_blocked': self.is_blocked,
+            'isBlocked': self.is_blocked,
             'expiration': self.expiration,
-            'is_typing': False,
-            'last_typing_change': None,
-            'last_seen': None,
+            'isTyping': False,
+            'lastTypingChange': None,
+            'lastSeen': None,
             'color': self.color,
         }
         if self.profile is not None:
@@ -130,17 +130,17 @@ class Contact(object):
         if self.devices is not None:
             contact_dict['devices'] = self.devices.__to_dict__()
         if self.last_typing_change is not None:
-            contact_dict['last_typing_change'] = self.last_typing_change.__to_dict__()
+            contact_dict['lastTypingChange'] = self.last_typing_change.__to_dict__()
         if self.last_seen is not None:
-            contact_dict['last_seen'] = self.last_seen.__to_dict__()
+            contact_dict['lastSeen'] = self.last_seen.__to_dict__()
         return contact_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
         self.name = from_dict['name']
         self.number = from_dict['number']
         self.uuid = from_dict['uuid']
-        self.is_blocked = from_dict['is_blocked']
-        self.is_typing = from_dict['is_typing']
+        self.is_blocked = from_dict['isBlocked']
+        self.is_typing = from_dict['isTyping']
         self.expiration = from_dict['expiration']
         self.color = from_dict['color']
         # Load Profile:
@@ -161,13 +161,13 @@ class Contact(object):
         else:
             self.devices = None
         # Load last typing change:
-        if from_dict['last_typing_change'] is not None:
-            self.last_typing_change = Timestamp(from_dict=from_dict['last_typing_change'])
+        if from_dict['lastTypingChange'] is not None:
+            self.last_typing_change = Timestamp(from_dict=from_dict['lastTypingChange'])
         else:
             self.last_typing_change = None
         # Load last seen:
-        if from_dict['last_seen'] is not None:
-            self.last_seen = Timestamp(from_dict=from_dict['last_seen'])
+        if from_dict['lastSeen'] is not None:
+            self.last_seen = Timestamp(from_dict=from_dict['lastSeen'])
         else:
             self.last_seen = None
         return
