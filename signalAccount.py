@@ -121,7 +121,7 @@ class Account(object):
         # Set the properties from the account json:
         self.number = raw_account['username']
         self.uuid = raw_account['uuid']
-        self.device_id = raw_account['device_id']
+        self.device_id = raw_account['deviceId']
         self.registered = raw_account['registered']
         self.config = raw_account['configurationStore']
         return
