@@ -69,7 +69,7 @@ class TypingMessage(Message):
         typingMessage = super().__to_dict__()
         typingMessage['action'] = self.action
         if (self.timeChanged != None):
-            typingMessage['timeChanged'] = self.timeChanged.__toDict__()
+            typingMessage['timeChanged'] = self.timeChanged.__to_dict__()
         else:
             typingMessage['timeChanged'] = None
         return typingMessage
@@ -78,7 +78,7 @@ class TypingMessage(Message):
         super().__from_dict__(from_dict)
         self.action = from_dict['action']
         if (from_dict['timeChanged'] != None):
-            self.timeChanged = Timestamp(fromDict=from_dict['timeChanged'])
+            self.timeChanged = Timestamp(from_dict=from_dict['timeChanged'])
         else:
             self.timeChanged = None
         return

@@ -40,7 +40,7 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
                 elif (attachment.local_path != None and attachment.exists == True):
                     displayName = attachment.local_path
                 elif (attachment.thumbnail != None and attachment.thumbnail.exists == True):
-                    displayName = "Thumbnail: %s" % attachment.thumbnail.localPath
+                    displayName = "Thumbnail: %s" % attachment.thumbnail.local_path
                 print("Trying to display attachment: %s...\n    Success=" % displayName, end='', flush=True)
                 # returnValue = attachment.display()
                 # print(returnValue)

@@ -152,7 +152,7 @@ class SyncMessage(Message):
         self.read_messages = []
         for (contact_id, timestamp_dict) in from_dict['read_messages']:
             added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
-            timestamp = Timestamp(fromDict=timestamp_dict)
+            timestamp = Timestamp(from_dict=timestamp_dict)
             self.read_messages.append((contact, timestamp))
         # Set blocked groups and contacts:
         self.blocked_contacts = from_dict['blocked_contacts']

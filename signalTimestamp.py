@@ -17,73 +17,74 @@ Self = TypeVar("Self", bound="Timestamp")
 
 
 class Timestamp(object):
+    """Time stamp object."""
     def __init__(self,
                  timestamp: Optional[int] = None,
-                 fromDict: Optional[dict[str, object]] = None,
-                 dateTime: Optional[datetime.datetime] = None,
+                 from_dict: Optional[dict[str, object]] = None,
+                 date_time: Optional[datetime.datetime] = None,
                  now: bool = False,
                  ) -> None:
         # Verify args:
-        if timestamp is None and fromDict is None and now is False and dateTime is None:
+        if timestamp is None and from_dict is None and not now and date_time is None:
             error_message = "FATAL: timestamp, from_dict, date_time must be defined, or now must be True."
             raise RuntimeError(error_message)
         # Type check args:
-        if timestamp is not None and isinstance(timestamp, int) is False:
+        if timestamp is not None and not isinstance(timestamp, int):
             __type_error__("timestamp", "int", timestamp)
-        if fromDict != None and isinstance(fromDict, dict) is False:
-            __type_error__("from_dict", "dict[str, object]", fromDict)
-        if dateTime != None and isinstance(dateTime, datetime.datetime) is False:
-            __type_error__("date_time", "datetime.datetime", dateTime)
-        if isinstance(now, bool) is False:
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict[str, object]", from_dict)
+        if date_time is not None and not isinstance(date_time, datetime.datetime):
+            __type_error__("date_time", "date_time.date_time", date_time)
+        if not isinstance(now, bool):
             __type_error__("now", "bool", now)
         # Set vars:
         self.timestamp: int = timestamp  # Int
-        self.datetime: Optional[datetime.datetime] = None  # Python tz aware datetime object.
+        self.date_time: Optional[datetime.datetime] = None  # Python tz aware date_time object.
         # Load from dict:
         if self.timestamp is not None:
-            self.__setDateTime__()
-        elif fromDict is not None:
-            self.__fromDict__(from_dict=fromDict)
-        elif dateTime is not None:
-            self.__fromDateTime__(dateTime)
+            self.__set_date_time__()
+        elif from_dict is not None:
+            self.__from_dict__(from_dict=from_dict)
+        elif date_time is not None:
+            self.__from_date_time__(date_time)
         elif now:
-            self.__fromNow__()
+            self.__from_now__()
         return
 
     ##########################
     # Init functions:
     ##########################
-    def __toDict__(self) -> dict:
+    def __to_dict__(self) -> dict:
         timestamp_dict = {
-            'timestamp': self.datetime.timestamp()
+            'timestamp': self.date_time.timestamp()
         }
         return timestamp_dict
 
-    def __fromDict__(self, from_dict: dict) -> None:
-        self.datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(from_dict['timestamp']))
+    def __from_dict__(self, from_dict: dict) -> None:
+        self.date_time = pytz.utc.localize(datetime.datetime.fromtimestamp(from_dict['timestamp']))
         self.timestamp = int(from_dict['timestamp'] * 1000)
         return
 
-    def __fromNow__(self) -> None:
-        self.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        seconds = self.datetime.timestamp()
+    def __from_now__(self) -> None:
+        self.date_time = pytz.utc.localize(datetime.datetime.utcnow())
+        seconds = self.date_time.timestamp()
         self.timestamp = int(seconds * 1000)
         return
 
-    def __fromDateTime__(self, date_time: datetime.datetime) -> None:
+    def __from_date_time__(self, date_time: datetime.datetime) -> None:
         try:
-            self.datetime = pytz.utc.localize(date_time)
+            self.date_time = pytz.utc.localize(date_time)
         except ValueError:
-            self.datetime = date_time
-        seconds = self.datetime.timestamp()
+            self.date_time = date_time
+        seconds = self.date_time.timestamp()
         self.timestamp = int(seconds * 1000)
         return
 
-    def __setDateTime__(self) -> None:
-        seconds = int(self.timestamp / 1000)
+    def __set_date_time__(self) -> None:
+        seconds = int(self.timestamp // 1000)
         microseconds = int((((self.timestamp / 1000) - seconds) * 1000) * 1000)
-        self.datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(seconds))
-        self.datetime = self.datetime.replace(microsecond=microseconds)
+        self.date_time = pytz.utc.localize(datetime.datetime.fromtimestamp(seconds))
+        self.date_time = self.date_time.replace(microsecond=microseconds)
         return
 
     ##########################################
@@ -93,52 +94,62 @@ class Timestamp(object):
         return self.timestamp
 
     def __float__(self) -> float:
-        return self.datetime.timestamp()
+        return self.date_time.timestamp()
 
     def __str__(self) -> str:
-        return self.datetime.isoformat()
+        return self.date_time.isoformat()
 
     def __eq__(self, __o: Self) -> bool:
-        if isinstance(__o, Timestamp) == False:
+        if not isinstance(__o, Timestamp):
             return False
-        return self.datetime == __o.datetime
+        return self.date_time == __o.date_time
 
     def __lt__(self, __o: Self) -> bool:
-        if isinstance(__o, Timestamp) == False:
+        if not isinstance(__o, Timestamp):
             raise TypeError("FATAL: only Timestamp is supported.")
-        return self.datetime < __o.datetime
+        return self.date_time < __o.date_time
 
     def __gt__(self, __o: Self | int) -> bool:
-        if isinstance(__o, Timestamp) == False:
+        if not isinstance(__o, Timestamp):
             raise TypeError("FATAL: Only SignalTimestamp and int are supported.")
-        return self.datetime > __o.datetime
+        return self.date_time > __o.datetime
 
     ##########################
     # Getters:
     ##########################
 
     def get_timestamp(self) -> int:
+        """Get the timestamp int."""
         return self.timestamp
 
     def get_datetime(self) -> datetime.datetime:
-        return self.datetime
+        """Get the datetime.datetime object."""
+        return self.date_time
 
     def get_display_time(self, local_time: bool = True) -> str:
+        """Get the timestamp as a display string."""
         if local_time:
             display_time = self.get_local_time()
         else:
-            display_time = self.datetime
+            display_time = self.date_time
         display_time_str = "%i<%s>" % (self.timestamp, display_time.isoformat())
         return display_time_str
 
     def get_local_time(self) -> datetime.datetime:
+        """Get a datetime.datetime object that has been localized to the system timezone."""
         local_tz = get_localzone()
-        return self.datetime.astimezone(local_tz)
+        return self.date_time.astimezone(local_tz)
 
     ########################
     # Method:
     ########################
     def print(self, indent: int = 0, indent_char: str = ' ', file=sys.stdout) -> None:
+        """
+        Print the timestamp.
+        :param: int: indent: The number of 'indent_char' to indent each line with.
+        :param: str: indent_char: The character to indent with, defaults to ' ' (space).
+        :param: IOObject: file: The io stream to output to, defaults to sys.stdout.
+        """
         # Arg Checks:
         if not isinstance(indent, int):
             raise TypeError("indent must be of type int.")
@@ -147,16 +158,16 @@ class Timestamp(object):
         if len(indent_char) != 1:
             raise ValueError("indent_char must be 1 character long.")
         # Convert to local time:
-        localTz = get_localzone()
-        localDatetime = self.datetime.astimezone(localTz)
+        local_tz = get_localzone()
+        local_datetime = self.date_time.astimezone(local_tz)
         # Create indent string:
-        indentString: str = indent_char * indent
-        print(indentString, "--------Begin Timestamp--------", file=file)
-        displayLine = "Timestamp: %i(%s)" % (self.timestamp, self.datetime.isoformat())
-        print(indentString, displayLine, file=file)
-        displayLine = "Local Time: %s" % (localDatetime.isoformat())
-        print(indentString, displayLine, file=file)
-        print(indentString, "---------End Timestamp---------", file=file)
+        indent_string: str = indent_char * indent
+        print(indent_string, "--------Begin Timestamp--------", file=file)
+        display_line = "Timestamp: %i(%s)" % (self.timestamp, self.date_time.isoformat())
+        print(indent_string, display_line, file=file)
+        display_line = "Local Time: %s" % (local_datetime.isoformat())
+        print(indent_string, display_line, file=file)
+        print(indent_string, "---------End Timestamp---------", file=file)
         return
 
 

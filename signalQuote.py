@@ -168,7 +168,7 @@ class Quote(object):
         }
         # Store timestamp
         if self.timestamp is not None:
-            quote_dict['timestamp'] = self.timestamp.__toDict__()
+            quote_dict['timestamp'] = self.timestamp.__to_dict__()
         # Store author:
         if self.author is not None:
             quote_dict['author'] = self.author.get_id()
@@ -187,7 +187,7 @@ class Quote(object):
         self.timestamp = None
         if from_dict['timestamp'] is not None:
             timestamp_dict: dict[str, object] = from_dict['timestamp']
-            self.timestamp = Timestamp(fromDict=timestamp_dict)
+            self.timestamp = Timestamp(from_dict=timestamp_dict)
         # Set author
         self.author = None
         if from_dict['author'] is not None:

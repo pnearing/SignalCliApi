@@ -115,13 +115,13 @@ class Receipt(Message):
         # Store when:
         receipt_dict['when'] = None
         if self.when is not None:
-            receipt_dict['when'] = self.when.__toDict__()
+            receipt_dict['when'] = self.when.__to_dict__()
         # Store receipt type:
         receipt_dict['receipt_type'] = self.receiptType
         # Store target timestamps:
         receipt_dict['timestamps'] = []
         for timestamp in self.timestamps:
-            receipt_dict['timestamps'].append(timestamp.__toDict__())
+            receipt_dict['timestamps'].append(timestamp.__to_dict__())
         return receipt_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -129,13 +129,13 @@ class Receipt(Message):
         # Load when:
         self.when = None
         if from_dict['when'] is not None:
-            self.when = Timestamp(fromDict=from_dict['when'])
+            self.when = Timestamp(from_dict=from_dict['when'])
         # Load receipt Type:
         self.receiptType = from_dict['receipt_type']
         # Load target timestamps:
         self.timestamps = []
         for timestampDict in from_dict['timestamps']:
-            self.timestamps.append(Timestamp(fromDict=timestampDict))
+            self.timestamps.append(Timestamp(from_dict=timestampDict))
         return
 
     #########################

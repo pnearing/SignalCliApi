@@ -230,13 +230,13 @@ class Message(object):
         if self.device is not None:
             message_dict['device'] = self.device.id
         if self.timestamp is not None:
-            message_dict['timestamp'] = self.timestamp.__toDict__()
+            message_dict['timestamp'] = self.timestamp.__to_dict__()
         if self.time_delivered is not None:
-            message_dict['time_delivered'] = self.time_delivered.__toDict__()
+            message_dict['time_delivered'] = self.time_delivered.__to_dict__()
         if self.time_read is not None:
-            message_dict['time_read'] = self.time_read.__toDict__()
+            message_dict['time_read'] = self.time_read.__to_dict__()
         if self.time_viewed is not None:
-            message_dict['time_viewed'] = self.time_viewed.__toDict__()
+            message_dict['time_viewed'] = self.time_viewed.__to_dict__()
         return message_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -260,25 +260,25 @@ class Message(object):
         if added:
             self._contacts.__save__()
         # Parse timestamp:
-        self.timestamp = Timestamp(fromDict=from_dict['timestamp'])
+        self.timestamp = Timestamp(from_dict=from_dict['timestamp'])
         # Parse message Type:
         self.message_type = from_dict['message_type']
         # Parse Delivered: (is and time)
         self.is_delivered = from_dict['is_delivered']
         if from_dict['time_delivered'] is not None:
-            self.time_delivered = Timestamp(fromDict=from_dict['time_delivered'])
+            self.time_delivered = Timestamp(from_dict=from_dict['time_delivered'])
         else:
             self.time_delivered = None
         # Parse read (is and time):
         self.is_read = from_dict['is_read']
         if from_dict['time_read'] is not None:
-            self.time_read = Timestamp(fromDict=from_dict['time_read'])
+            self.time_read = Timestamp(from_dict=from_dict['time_read'])
         else:
             self.time_read = None
         # Parse viewed (is and time):
         self.is_viewed = from_dict['is_viewed']
         if from_dict['time_viewed'] is not None:
-            self.time_viewed = Timestamp(fromDict=from_dict['time_viewed'])
+            self.time_viewed = Timestamp(from_dict=from_dict['time_viewed'])
         else:
             self.time_viewed = None
         return

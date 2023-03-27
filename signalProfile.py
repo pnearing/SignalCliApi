@@ -107,7 +107,7 @@ class Profile(object):
             'last_update': None,
         }
         if self.last_update is not None:
-            profile_dict['last_update'] = self.last_update.__toDict__()
+            profile_dict['last_update'] = self.last_update.__to_dict__()
         return profile_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -121,7 +121,7 @@ class Profile(object):
         self.avatar = from_dict['avatar']
         self.__find_avatar__()
         if from_dict['last_update'] is not None:
-            self.last_update = Timestamp(fromDict=from_dict['last_update'])
+            self.last_update = Timestamp(from_dict=from_dict['last_update'])
         else:
             self.last_update = from_dict['last_update']
         return

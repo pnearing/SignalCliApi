@@ -266,7 +266,7 @@ class ReceivedMessage(Message):
         if self.expiration is not None:
             received_message_dict['expiration'] = self.expiration.seconds
         if self.expiration_timestamp is not None:
-            received_message_dict['expiration_timestamp'] = self.expiration_timestamp.__toDict__()
+            received_message_dict['expiration_timestamp'] = self.expiration_timestamp.__to_dict__()
         # Set previews:
         received_message_dict['previews'] = []
         for preview in self.previews:
@@ -311,7 +311,7 @@ class ReceivedMessage(Message):
             self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expiration_timestamp = None
         if from_dict['expiration_timestamp'] is not None:
-            self.expiration_timestamp = Timestamp(fromDict=from_dict['expiration_timestamp'])
+            self.expiration_timestamp = Timestamp(from_dict=from_dict['expiration_timestamp'])
         # Load previews:
         self.previews = []
         for preview_dict in from_dict['previews']:
@@ -367,8 +367,8 @@ class ReceivedMessage(Message):
 
     def __set_expiry__(self, time_opened: Timestamp):
         if self.expiration is not None:
-            expiryDateTime = time_opened.datetime + self.expiration
-            self.expiration_timestamp = Timestamp(dateTime=expiryDateTime)
+            expiryDateTime = time_opened.date_time + self.expiration
+            self.expiration_timestamp = Timestamp(date_time=expiryDateTime)
         return
 
     #####################

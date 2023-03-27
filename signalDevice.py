@@ -90,20 +90,20 @@ class Device(object):
             'is_primary_device': self.is_primary_device,
         }
         if self.created is not None:
-            device_dict['created'] = self.created.__toDict__()
+            device_dict['created'] = self.created.__to_dict__()
         if self.last_seen is not None:
-            device_dict['last_seen'] = self.last_seen.__toDict__()
+            device_dict['last_seen'] = self.last_seen.__to_dict__()
         return device_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
         self.id = from_dict['contact_id']
         self.name = from_dict['name']
         if from_dict['created'] is not None:
-            self.created = Timestamp(fromDict=from_dict['created'])
+            self.created = Timestamp(from_dict=from_dict['created'])
         else:
             self.created = None
         if from_dict['last_seen'] is not None:
-            self.last_seen = Timestamp(fromDict=from_dict['last_seen'])
+            self.last_seen = Timestamp(from_dict=from_dict['last_seen'])
         else:
             self.last_seen = None
         self.is_account_device = from_dict['is_account_device']

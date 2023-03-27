@@ -120,7 +120,7 @@ class Reaction(Message):
         if self.target_author is not None:
             reaction_dict['targetAuthorId'] = self.target_author.get_id()
         if self.target_timestamp is not None:
-            reaction_dict['target_timestamp'] = self.target_timestamp.__toDict__()
+            reaction_dict['target_timestamp'] = self.target_timestamp.__to_dict__()
         return reaction_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -135,7 +135,7 @@ class Reaction(Message):
             self.target_author = None
         # Parse target timestamp:
         if from_dict['target_timestamp'] is not None:
-            self.target_timestamp = Timestamp(fromDict=from_dict['target_timestamp'])
+            self.target_timestamp = Timestamp(from_dict=from_dict['target_timestamp'])
         # Parse is remove:
         self.is_remove = from_dict['is_remove']
         # Parse is change:

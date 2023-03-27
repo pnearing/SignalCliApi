@@ -299,7 +299,7 @@ class SentMessage(Message):
         if self.expiration is not None:
             sent_message_dict['expiration'] = self.expiration.seconds
         if self.expiration_timestamp is not None:
-            sent_message_dict['expiration_timestamp'] = self.expiration_timestamp.__toDict__()
+            sent_message_dict['expiration_timestamp'] = self.expiration_timestamp.__to_dict__()
         # Set is sent:
         sent_message_dict['is_sent'] = self.is_sent
         # Set sent_to list:
@@ -358,7 +358,7 @@ class SentMessage(Message):
             self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expiration_timestamp = None
         if from_dict['expiration_timestamp'] is not None:
-            self.expiration_timestamp = Timestamp(fromDict=from_dict['expiration_timestamp'])
+            self.expiration_timestamp = Timestamp(from_dict=from_dict['expiration_timestamp'])
         self.is_expired = from_dict['is_expired']
         # Load is_sent:
         self.is_sent = from_dict['is_sent']
@@ -414,8 +414,8 @@ class SentMessage(Message):
 
     def __set_expiry__(self, time_opened: Timestamp) -> None:
         if self.expiration is not None:
-            expiryDateTime = time_opened.datetime + self.expiration
-            self.expiration_timestamp = Timestamp(dateTime=expiryDateTime)
+            expiryDateTime = time_opened.date_time + self.expiration
+            self.expiration_timestamp = Timestamp(date_time=expiryDateTime)
         return
 
     ###########################

@@ -130,9 +130,9 @@ class Contact(object):
         if self.devices is not None:
             contact_dict['devices'] = self.devices.__to_dict__()
         if self.last_typing_change is not None:
-            contact_dict['last_typing_change'] = self.last_typing_change.__toDict__()
+            contact_dict['last_typing_change'] = self.last_typing_change.__to_dict__()
         if self.last_seen is not None:
-            contact_dict['last_seen'] = self.last_seen.__toDict__()
+            contact_dict['last_seen'] = self.last_seen.__to_dict__()
         return contact_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -162,12 +162,12 @@ class Contact(object):
             self.devices = None
         # Load last typing change:
         if from_dict['last_typing_change'] is not None:
-            self.last_typing_change = Timestamp(fromDict=from_dict['last_typing_change'])
+            self.last_typing_change = Timestamp(from_dict=from_dict['last_typing_change'])
         else:
             self.last_typing_change = None
         # Load last seen:
         if from_dict['last_seen'] is not None:
-            self.last_seen = Timestamp(fromDict=from_dict['last_seen'])
+            self.last_seen = Timestamp(from_dict=from_dict['last_seen'])
         else:
             self.last_seen = None
         return

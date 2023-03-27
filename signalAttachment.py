@@ -94,7 +94,7 @@ class Attachment(object):
             self.exists = False
         self.thumbnail = None
         if 'thumbnail' in raw_attachment.keys():
-            self.thumbnail = Thumbnail(configPath=self._config_path, rawThumbnail=raw_attachment['thumbnail'])
+            self.thumbnail = Thumbnail(config_path=self._config_path, raw_thumbnail=raw_attachment['thumbnail'])
         return
 
     #########################
@@ -109,7 +109,7 @@ class Attachment(object):
             'thumbnail': None,
         }
         if self.thumbnail is not None:
-            attachment_dict['thumbnail'] = self.thumbnail.__toDict__()
+            attachment_dict['thumbnail'] = self.thumbnail.__to_dict__()
         return attachment_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -124,7 +124,7 @@ class Attachment(object):
             self.exists = False
         self.thumbnail = None
         if from_dict['thumbnail'] is not None:
-            self.thumbnail = Thumbnail(configPath=self._config_path, fromDict=from_dict['thumbnail'])
+            self.thumbnail = Thumbnail(config_path=self._config_path, from_dict=from_dict['thumbnail'])
         return
 
     ########################
@@ -136,8 +136,8 @@ class Attachment(object):
         """
         if self.local_path is not None:
             return self.local_path
-        if self.thumbnail is not None and self.thumbnail.localPath is not None:
-            return self.thumbnail.localPath
+        if self.thumbnail is not None and self.thumbnail.local_path is not None:
+            return self.thumbnail.local_path
         return None
 
     ########################
