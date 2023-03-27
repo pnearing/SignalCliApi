@@ -12,145 +12,156 @@ from .signalGroup import Group
 from .signalGroups import Groups
 from .signalReaction import Reaction
 
+
 class Reactions(object):
     def __init__(self,
-                    commandSocket: socket.socket,
-                    accountId: str,
-                    contacts: Contacts,
-                    groups: Groups,
-                    devices: Devices,
-                    thisDevice: Device,
-                    fromDict: dict[str, object] = None,
-                    reactions: Optional[Iterable[Reaction]] = None,
-                ) -> None:
-    # Argument checks:
-        if (isinstance(commandSocket, socket.socket) == False):
-            __type_error__("command_socket", "socket.socket", commandSocket)
-        if (isinstance(accountId, str) == False):
-            __type_error__("contact_id", "str", accountId)
-        if (isinstance(contacts, Contacts) == False):
+                 command_socket: socket.socket,
+                 account_id: str,
+                 contacts: Contacts,
+                 groups: Groups,
+                 devices: Devices,
+                 this_device: Device,
+                 from_dict: dict[str, object] = None,
+                 reactions: Optional[Iterable[Reaction]] = None,
+                 ) -> None:
+        # Argument checks:
+        if not isinstance(command_socket, socket.socket):
+            __type_error__("command_socket", "socket.socket", command_socket)
+        if not isinstance(account_id, str):
+            __type_error__("contact_id", "str", account_id)
+        if not isinstance(contacts, Contacts):
             __type_error__("contacts", "Contacts", contacts)
-        if (isinstance(groups, Groups) == False):
+        if not isinstance(groups, Groups):
             __type_error__("groups", "Groups", groups)
-        if (isinstance(devices, Devices) == False):
+        if not isinstance(devices, Devices):
             __type_error__("devices", "Devices", devices)
-        if (isinstance(thisDevice, Device) == False):
-            __type_error__("this_device", "Device", thisDevice)
-        if (fromDict != None and isinstance(fromDict, dict) == False):
-            __type_error__("from_dict", "dict", fromDict)
-    # Set internal vars:
-        self._commandSocket: socket.socket = commandSocket
-        self._accountId: str = accountId
+        if not isinstance(this_device, Device):
+            __type_error__("this_device", "Device", this_device)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        # Set internal vars:
+        self._command_socket: socket.socket = command_socket
+        self._account_id: str = account_id
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
         self._devices: Devices = devices
-        self._thisDevice: Device = thisDevice
+        self._this_device: Device = this_device
         self._reactions: list[Reaction] = []
-        if (reactions != None):
-            i = 0
-            for reaction in reactions:
-                if (isinstance(reaction, Reaction) == False):
+        if reactions is not None:
+            for i, reaction in enumerate(reactions):
+                if not isinstance(reaction, Reaction):
                     __type_error__("reactions[%i]" % i, "Reaction", reaction)
-                i = i + 1
                 self._reactions.append(reaction)
         return
 
-############################
-# Overrides:
-############################
+    ############################
+    # Overrides:
+    ############################
     def __iter__(self) -> Iterator[Reaction]:
         return iter(self._reactions)
-    
-    def __getitem__(self, index:int) -> Reaction:
-        if (isinstance(index, int) == False):
+
+    def __getitem__(self, index: int) -> Reaction:
+        if not isinstance(index, int):
             __type_error__("index", "int", index)
         return self._reactions[index]
 
-#########################
-# To / From Dict:
-#########################
-    def __toDict__(self) -> dict[str, object]:
-        reactionsDict = {
+    #########################
+    # To / From Dict:
+    #########################
+    def __to_dict__(self) -> dict[str, object]:
+        reactions_dict = {
             'reactions': []
         }
         for reaction in self._reactions:
-            reactionsDict['reactions'].append(reaction.__to_dict__())
-        return reactionsDict
-    
-    def __fromDict__(self, fromDict) -> None:
+            reactions_dict['reactions'].append(reaction.__to_dict__())
+        return reactions_dict
+
+    def __from_dict__(self, from_dict: dict[str, object]) -> None:
         self._reactions = []
-        for reactionDict in fromDict['reactions']:
-            reaction = Reaction(command_socket=self._commandSocket, contacts=self._contacts, groups=self._groups,
-                                device=self._devices, from_dict=reactionDict)
+        for reaction_dict in from_dict['reactions']:
+            reaction = Reaction(command_socket=self._command_socket, contacts=self._contacts, groups=self._groups,
+                                devices=self._devices, this_device=self._this_device, from_dict=reaction_dict)
             self._reactions.append(reaction)
         return
 
-####################
-# Methods:
-####################
-    def __parse__(self, reaction:Reaction) -> None:
-    # Parse a remove request:
-        if (reaction.is_remove == True):
+    ####################
+    # Methods:
+    ####################
+    def __parse__(self, reaction: Reaction) -> None:
+        # Parse a remove request:
+        if reaction.is_remove:
             self.__remove__(reaction)
             return
-    # Try to find a previous reaction:
-        previousReaction = self.getByContact(reaction.sender)
-        if (previousReaction == None):
+        # Try to find a previous reaction:
+        previousReaction = self.get_by_contact(reaction.sender)
+        if previousReaction is None:
             self.__add__(reaction)
         else:
             self.__replace__(previousReaction, reaction)
         return
 
-    def __add__(self, newReaction:Reaction) -> None:
-        if (isinstance(newReaction, Reaction) == False):
-            __type_error__("newReaction", "Reaction", newReaction)
-        if (newReaction in self._reactions):
+    def __add__(self, newReaction: Reaction) -> None:
+        if not isinstance(newReaction, Reaction):
+            __type_error__("new_reaction", "Reaction", newReaction)
+        if newReaction in self._reactions:
             raise RuntimeError("reaction already in reactions.")
         self._reactions.append(newReaction)
         return
 
-    def __remove__(self, targetReaction:Reaction) -> None:
-        if (isinstance(targetReaction, Reaction) == False):
-            __type_error__("targetReaction", "Reaction", targetReaction)
+    def __remove__(self, target_reaction: Reaction) -> None:
+        if not isinstance(target_reaction, Reaction):
+            __type_error__("target_reaction", "Reaction", target_reaction)
         for index in range(len(self._reactions)):
             reaction = self._reactions[index]
-            if (reaction.sender == targetReaction.sender):
+            if reaction.sender == target_reaction.sender:
                 self._reactions.pop(index)
                 return
-        raise RuntimeError("targetReaction not found in reactions.")
+        raise RuntimeError("target_reaction not found in reactions.")
 
-    def __replace__(self, oldReaction:Reaction, newReaction:Reaction) -> None:
-        self.__remove__(oldReaction)
-        newReaction.is_change = True
-        newReaction.__update_body__()
-        self.__add__(newReaction)
+    def __replace__(self, old_reaction: Reaction, new_reaction: Reaction) -> None:
+        self.__remove__(old_reaction)
+        new_reaction.is_change = True
+        new_reaction.__update_body__()
+        self.__add__(new_reaction)
         return
 
-    def reactionIn(self, targetReaction:Reaction) -> bool:
-        return (targetReaction in self._reactions)
+    def reaction_in(self, target_reaction: Reaction) -> bool:
+        return target_reaction in self._reactions
 
-###########################
-# Getters:
-###########################
+    ###########################
+    # Getters:
+    ###########################
 
-    def getByContact(self, contact:Contact) -> Optional[Reaction]:
-        if (isinstance(contact, Contact) == False):
+    def get_by_contact(self, contact: Contact) -> Optional[Reaction]:
+        """
+        Get by contact
+        :param: str: contact: The contact to search by
+        """
+        if not isinstance(contact, Contact):
             __type_error__("contact", "Contact | str", contact)
         for reaction in self._reactions:
-            if (reaction.sender == contact):
+            if reaction.sender == contact:
                 return reaction
         return None
 
-    def getByEmoji(self, emoji:str) -> tuple[Reaction]:
-        if (isinstance(emoji, str) == False):
+    def get_by_emoji(self, emoji: str) -> tuple[Reaction]:
+        """
+        Get by emoji
+        :param: str: emmoji: The emoji to search for.
+        """
+        if not isinstance(emoji, str):
             __type_error__("emoji", "str", emoji)
-        if (len(emoji) == 0 or len(emoji) > 1):
-            raise ValueError("emoji must be one character")
-        reactions = [ reaction for reaction in self._reactions if reaction.emoji == emoji ]
+        if len(emoji) == 0 or len(emoji) > 2:
+            raise ValueError("emoji must be one or 2 characters")
+        reactions = [reaction for reaction in self._reactions if reaction.emoji == emoji]
         return tuple(reactions)
-    
-    def getByRecipient(self, recipient: Contact | Group) -> tuple[Reaction]:
-        if (isinstance(recipient, Contact) == False and isinstance(recipient, Group) == False):
+
+    def get_by_recipient(self, recipient: Contact | Group) -> tuple[Reaction]:
+        """
+        Get by recipient
+        :param: Contact | Group: The recipient to search for.
+        """
+        if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
             __type_error__("recipient", "Contact | Group", recipient)
-        reactions = [ reaction for reaction in self._reactions if reaction.recipient == recipient]
+        reactions = [reaction for reaction in self._reactions if reaction.recipient == recipient]
         return tuple(reactions)

@@ -165,10 +165,10 @@ class SentMessage(Message):
         if (isinstance(reactions, Reactions) == True):
             self.reactions = reactions
         elif (len(reactionList) == 0):
-            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
-                                       groups=groups, devices=devices, thisDevice=this_device)
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
+                                       groups=groups, devices=devices, this_device=this_device)
         else:
-            self.reactions = Reactions(commandSocket=command_socket, accountId=account_id, contacts=contacts,
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
                                        groups=groups, devices=devices, reactions=reactionList)
     # Set sticker:
         self.sticker: Optional[Sticker] = sticker
@@ -284,7 +284,7 @@ class SentMessage(Message):
     # Set Reactions:
         sentMessageDict['reactions'] = None
         if (self.reactions != None):
-            sentMessageDict['reactions'] = self.reactions.__toDict__()
+            sentMessageDict['reactions'] = self.reactions.__to_dict__()
     # Set sticker:
         sentMessageDict['sticker'] = None
         if (self.sticker != None):
@@ -342,9 +342,9 @@ class SentMessage(Message):
     # Load reactions:        
         self.reactions = None
         if (from_dict['reactions'] != None):
-            self.reactions = Reactions(commandSocket=self._command_socket, accountId=self._account_id,
+            self.reactions = Reactions(command_socket=self._command_socket, account_id=self._account_id,
                                        contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                       fromDict=from_dict['reactions'])
+                                       from_dict=from_dict['reactions'])
     # Load sticker
         self.sticker = None
         if (from_dict['sticker'] != None):

@@ -31,25 +31,39 @@ class Reaction(Message):
                  this_device: Device,
                  from_dict: Optional[dict] = None,
                  raw_message: Optional[dict] = None,
-                 # sender: Optional[Contact] = None,
                  recipient: Optional[Contact | Group] = None,
-                 # device: Optional[Device] = None,
-                 # timestamp: Optional[Timestamp] = None,
-                 # is_delivered: bool = False,
-                 # time_delivered: Optional[Timestamp] = None,
-                 # is_read: bool = False,
-                 # time_read: Optional[Timestamp] = None,
-                 # is_viewed: bool = False,
-                 # time_viewed: Optional[Timestamp] = None,
                  emoji: Optional[str] = None,
                  target_author: Optional[Contact] = None,
                  target_timestamp: Optional[Timestamp] = None,
                  is_remove: bool = False,
-                 # is_change: bool = False,
-                 # previous_emoji: Optional[str] = None,
                  ) -> None:
-        # TODO: Argument checks:
-
+        # Argument checks:
+        if not isinstance(command_socket, socket.socket):
+            __type_error__("command_socket", "socket.socket", command_socket)
+        if not isinstance(emoji, str):
+            __type_error__("emoji", "str", emoji)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(contacts, Contacts):
+            __type_error__("contacts", "Contacts", contacts)
+        if not isinstance(devices, Devices):
+            __type_error__("devices", "Devices", devices)
+        if not isinstance(this_device, Device):
+            __type_error__("this_device", "Device", this_device)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if raw_message is not None and not isinstance(raw_message):
+            __type_error__("raw_message", "dict", raw_message)
+        if recipient is not None and not isinstance(recipient, Contact) and not isinstance(recipient, Group):
+            __type_error__("recipient", "Contact | Group", recipient)
+        if emoji is not None and not isinstance(emoji, str):
+            __type_error__("emoji", 'str', emoji)
+        if target_author is not None and not isinstance(target_author, Contact):
+            __type_error__("target_author", "Contact", target_author)
+        if target_timestamp is not None and not isinstance(target_timestamp, Timestamp):
+            __type_error__("target_timestamp", "Timestamp", target_timestamp)
+        if not isinstance(is_remove, bool):
+            __type_error__("is_remove", 'bool', is_remove)
         # Set external properties:
         self.emoji: str = emoji
         self.target_author: Contact = target_author
@@ -134,6 +148,7 @@ class Reaction(Message):
     # Send reaction:
     ###########################
     def send(self) -> tuple[bool, str]:
+        """Send the reaction"""
         # Create reaction command object and json command string:
         send_reaction_command_obj = {
             "jsonrpc": "2.0",
