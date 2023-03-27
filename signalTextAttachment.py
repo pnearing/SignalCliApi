@@ -4,87 +4,87 @@ from typing import Optional
 
 from .signalCommon import __type_error__
 
+
 class TextAttachment(object):
     def __init__(self,
-                        fromDict: Optional[dict[str, object]] = None,
-                        rawAttachment: Optional[dict[str, object]] = None,
-                        text: Optional[str] = None,
-                        style: Optional[str] = None,
-                        textForegroundColor: Optional[str] = None,
-                        textBackgroundColor: Optional[str] = None,
-                        backgroudColor: Optional[str] = None,
-                    ) -> None:
-# Argument checks:
-    # Check text:
-        if (text != None and isinstance(text, str) == False):
+                 from_dict: Optional[dict[str, object]] = None,
+                 raw_attachment: Optional[dict[str, object]] = None,
+                 text: Optional[str] = None,
+                 style: Optional[str] = None,
+                 text_foreground_color: Optional[str] = None,
+                 text_background_color: Optional[str] = None,
+                 backgroud_color: Optional[str] = None,
+                 ) -> None:
+        # Argument checks:
+        # Check text:
+        if text is not None and not isinstance(text, str):
             __type_error__("text", "str", text)
-    # Check style:
-        if (style != None and isinstance(style, str) == False):
+        # Check style:
+        if style is not None and not isinstance(style, str):
             __type_error__("style", "str", style)
-    # check text fg colour:
-        if (textForegroundColor != None and isinstance(textForegroundColor, str) == False):
-            __type_error__("textForegroundColor", "str", textForegroundColor)
-    # Check text bg colour:
-        if (textBackgroundColor != None and isinstance(textBackgroundColor, str) == False):
-            __type_error__("textBackgroundColor", "str", textBackgroundColor)
-    # Check bg Colour:
-        if (backgroudColor != None and isinstance(backgroudColor, str) == False):
-            __type_error__("backgroundColor", "str", backgroudColor)
-# Set external properties
-    # Set text:
+        # check text fg colour:
+        if text_foreground_color is not None and not isinstance(text_foreground_color, str):
+            __type_error__("text_foreground_color", "str", text_foreground_color)
+        # Check text bg colour:
+        if text_background_color is not None and not isinstance(text_background_color, str):
+            __type_error__("text_background_color", "str", text_background_color)
+        # Check bg Colour:
+        if backgroud_color is not None and not isinstance(backgroud_color, str):
+            __type_error__("background_color", "str", backgroud_color)
+        # Set external properties
+        # Set text:
         self.text: str = text
-    # Set style:
+        # Set style:
         self.style: str = style
-    # Set text bg colour:
-        self.textBackgroundColor = textBackgroundColor
-    # Set text fg colour:
-        self.textForegroundColor = textForegroundColor
-    # Set background colour:
-        self.backgroundColor = backgroudColor
+        # Set text bg colour:
+        self.text_background_color = text_background_color
+        # Set text fg colour:
+        self.text_foreground_color = text_foreground_color
+        # Set background colour:
+        self.background_color = backgroud_color
 
-    # Parse fromdict:
-        if (fromDict != None):
-            self.__fromDict__(fromDict)
-    # Parse raw attachment
-        elif (rawAttachment != None):
-            self.__fromRawAttachment__(rawAttachment)
+        # Parse from_dict:
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
+        # Parse raw attachment
+        elif raw_attachment is not None:
+            self.__from_raw_attachment__(raw_attachment)
         return
 
-####################
-# Init:
-####################
-    def __fromRawAttachment__(self, rawAttachment:dict[str,object]) -> None:
-    # Load text:    
-        self.text = rawAttachment['text']
-        self.style = rawAttachment['style']
-        self.textBackgroundColor = rawAttachment['textBackgroundColor']
-        self.textForegroundColor = rawAttachment['textForegroundColor']
-        self.backgroundColor = rawAttachment['backgroundColor']
+    ####################
+    # Init:
+    ####################
+    def __from_raw_attachment__(self, raw_attachment: dict[str, object]) -> None:
+        # Load text:
+        self.text = raw_attachment['text']
+        self.style = raw_attachment['style']
+        self.text_background_color = raw_attachment['text_background_color']
+        self.text_foreground_color = raw_attachment['text_foreground_color']
+        self.background_color = raw_attachment['background_color']
         return
 
-
-####################
-# To / From dict:
-####################
-    def __toDict__(self) -> dict[str, object]:
+    ####################
+    # To / From dict:
+    ####################
+    def __to_dict__(self) -> dict[str, object]:
         textAttachmentDict = {
             'text': self.text,
             'style': self.style,
-            'textBackgroundColor': self.textBackgroundColor,
-            'textForegroundColor': self.textForegroundColor,
-            'backgroundColor': self.backgroundColor,
+            'text_background_color': self.text_background_color,
+            'text_foreground_color': self.text_foreground_color,
+            'background_color': self.background_color,
         }
         return textAttachmentDict
 
-    def __fromDict__(self, fromDict:dict[str, object]) -> None:
-    # Load text:
-        self.text = fromDict['text']
-    # Load style:
-        self.style = fromDict['style']
-    # Load text bg colour:
-        self.textBackgroundColor = fromDict['textBackgroundColor']
-    # Load text fg colour:
-        self.textForegroundColor = fromDict['textForegroundColor']
-    # Load background colour:
-        self.backgroundColor = fromDict['backgroundColor']
+    def __from_dict__(self, from_dict: dict[str, object]) -> None:
+        # Load text:
+        self.text = from_dict['text']
+        # Load style:
+        self.style = from_dict['style']
+        # Load text bg colour:
+        self.text_background_color = from_dict['text_background_color']
+        # Load text fg colour:
+        self.text_foreground_color = from_dict['text_foreground_color']
+        # Load background colour:
+        self.background_color = from_dict['background_color']
         return

@@ -75,7 +75,7 @@ class StoryMessage(Message):
             self.attachment = Attachment(config_path=self._config_path,
                                          raw_attachment=raw_story_message['fileAttachment'])
         elif 'textAttachment' in raw_story_message.keys():
-            self.attachment = TextAttachment(rawAttachment=raw_story_message['textAttachment'])
+            self.attachment = TextAttachment(raw_attachment=raw_story_message['textAttachment'])
         # Preview:
         self.preview = None
         if 'preview' in raw_story_message.keys():
