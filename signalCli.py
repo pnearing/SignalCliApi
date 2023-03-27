@@ -321,20 +321,20 @@ class SignalCli(object):
                       call_message_callback: Optional[Callable] = None,
                       ) -> None:
         thread_id = account.number
-        thread = ReceiveThread(serverAddress=self._server_address,
-                               commandSocket=self._command_socket,
-                               configPath=self.config_path,
+        thread = ReceiveThread(server_address=self._server_address,
+                               command_socket=self._command_socket,
+                               config_path=self.config_path,
                                account=account,
-                               stickerPacks=self.sticker_packs,
-                               allMessagesCallback=all_messages_callback,
-                               receivedMessageCallback=received_message_callback,
-                               receiptMessageCallback=receipt_message_callback,
-                               syncMessageCallback=sync_message_callback,
-                               typingMessageCallback=typing_message_callback,
-                               storyMessageCallback=story_message_callback,
-                               paymentMessageCallback=payment_message_callback,
-                               reactionMessageCallback=reaction_message_callback,
-                               callMessageCallback=call_message_callback,
+                               sticker_packs=self.sticker_packs,
+                               all_messages_callback=all_messages_callback,
+                               received_message_callback=received_message_callback,
+                               receipt_message_callback=receipt_message_callback,
+                               sync_message_callback=sync_message_callback,
+                               typing_message_callback=typing_message_callback,
+                               story_message_callback=story_message_callback,
+                               payment_message_callback=payment_message_callback,
+                               reaction_message_callback=reaction_message_callback,
+                               call_message_callback=call_message_callback,
                                )
         thread.start()
         self._recieve_threads[thread_id] = thread
