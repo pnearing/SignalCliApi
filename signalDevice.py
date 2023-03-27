@@ -55,7 +55,7 @@ class Device(object):
     def __fromRawDevice__(self, raw_device: dict) -> None:
         print(raw_device)
         exit(255)
-        self.id = raw_device['contact_id']
+        self.id = raw_device['id']
         self.name = raw_device['name']
         if raw_device['createdTimestamp'] is not None:
             self.created = Timestamp(timestamp=raw_device['createdTimestamp'])
@@ -84,32 +84,32 @@ class Device(object):
     ##########################
     def __to_dict__(self) -> dict:
         device_dict = {
-            'contact_id': self.id,
+            'id': self.id,
             'name': self.name,
             'created': None,
-            'last_seen': None,
-            'is_account_device': self.is_account_device,
-            'is_primary_device': self.is_primary_device,
+            'lastSeen': None,
+            'isAccountDevice': self.is_account_device,
+            'isPrimaryDevice': self.is_primary_device,
         }
         if self.created is not None:
             device_dict['created'] = self.created.__to_dict__()
         if self.last_seen is not None:
-            device_dict['last_seen'] = self.last_seen.__to_dict__()
+            device_dict['lastSeen'] = self.last_seen.__to_dict__()
         return device_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
-        self.id = from_dict['contact_id']
+        self.id = from_dict['id']
         self.name = from_dict['name']
         if from_dict['created'] is not None:
             self.created = Timestamp(from_dict=from_dict['created'])
         else:
             self.created = None
-        if from_dict['last_seen'] is not None:
-            self.last_seen = Timestamp(from_dict=from_dict['last_seen'])
+        if from_dict['lastSeen'] is not None:
+            self.last_seen = Timestamp(from_dict=from_dict['lastSeen'])
         else:
             self.last_seen = None
-        self.is_account_device = from_dict['is_account_device']
-        self.is_primary_device = from_dict['is_primary_device']
+        self.is_account_device = from_dict['isAccountDevice']
+        self.is_primary_device = from_dict['isPrimaryDevice']
         return
 
     ########################
