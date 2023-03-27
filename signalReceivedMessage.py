@@ -210,8 +210,8 @@ class ReceivedMessage(Message):
         if 'sticker' in dataMessage.keys():
             stickerDict: dict[str, object] = dataMessage['sticker']
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
-            self.sticker = self._sticker_packs.getSticker(packId=stickerDict['packId'],
-                                                          stickerId=stickerDict['stickerId'])
+            self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['pack_id'],
+                                                           sticker_id=stickerDict['sticker_id'])
         # Parse Quote
         if 'quote' in dataMessage.keys():
             if self.recipient_type == 'group':
@@ -252,8 +252,8 @@ class ReceivedMessage(Message):
         received_message_dict['sticker'] = None
         if self.sticker is not None:
             received_message_dict['sticker'] = {
-                'packId': self.sticker._packId,
-                'stickerId': self.sticker.id
+                'pack_id': self.sticker._pack_id,
+                'sticker_id': self.sticker.id
             }
         # Set quote:
         received_message_dict['quote'] = None
@@ -295,9 +295,9 @@ class ReceivedMessage(Message):
         # Load sticker:
         self.sticker = None
         if from_dict['sticker'] is not None:
-            self.sticker = self._sticker_packs.getSticker(
-                packId=from_dict['sticker']['packId'],
-                stickerId=from_dict['sticker']['stickerId']
+            self.sticker = self._sticker_packs.get_sticker(
+                pack_id=from_dict['sticker']['pack_id'],
+                sticker_id=from_dict['sticker']['sticker_id']
             )
         # Load quote
         self.quote = None

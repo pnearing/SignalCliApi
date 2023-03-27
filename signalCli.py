@@ -146,7 +146,7 @@ class SignalCli(object):
         self._command_socket = __socket_create__(self._server_address)
         __socket_connect__(self._command_socket, self._server_address)
         # Load stickers:
-        self.sticker_packs = StickerPacks(configPath=self.config_path)
+        self.sticker_packs = StickerPacks(config_path=self.config_path)
         # Load accounts:
         self.accounts = Accounts(sync_socket=self._sync_socket, command_socket=self._command_socket,
                                  config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)

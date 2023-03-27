@@ -225,8 +225,8 @@ class SentMessage(Message):
         # Load sticker:
         self.sticker = None
         if 'sticker' in raw_sent_message.keys():
-            self.sticker = self._sticker_packs.getSticker(packId=raw_sent_message['sticker']['packId'],
-                                                          stickerId=raw_sent_message['sticker']['stickerId'])
+            self.sticker = self._sticker_packs.get_sticker(pack_id=raw_sent_message['sticker']['pack_id'],
+                                                           sticker_id=raw_sent_message['sticker']['sticker_id'])
         # Load mentions:
         self.mentions = None
         if 'mentions' in raw_sent_message.keys():
@@ -285,8 +285,8 @@ class SentMessage(Message):
         sent_message_dict['sticker'] = None
         if self.sticker is not None:
             sent_message_dict['sticker'] = {
-                'packId': self.sticker._packId,
-                'stickerId': self.sticker.id
+                'pack_id': self.sticker._pack_id,
+                'sticker_id': self.sticker.id
             }
         # Set quote:
         sent_message_dict['quote'] = None
@@ -344,9 +344,9 @@ class SentMessage(Message):
         # Load sticker
         self.sticker = None
         if from_dict['sticker'] is not None:
-            self.sticker = self._sticker_packs.getSticker(
-                packId=from_dict['sticker']['packId'],
-                stickerId=from_dict['sticker']['stickerId']
+            self.sticker = self._sticker_packs.get_sticker(
+                pack_id=from_dict['sticker']['pack_id'],
+                sticker_id=from_dict['sticker']['sticker_id']
             )
         # Load Quote:
         self.quote = None

@@ -226,7 +226,7 @@ if __name__ == '__main__':
                 body="Test message.\n%s" % previewUrl,
                 preview=preview,
             )
-        stickerPack = signal.sticker_packs.getPackByName("Josh Saunders")
+        stickerPack = signal.sticker_packs.get_pack_by_name("Josh Saunders")
         sticker = stickerPack[0]
         account.messages.send_message(contact, sticker=sticker)
     
