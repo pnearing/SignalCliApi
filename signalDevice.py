@@ -9,6 +9,7 @@ Self = TypeVar("Self", bound="Device")
 
 
 class Device(object):
+    """Class to store a device."""
     def __init__(self,
                  sync_socket: socket.socket,
                  account_id: str,
@@ -52,7 +53,8 @@ class Device(object):
         return
 
     def __fromRawDevice__(self, raw_device: dict) -> None:
-        # print(raw_device)
+        print(raw_device)
+        exit(255)
         self.id = raw_device['contact_id']
         self.name = raw_device['name']
         if raw_device['createdTimestamp'] is not None:
