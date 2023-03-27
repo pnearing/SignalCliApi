@@ -79,8 +79,8 @@ class Profile(object):
 
     def __from_raw_profile__(self, raw_profile: dict) -> None:
         # print (raw_profile)
-        self.given_name = raw_profile['given_name']
-        self.family_name = raw_profile['family_name']
+        self.given_name = raw_profile['givenName']
+        self.family_name = raw_profile['familyName']
         self.__set_name__()
         self.about = raw_profile['about']
         self.emoji = raw_profile['aboutEmoji']
@@ -98,32 +98,32 @@ class Profile(object):
 
     def __to_dict__(self) -> dict:
         profile_dict = {
-            'given_name': self.given_name,
-            'family_name': self.family_name,
+            'givenName': self.given_name,
+            'familyName': self.family_name,
             'about': self.about,
             'emoji': self.emoji,
-            'coin_address': self.coin_address,
+            'coinAddress': self.coin_address,
             'avatar': self.avatar,
-            'last_update': None,
+            'lastUpdate': None,
         }
         if self.last_update is not None:
-            profile_dict['last_update'] = self.last_update.__to_dict__()
+            profile_dict['lastUpdate'] = self.last_update.__to_dict__()
         return profile_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
         # Set properties:
-        self.given_name = from_dict['given_name']
-        self.family_name = from_dict['family_name']
+        self.given_name = from_dict['givenName']
+        self.family_name = from_dict['familyName']
         self.__set_name__()
         self.about = from_dict['about']
         self.emoji = from_dict['emoji']
-        self.coin_address = from_dict['coin_address']
+        self.coin_address = from_dict['coinAddress']
         self.avatar = from_dict['avatar']
         self.__find_avatar__()
-        if from_dict['last_update'] is not None:
-            self.last_update = Timestamp(from_dict=from_dict['last_update'])
+        if from_dict['lastUpdate'] is not None:
+            self.last_update = Timestamp(from_dict=from_dict['lastUpdate'])
         else:
-            self.last_update = from_dict['last_update']
+            self.last_update = from_dict['lastUpdate']
         return
 
     #####################################
