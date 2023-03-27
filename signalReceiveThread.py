@@ -206,37 +206,37 @@ class ReceiveThread(threading.Thread):
                         command_socket=self._command_socket, account_id=self._account.number,
                         config_path=self._config_path, contacts=self._account.contacts,
                         groups=self._account.groups, devices=self._account.devices,
-                        this_device=self._account.device, stickerPacks=self._sticker_packs,
+                        this_device=self._account.device, sticker_packs=self._sticker_packs,
                         raw_message=envelopeDict
                     )
                     # Parse the sync message based on sync type:
                     if DEBUG:
                         print("Parsing sync message...", file=sys.stderr)
-                    if (message.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC or
-                            message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
+                    if (message.sync_type == SyncMessage.TYPE_READ_MESSAGE_SYNC or
+                            message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
                         if DEBUG:
                             print("Read messages.", file=sys.stderr)
                         self._account.messages.__parse_sync_message__(message)
-                    elif message.syncType == SyncMessage.TYPE_CONTACT_SYNC:
+                    elif message.sync_type == SyncMessage.TYPE_CONTACT_SYNC:
                         if DEBUG:
                             print("Contact sync", file=sys.stderr)
                         self._account.contacts.__sync__()
-                    elif message.syncType == SyncMessage.TYPE_GROUPS_SYNC:
+                    elif message.sync_type == SyncMessage.TYPE_GROUPS_SYNC:
                         if DEBUG:
                             print("Group sync", file=sys.stderr)
                         self._account.groups.__sync__()
-                    elif message.syncType == SyncMessage.TYPE_BLOCKED_SYNC:
+                    elif message.sync_type == SyncMessage.TYPE_BLOCKED_SYNC:
                         if DEBUG:
                             print("Blocked sync", file=sys.stderr)
                         self._account.contacts.__parse_sync_message__(message)
                         self._account.groups.__parse_sync_message__(message)
-                    elif message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
+                    elif message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
                         if DEBUG:
                             print("Sent message sync", file=sys.stderr)
                         self._account.messages.__parse_sync_message__(message)
                     else:
                         print(envelopeDict, file=sys.stderr, flush=True)
-                        print(message.syncType, file=sys.stderr, flush=True)
+                        print(message.sync_type, file=sys.stderr, flush=True)
                         raise RuntimeError("Unhandled sync type")
                     # Append the message to messages:
                     if message is None:

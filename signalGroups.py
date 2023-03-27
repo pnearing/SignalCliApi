@@ -103,8 +103,8 @@ class Groups(object):
     # Helpers:
     ##############################
     def __parse_sync_message__(self, sync_message) -> None:  # sync_message type SyncMessage
-        if sync_message.syncType == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
-            for group_id in sync_message.blockedGroups:
+        if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
+            for group_id in sync_message.blocked_groups:
                 added, group = self.__get_or_add__("<UNKNOWN-GROUP>", group_id)
                 group.is_blocked = True
         else:

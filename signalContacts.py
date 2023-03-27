@@ -195,8 +195,8 @@ class Contacts(object):
     # Helpers:
     ##################################
     def __parse_sync_message__(self, sync_message) -> None:  # sync_message type = SyncMessage
-        if sync_message.syncType == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
-            for contact_id in sync_message.blockedContacts:
+        if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
+            for contact_id in sync_message.blocked_contacts:
                 added, contact = self.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
                 contact.is_blocked = True
             self.__save__()

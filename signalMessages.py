@@ -137,7 +137,7 @@ class Messages(object):
                 message = SyncMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,
-                                      stickerPacks=self._sticker_packs, from_dict=message_dict)
+                                      sticker_packs=self._sticker_packs, from_dict=message_dict)
             else:
                 error_message = "FATAL: Invalid message type in for sync messages in Messages.__from_dict__"
                 raise RuntimeError(error_message)
@@ -232,7 +232,7 @@ class Messages(object):
         return
 
     def __parse_read_message_sync__(self, sync_message: SyncMessage) -> None:
-        for contact, timestamp in sync_message.readMessages:
+        for contact, timestamp in sync_message.read_messages:
             search_messages = self.get_by_sender(contact)
             for message in search_messages:
                 if message.timestamp == timestamp:
@@ -248,17 +248,17 @@ class Messages(object):
                               config_path=self._config_path,
                               contacts=self._contacts, groups=self._groups, devices=self._devices,
                               this_device=self._this_device, sticker_packs=self._sticker_packs,
-                              raw_message=sync_message.rawSentMessage)
+                              raw_message=sync_message.raw_sent_message)
         self.append(message)
         return
 
     def __parse_sync_message__(self, sync_message: SyncMessage) -> None:
-        if sync_message.syncType == SyncMessage.TYPE_READ_MESSAGE_SYNC:
+        if sync_message.sync_type == SyncMessage.TYPE_READ_MESSAGE_SYNC:
             self.__parse_read_message_sync__(sync_message)
-        elif sync_message.syncType == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
+        elif sync_message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
             self.__parse_sent_message_sync__(sync_message)
         else:
-            error_message = "Can only parse SyncMessage.TYPE_READ_MESSAGE_SYNC and SyncMessage.TYPE_SENT_MESSAGE_SYNC not: %i" % sync_message.syncType
+            error_message = "Can only parse SyncMessage.TYPE_READ_MESSAGE_SYNC and SyncMessage.TYPE_SENT_MESSAGE_SYNC not: %i" % sync_message.sync_type
             raise TypeError(error_message)
         self.__save__()
         return

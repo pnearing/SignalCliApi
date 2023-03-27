@@ -16,6 +16,7 @@ from .signalPreview import Preview
 from .signalTextAttachment import TextAttachment
 from .signalTimestamp import Timestamp
 
+
 class StoryMessage(Message):
     def __init__(self,
                  command_socket: socket.socket,
@@ -31,63 +32,62 @@ class StoryMessage(Message):
                  recipient: Optional[Contact | Group] = None,
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
-                 allowsReplies: bool = True,
+                 allows_replies: bool = True,
                  preview: Optional[Preview] = None,
-                 attachment: Optional[Attachment|TextAttachment] = None,
+                 attachment: Optional[Attachment | TextAttachment] = None,
                  ) -> None:
-# Argument Checks:
-    # Check allows replies:
-        if (isinstance(allowsReplies, bool) == False):
-            __type_error__("allowsReplies", "bool", allowsReplies)
-    # Check preview:
-        if (preview != None and isinstance(preview, Preview) == False):
+        # Argument Checks:
+        # Check allows replies:
+        if not isinstance(allows_replies, bool):
+            __type_error__("allows_replies", "bool", allows_replies)
+        # Check preview:
+        if preview is not None and not isinstance(preview, Preview):
             __type_error__("preview", "Preview", preview)
-    # Check attachment:
-        if (attachment != None):
-            if (isinstance(attachment, Attachment) == False and isinstance(attachment, TextAttachment) == False):
+        # Check attachment:
+        if attachment is not None:
+            if not isinstance(attachment, Attachment) and not isinstance(attachment, TextAttachment):
                 __type_error__("attachment", "Attachment | TextAttachment", attachment)
-# Set external properties:
-    # Allows replies:
-        self.allowsReplies: bool = allowsReplies
-    # Preview:
+        # Set external properties:
+        # Allows replies:
+        self.allows_replies: bool = allows_replies
+        # Preview:
         self.preview: Optional[Preview] = preview
-    # Attachment:
+        # Attachment:
         self.attachment: Attachment | TextAttachment = attachment
-    
-    # Run super init:
+
+        # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
                          raw_message, sender, recipient, device, timestamp, Message.TYPE_STORY_MESSAGE)
         return
-    
-###########################
-# Init:
-###########################
+
+    ###########################
+    # Init:
+    ###########################
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
         print(raw_message)
-    # Load allows replies:
-        rawStoryMessage:dict[str,object] = raw_message['storyMessage']
-        self.allowsReplies = rawStoryMessage['allowsReplies']
-    # Attachment:
+        # Load allows replies:
+        raw_story_message: dict[str, object] = raw_message['storyMessage']
+        self.allows_replies = raw_story_message['allows_replies']
+        # Attachment:
         self.attachment = None
-        if ('fileAttachment' in rawStoryMessage.keys()):
-            self.attachment = Attachment(config_path=self._config_path, raw_attachment=rawStoryMessage['fileAttachment'])
-        elif ('textAttachment' in rawStoryMessage.keys()):
-            self.attachment = TextAttachment(rawAttachment=rawStoryMessage['textAttachment'])
-    # Preview:
+        if 'fileAttachment' in raw_story_message.keys():
+            self.attachment = Attachment(config_path=self._config_path,
+                                         raw_attachment=raw_story_message['fileAttachment'])
+        elif 'textAttachment' in raw_story_message.keys():
+            self.attachment = TextAttachment(rawAttachment=raw_story_message['textAttachment'])
+        # Preview:
         self.preview = None
-        if ('preview' in rawStoryMessage.keys()):
-            self.preview = Preview(config_path=self._config_path, raw_preview=rawStoryMessage['preview'])
+        if 'preview' in raw_story_message.keys():
+            self.preview = Preview(config_path=self._config_path, raw_preview=raw_story_message['preview'])
         return
-    
 
-###########################
-# To / From Dict:
-###########################
+    ###########################
+    # To / From Dict:
+    ###########################
     def __to_dict__(self) -> dict:
-        storyMessageDict = super().__to_dict__()
-
-        return storyMessageDict
+        story_message_dict = super().__to_dict__()
+        return story_message_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
         super().__from_dict__(from_dict)
