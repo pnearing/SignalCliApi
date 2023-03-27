@@ -114,14 +114,14 @@ class Messages(object):
                 message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,
-                                      stickerPacks=self._sticker_packs,
+                                      sticker_packs=self._sticker_packs,
                                       from_dict=message_dict)
 
             elif message_dict['message_type'] == Message.TYPE_RECEIVED_MESSAGE:
                 message = ReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
                                           config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                           devices=self._devices, this_device=self._this_device,
-                                          stickerPacks=self._sticker_packs, from_dict=message_dict)
+                                          sticker_packs=self._sticker_packs, from_dict=message_dict)
             else:
                 error_message = "FATAL: Invalid message type in messages from_dict: %s" % fromDict['message_type']
                 raise RuntimeError(error_message)
@@ -227,7 +227,7 @@ class Messages(object):
         for message in sentMessages:
             for timestamp in receipt.timestamps:
                 if message.timestamp == timestamp:
-                    message.__parseReceipt__(receipt)
+                    message.__parse_receipt__(receipt)
                     self.__save__()
         return
 
@@ -238,7 +238,7 @@ class Messages(object):
                 if message.timestamp == timestamp:
                     if not message.is_read:
                         if isinstance(message, ReceivedMessage):
-                            message.mark_read(when=sync_message.timestamp, sendReceipt=False)
+                            message.mark_read(when=sync_message.timestamp, send_receipt=False)
                         else:
                             message.mark_read(when=sync_message.timestamp)
         return
@@ -247,7 +247,7 @@ class Messages(object):
         message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                               config_path=self._config_path,
                               contacts=self._contacts, groups=self._groups, devices=self._devices,
-                              this_device=self._this_device, stickerPacks=self._sticker_packs,
+                              this_device=self._this_device, sticker_packs=self._sticker_packs,
                               raw_message=sync_message.rawSentMessage)
         self.append(message)
         return
@@ -561,9 +561,9 @@ class Messages(object):
                 sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                            config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                            devices=self._devices, this_device=self._this_device,
-                                           stickerPacks=self._sticker_packs, recipient=recipient,
+                                           sticker_packs=self._sticker_packs, recipient=recipient,
                                            timestamp=timestamp, body=body, attachments=target_attachments,
-                                           mentions=target_mentions, quote=quote, sticker=sticker, isSent=True)
+                                           mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True)
                 self.append(sent_message)
                 sent_messages.append(sent_message)
             for result in results_list:
@@ -578,7 +578,7 @@ class Messages(object):
                 if result['type'] == "SUCCESS":
                     for message in sent_messages:
                         if message.recipient == group:
-                            message.sentTo.append(contact)
+                            message.sent_to.append(contact)
                             return_value.append((True, contact, message))
                 # Message failed to send:
                 else:
@@ -600,10 +600,10 @@ class Messages(object):
                                                config_path=self._config_path, contacts=self._contacts,
                                                groups=self._groups,
                                                devices=self._devices, this_device=self._this_device,
-                                               stickerPacks=self._sticker_packs, recipient=contact,
+                                               sticker_packs=self._sticker_packs, recipient=contact,
                                                timestamp=timestamp, body=body, attachments=target_attachments,
-                                               mentions=target_mentions, quote=quote, sticker=sticker, isSent=True,
-                                               sentTo=target_recipients)
+                                               mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True,
+                                               sent_to=target_recipients)
                     return_value.append((True, contact, sent_message))
                     self.append(sent_message)
                     self.__save__()

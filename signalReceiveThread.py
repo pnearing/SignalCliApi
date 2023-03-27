@@ -166,7 +166,7 @@ class ReceiveThread(threading.Thread):
                                                         command_socket=self._commandSocket, account_id=self._account.number,
                                                         config_path=self._configPath, contacts=self._account.contacts,
                                                         groups=self._account.groups, devices=self._account.devices, 
-                                                        this_device=self._account.device, stickerPacks=self._stickerPacks,
+                                                        this_device=self._account.device, sticker_packs=self._stickerPacks,
                                                         raw_message=envelopeDict,
                                                     )
                         # Sender is no longer typing:

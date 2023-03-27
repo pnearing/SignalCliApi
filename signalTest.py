@@ -56,13 +56,13 @@ def receivedMsgCb(account:Account, message:ReceivedMessage):
                     print("in GROUP: %s" % quotedMessage.recipient.get_display_name())
             elif (isinstance(quotedMessage, SentMessage) == True):
                 print("Quoting message sent AT: %s" % quotedMessage.timestamp.get_display_time())
-                if (quotedMessage.recipientType == 'group'):
+                if (quotedMessage.recipient_type == 'group'):
                     print("In GROUP: %s" % quotedMessage.recipient.get_display_name())
         quotedText = message.quote.parse_mentions()
         print("Quoted TEXT: %s" % quotedText)
 
     print("--------Begin Message--------")
-    displayText = message.parseMentions()
+    displayText = message.parse_mentions()
     print(displayText)
     print("---------End Message---------")
 
