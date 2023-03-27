@@ -18,6 +18,7 @@ from .signalReaction import Reaction
 from .signalSticker import Sticker
 from .signalTimestamp import Timestamp
 
+
 class TypingMessage(Message):
     def __init__(self,
                  command_socket: socket.socket,
@@ -34,65 +35,66 @@ class TypingMessage(Message):
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
                  action: Optional[str] = None,
-                 timeChanged: Optional[Timestamp] = None,
+                 time_changed: Optional[Timestamp] = None,
                  ) -> None:
-    # Arg Checks:
+        # Arg Checks:
         # Check action
-        if (action != None):
-            if(isinstance(action, str) == False):
+        if action is not None:
+            if not isinstance(action, str):
                 __type_error__("action", 'str', action)
             action = action.upper()
-            if (action != 'STARTED' and action != 'STOPPED'):
+            if action != 'STARTED' and action != 'STOPPED':
                 raise ValueError("action must be either STARTED or STOPPED")
         # Check time changed:
-        if (timeChanged != None and isinstance(timeChanged, Timestamp) == False):
-            __type_error__("timeChanged", "Timestamp", timeChanged)
-    # Set external properties:
+        if time_changed is not None and not isinstance(time_changed, Timestamp):
+            __type_error__("time_changed", "Timestamp", time_changed)
+        # Set external properties:
         self.action: str = action
-        self.timeChanged: Timestamp = timeChanged
+        self.time_changed: Timestamp = time_changed
         self.body: str = ''
-    # Run super init:
+        # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
                          raw_message, sender, recipient, device, timestamp, Message.TYPE_TYPING_MESSAGE)
-    # update body:
-        self.__updateBody__()
+        # update body:
+        self.__update_body__()
         return
 
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
-        typingDict:dict[str, object] = raw_message['typingMessage']
-        self.action = typingDict['action']
-        self.timeChanged = Timestamp(timestamp=typingDict['timestamp'])
+        typing_dict: dict[str, object] = raw_message['typingMessage']
+        self.action = typing_dict['action']
+        self.time_changed = Timestamp(timestamp=typing_dict['timestamp'])
         return
 
     def __to_dict__(self) -> dict:
-        typingMessage = super().__to_dict__()
-        typingMessage['action'] = self.action
-        if (self.timeChanged != None):
-            typingMessage['timeChanged'] = self.timeChanged.__to_dict__()
+        typing_message = super().__to_dict__()
+        typing_message['action'] = self.action
+        if self.time_changed is not None:
+            typing_message['time_changed'] = self.time_changed.__to_dict__()
         else:
-            typingMessage['timeChanged'] = None
-        return typingMessage
+            typing_message['time_changed'] = None
+        return typing_message
 
     def __from_dict__(self, from_dict: dict) -> None:
         super().__from_dict__(from_dict)
         self.action = from_dict['action']
-        if (from_dict['timeChanged'] != None):
-            self.timeChanged = Timestamp(from_dict=from_dict['timeChanged'])
+        if from_dict['time_changed'] is not None:
+            self.time_changed = Timestamp(from_dict=from_dict['time_changed'])
         else:
-            self.timeChanged = None
+            self.time_changed = None
         return
-    
 
-    def __updateBody__(self) -> None:
-        if (self.sender != None and self.action != None and self.timeChanged != None ):
-            if (self.recipient !=None and self.recipient_type != None):
-                if (self.recipient_type == 'contact'):
-                    self.body = "At %s, %s %s typing." % (self.timeChanged.get_display_time(), self.sender.get_display_name(),
-                                                          self.action.lower())
-                elif (self.recipient_type == 'group'):
-                    self.body = "At %s, %s %s typing in group %s." %(self.timeChanged.get_display_time(), self.sender.get_display_name(),
-                                                                     self.action.lower(), self.recipient.get_display_name())
+    def __update_body__(self) -> None:
+        if self.sender is not None and self.action is not None and self.time_changed is not None:
+            if self.recipient is not None and self.recipient_type is not None:
+                if self.recipient_type == 'contact':
+                    self.body = "At %s, %s %s typing." % (
+                        self.time_changed.get_display_time(), self.sender.get_display_name(),
+                        self.action.lower())
+                elif self.recipient_type == 'group':
+                    self.body = "At %s, %s %s typing in group %s." % (
+                        self.time_changed.get_display_time(), self.sender.get_display_name(),
+                        self.action.lower(), self.recipient.get_display_name())
                 else:
                     raise ValueError("invalid recipient_type: %s" % self.recipient_type)
         else:
