@@ -75,8 +75,6 @@ class Device(object):
         return
 
     def __fromRawDevice__(self, raw_device: dict) -> None:
-        print(raw_device)
-        exit(255)
         self.id = raw_device['id']
         self.name = raw_device['name']
         if raw_device['createdTimestamp'] is not None:
