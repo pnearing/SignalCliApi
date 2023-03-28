@@ -206,14 +206,14 @@ class SignalCli(object):
         """
                 Register a new account. NOTE: Subject to rate limiting.
                 :param number: str: The phone number to register.
-                :param captcha: str: The captcha from 'https://signalcaptchas.org/registration/generate.html', can include the
-                                        'signalcaptcha://'.
+                :param captcha: str: The captcha from 'https://signalcaptchas.org/registration/generate.html', can
+                                        include the 'signalcaptcha://'.
                 :param voice: bool: True = Voice call verification, False = SMS verification.
-                :returns: tuple[bool, Account | str]: The first element (bool) is True for success or failure.  The second
-                                                        element, on success is the new Account object, which will remain in
-                                                        an unregistered state until verify is called with the verification code.
-                                                        Upon failure, the second element will contain a string with an error
-                                                        message.
+                :returns: tuple[bool, Account | str]: The first element (bool) is True for success or failure.  The
+                                                        second element, on success is the new Account object, which
+                                                        will remain in an unregistered state until verify is called
+                                                        with the verification code.  Upon failure, the second element
+                                                        will contain a string with an error message.
                 :raises: TypeError: If number or captcha are not strings, or if voice is not a boolean.
                 """
         # Type check arguments:
@@ -229,10 +229,10 @@ class SignalCli(object):
             # noinspection SpellCheckingInspection
             return False, "number must be in format +nnnnnnnn...."
         # noinspection SpellCheckingInspection
-        if captcha[:16] == 'signalcaptcha://':
+        if captcha.startswith('signalcaptcha://'):
             captcha = captcha[16:]
         # noinspection SpellCheckingInspection
-        if captcha[:17] != 'signal-recaptcha-' and captcha[:15] != 'signal-hcaptcha':
+        if not captcha.startswith('signal-recaptcha-') and not captcha.startswith('signal-hcaptcha'):
             return False, "invalid captcha"
         # Check if account exists, and isn't registered.
         account = self.accounts.get_by_number(number)
