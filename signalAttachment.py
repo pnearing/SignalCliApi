@@ -81,9 +81,6 @@ class Attachment(object):
         return
 
     def __from_raw_attachment__(self, raw_attachment: dict) -> None:
-        print(raw_attachment)
-        print("DEBUG IN FROM_RAW_ATTACHMENT")
-        exit(252)
         self.content_type = raw_attachment['contentType']
         self.id = raw_attachment['id']
         self.filename = raw_attachment['filename']
