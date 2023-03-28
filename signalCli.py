@@ -183,10 +183,12 @@ class SignalCli(object):
         __socket_close__(self._command_socket)
         # Terminate processes:
         if self._process is not None:
-            self._process.terminate()
-            self._process = None
+            self._process.terminate()  # Kill the process (Sends SigTerm)
+            out, err = self._process.communicate()  # Flush the pipes.
+            self._process = None  # Clear the process.
         if self._link_process is not None:
             self._link_process.terminate()
+            out, err = self._link_process.communicate()
             self._link_process = None
         # Remove socket file:
         try:
