@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+ """File: signalGroup.py"""
 from typing import TypeVar, Optional
 import socket
 import json
@@ -150,6 +150,7 @@ class Group(object):
         print(raw_group)
         print("DEBUG in __from_raw_group__")
         exit(254)
+        print("DEBUG: in __from_raw_group__ after exit.")
         # TODO: figure out group ID key.
         self.id = raw_group['id']
         self.name: Optional[str] = None
