@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
- """File: signalGroup.py"""
+"""File: signalGroup.py"""
 from typing import TypeVar, Optional
 import socket
 import json
