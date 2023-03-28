@@ -21,6 +21,7 @@ Self = TypeVar("Self", bound="Reaction")
 
 
 class Reaction(Message):
+    """Class to store a reaction message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
