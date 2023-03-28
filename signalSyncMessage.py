@@ -18,6 +18,7 @@ from .signalCommon import __type_error__
 DEBUG: bool = False
 
 
+# noinspection GrazieInspection
 class SyncMessage(Message):
     """Class to store the different type of sync messages."""
     # Sync message types:
@@ -26,7 +27,7 @@ class SyncMessage(Message):
     TYPE_SENT_MESSAGE_SYNC: int = 3
     TYPE_READ_MESSAGE_SYNC: int = 4
     TYPE_BLOCKED_SYNC: int = 5
-    # Sent message message types:
+    # Sent message, message types:
     SENT_TYPE_SENT_MESSAGE: int = 1
     SENT_TYPE_GROUP_UPDATE_MESSAGE: int = 2
 

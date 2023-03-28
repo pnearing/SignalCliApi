@@ -6,7 +6,7 @@ from .signalCommon import __type_error__
 
 
 class TextAttachment(object):
-    """"Class to store a 'text attachment' from story messages."""
+    """Class to store a 'text attachment' from story messages."""
     def __init__(self,
                  from_dict: Optional[dict[str, object]] = None,
                  raw_attachment: Optional[dict[str, object]] = None,

@@ -249,7 +249,7 @@ class StickerPacks(object):
         # Load Known sticker packs:
         self.__load__()
         if DEBUG and len(self.packs) == 0:
-            warningMessage = "WARNING: No stickers loaded, sending stickers will be disabled until they are recieved."
+            warningMessage = "WARNING: No stickers loaded, sending stickers will be disabled until they are received."
             print(warningMessage, file=sys.stderr)
         return
 
@@ -268,7 +268,7 @@ class StickerPacks(object):
         pack_ids: list[str] = os.listdir(stickers_path)
         if len(pack_ids) == 0:
             if DEBUG:
-                error_message = "FATAL: no stickers sync'd"
+                error_message = "FATAL: no stickers syncronized."
                 print(error_message, file=sys.stderr)
             return
         # Load the manifest files from the sticker packs:

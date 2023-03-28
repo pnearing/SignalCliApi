@@ -28,6 +28,7 @@ Self = TypeVar("Self", bound="SentMessage")
 
 
 class SentMessage(Message):
+    # noinspection GrazieInspection
     """Class to store a sent message."""
     def __init__(self,
                  command_socket: socket.socket,
@@ -252,7 +253,7 @@ class SentMessage(Message):
             self.preview = Preview(config_path=self._config_path, raw_preview=raw_sent_message['preview'])
         # Set sent
         self.is_sent = True
-        # Set sent to, If group, assume sent to all current members.
+        # Set sent to, if a group, assume sent to all current members.
         self.sent_to = []
         if self.recipient_type == 'group':
             for contact in self.recipient.members:

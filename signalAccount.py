@@ -102,8 +102,9 @@ class Account(object):
             # Set this device:
             self.device = self.devices.get_account_device()
             # Load contacts from signal:
-            self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
-                                     account_path=self._account_path, do_load=True, do_sync=True)
+            self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path,
+                                     account_id=self.number, account_path=self._account_path, do_load=True,
+                                     do_sync=True)
             # Load groups from signal:
             self.groups = Groups(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                  account_contacts=self.contacts, do_sync=True)

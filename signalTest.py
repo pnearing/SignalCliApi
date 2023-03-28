@@ -140,8 +140,9 @@ if __name__ == '__main__':
     parser.add_argument("--verify", help="--verify NUMBER, number to verify")
     parser.add_argument("--code", help="--code CODE, 6 digit verification code.")
     parser.add_argument("--link", help="--link, Link an existing account.", action='store_true')
-    parser.add_argument("--addContact", help="--addContct NUMBER add a contact.")
+    parser.add_argument("--addContact", help="--addContact NUMBER add a contact.")
     parser.add_argument("--name", help="--name NAME, Contact name.")
+    # noinspection SpellCheckingInspection
     parser.add_argument("--account", help="--account ACCOUNTID, number of the account to use.")
     parser.add_argument("--doSend", help="--doSend NUMBER, send a test message to number.")
     parser.add_argument("--doSendGroup", help="--doSendGroup, Send a test message to c&c group", action='store_true')
@@ -217,7 +218,7 @@ if __name__ == '__main__':
         print("updating about...")
         updated = account.profile.set_about("Peter's bot account.")
         print("Updated=", updated)
-        print("updateing about emoji to 🤖...")
+        print("updating about emoji to 🤖...")
         update = account.profile.set_emoji('🤖')
         print("Updated=", updated)
 
@@ -243,8 +244,10 @@ if __name__ == '__main__':
     # account.messages.send_message(recipients=[recipient], sticker=sticker)
     if args.doSendGroup:
         marshJpg = '/home/streak/Pictures/marshmallow.jpg'
+        # noinspection SpellCheckingInspection
         groupId = "ECxpUY76Wwti8hxCfDmOgE9cZx2CCYHD1GxlWwwtFjs="
         group = account.groups.get_by_id(groupId)
+        # noinspection SpellCheckingInspection
         messageText = "This is a test.\n@<+16134548055>Please ignore.\n@<53bfafdc-9b22-4559-a7a6-1c8029f599d7>Also ignore."
 
         mentions = Mentions(contacts=account.contacts)

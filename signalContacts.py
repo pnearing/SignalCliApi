@@ -280,6 +280,7 @@ class Contacts(object):
         # Value check number:
         number_match = phone_number_regex.match(number)
         if number_match is None:
+            # noinspection SpellCheckingInspection
             error_message = "number must be in format '+nnnnnnnn...'"
             raise ValueError(error_message)
         for contact in self._contacts:
@@ -301,6 +302,7 @@ class Contacts(object):
         uuid_match = uuid_regex.match(uuid)
         # Value check uuid:
         if uuid_match is None:
+            # noinspection SpellCheckingInspection
             error_message = "uuid must be in format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
             raise ValueError(error_message)
         for contact in self._contacts:
@@ -328,6 +330,7 @@ class Contacts(object):
             return self.get_by_uuid(contact_id)
         else:
             # Value error:
+            # noinspection SpellCheckingInspection
             errorMessage = "contact_id must be in format '+nnnnnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
             raise ValueError(errorMessage)
 
@@ -382,6 +385,7 @@ class Contacts(object):
             phone_number_match = phone_number_regex.match(contact_id)
             uuid_match = uuid_regex.match(contact_id)
             if phone_number_match is None and uuid_match is None:
+                # noinspection SpellCheckingInspection
                 error_message = "contact_id must be in format '+nnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 ValueError(error_message)
         if expiration is not None and not isinstance(expiration, int):
@@ -426,6 +430,7 @@ class Contacts(object):
                                       account_id=self._account_id,
                                       account_path=self._account_path, name=name, uuid=contact_id)
             else:
+                # noinspection SpellCheckingInspection
                 error_message = "contact_id must be in format '+nnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 raise ValueError(error_message)
             self._contacts.append(new_contact)

@@ -180,7 +180,7 @@ class Contact(object):
     ########################
     def get_id(self) -> str:
         """
-        Get the id, prefering the phone number, otherwise the uuid of the contact.
+        Get the id, preferring the phone number, otherwise the uuid of the contact.
         :returns: str: The number or uuid.
         """
         if self.number is not None:

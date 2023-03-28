@@ -468,7 +468,7 @@ class Messages(object):
         :param mentions: Optional[Iterable[Mention] | Mentions | Mention]: Mentions in the message.
         :param quote: Optional[Quote]: A Quote object for the message.
         :param sticker: Optional[Sticker]: A sticker to send.
-        :param preview: Optional[Preview]: A preview for a url in the message, url must appear in the body of the
+        :param preview: Optional[Preview]: A preview for the url in the message, url must appear in the body of the
                                                 message.
         :returns: tuple[tuple[bool, Contact | Group, str | SentMessage]]: True / False for message sent successfully,
                                                                             Contact | Group the message was sent to,

@@ -178,7 +178,7 @@ class Mentions(object):
         """
         Append a mention to the mention list.
         :param mention: Mention: The mention to append.
-        :returns None
+        :returns: None
         :raises: TypeError if mention is not a Mention object.
         :raises: RuntimeError is mention already in the mention list.
         """

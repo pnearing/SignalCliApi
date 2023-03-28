@@ -353,8 +353,8 @@ class Profile(object):
 
     def set_about(self, value: str) -> bool:
         """
-        Set the about for the account profile.
-        :param value: str: The value to set the about to.
+        Set the 'about' for the account profile.
+        :param value: str: The value to set the 'about' to.
         :returns: bool: True if successfully updated, False if not.
         :raises: TypeError: If value is not a string.
         """

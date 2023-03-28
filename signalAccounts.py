@@ -13,6 +13,7 @@ DEBUG: bool = False
 ACCOUNTS: list[Account] = []
 
 
+# noinspection SpellCheckingInspection
 class Accounts(object):
     """Class to store the known accounts."""
     supported_accounts_version: int = 2
@@ -120,13 +121,14 @@ class Accounts(object):
 
     @staticmethod
     def get_by_number(number: str) -> Optional[Account]:
+        # noinspection SpellCheckingInspection
         """
-        Get an account by phone number.
-        :param number: str: The phone number in format +nnnnnnnnn...
-        :returns: Optional[Account]: The account found or None if not found.
-        :raises: TypeError: If number not a string.
-        :raises: ValueError: If number not in proper format.
-        """
+                Get an account by phone number.
+                :param number: str: The phone number in format +nnnnnnnnn...
+                :returns: Optional[Account]: The account found or None if not found.
+                :raises: TypeError: If number not a string.
+                :raises: ValueError: If number not in proper format.
+                """
         global ACCOUNTS
         if not isinstance(number, str):
             __type_error__("number", "str", number)

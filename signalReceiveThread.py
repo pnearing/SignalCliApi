@@ -22,6 +22,7 @@ from .signalTimestamp import Timestamp
 DEBUG: bool = False
 
 
+# noinspection SpellCheckingInspection
 class ReceiveThread(threading.Thread):
     """The reception thread."""
     def __init__(self,
@@ -201,7 +202,7 @@ class ReceiveThread(threading.Thread):
                             self._account.messages.append(message)
                             if self._sync_msg_cb is not None:
                                 self._sync_msg_cb(self._account, message)
-                        ########################### Recieved Message ###################
+                        ########################### Received Message ###################
                         else:
                             # Create Received message:
                             message = ReceivedMessage(

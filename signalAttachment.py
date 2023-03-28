@@ -15,6 +15,7 @@ class Attachment(object):
     """
     Class to store an attachment.
     """
+
     def __init__(self,
                  config_path: str,
                  from_dict: Optional[dict] = None,
@@ -32,7 +33,7 @@ class Attachment(object):
         if from_dict is not None and not isinstance(from_dict, dict):
             __type_error__("from_dict", "dict[str, object]", from_dict)
         # Check raw Attachment:
-        if raw_attachment is not None and  not isinstance(raw_attachment, dict):
+        if raw_attachment is not None and not isinstance(raw_attachment, dict):
             __type_error__("raw_attachment", "dict[str, object]", raw_attachment)
         # Check content type:
         if content_type is not None and not isinstance(content_type, str):
@@ -41,7 +42,7 @@ class Attachment(object):
         if file_name is not None and not isinstance(file_name, str):
             __type_error__("filename", "str", file_name)
         # Check size:
-        if size is not None and  not isinstance(size, int):
+        if size is not None and not isinstance(size, int):
             __type_error__("size", "int", size)
         # Check local_path:
         if local_path is not None and not isinstance(local_path, str):

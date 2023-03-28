@@ -16,6 +16,7 @@ uuid_regex: Pattern = re.compile(
 #########################
 # Strings:
 #########################
+# noinspection SpellCheckingInspection
 UUID_FORMAT_STR = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 NUMBER_FORMAT_STR = "+nnnnnnn..."
 

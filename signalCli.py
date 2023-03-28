@@ -51,6 +51,7 @@ class SignalCli(object):
                     __type_error__("server_address[1]", "int", server_address[1])
             elif isinstance(server_address, str):
                 if os.path.exists(server_address) and start_signal:
+                    # noinspection PyPep8
                     error_message = "socket path '%s' already exists. Perhaps signal is already running." % server_address
                     raise FileExistsError(error_message)
         # Check log file path:
@@ -86,6 +87,7 @@ class SignalCli(object):
         # Check to see if we're starting signal, if the socket exists, throw an error.
         if isinstance(self._server_address, str) and start_signal:
             if os.path.exists(self._server_address):
+                # noinspection PyPep8
                 error_message = "socket path '%s' already exists. Perhaps signal is already running." % self._server_address
                 raise FileExistsError(error_message)
 
@@ -162,7 +164,9 @@ class SignalCli(object):
             if self._process is not None:
                 if isinstance(self._server_address, str):
                     os.remove(self._server_address)
-        except Exception:
+        except FileNotFoundError:
+            pass
+        except PermissionError:
             pass
         return
 
@@ -174,11 +178,12 @@ class SignalCli(object):
         Stop the signal-cli process.
         :returns: None
         """
-        try:
-            __socket_close__(self._sync_socket)
-            __socket_close__(self._command_socket)
-        except:
-            pass
+        # try:
+        __socket_close__(self._sync_socket)
+        __socket_close__(self._command_socket)
+        __socket_close__(self._command_socket)
+        # except:
+        #     pass
         try:
             self._process.terminate()
             self._link_process.terminate()
@@ -196,19 +201,20 @@ class SignalCli(object):
                          captcha: str,
                          voice: bool = False
                          ) -> tuple[bool, Account | str]:
+        # noinspection SpellCheckingInspection
         """
-        Register a new account. NOTE: Subject to rate limiting.
-        :param number: str: The phone number to register.
-        :param captcha: str: The captcha from 'https://signalcaptchas.org/registration/generate.html', can include the
-                                'signalcaptcha://'.
-        :param voice: bool: True = Voice call verification, False = SMS verification.
-        :returns: tuple[bool, Account | str]: The first element (bool) is True for success or failure.  The second
-                                                element, on success is the new Account object, which will remain in
-                                                an unregistered state until verify is called with the verification code.
-                                                Upon failure, the second element will contain a string with an error
-                                                message.
-        :raises: TypeError: If number or captcha are not strings, or if voice is not a boolean.
-        """
+                Register a new account. NOTE: Subject to rate limiting.
+                :param number: str: The phone number to register.
+                :param captcha: str: The captcha from 'https://signalcaptchas.org/registration/generate.html', can include the
+                                        'signalcaptcha://'.
+                :param voice: bool: True = Voice call verification, False = SMS verification.
+                :returns: tuple[bool, Account | str]: The first element (bool) is True for success or failure.  The second
+                                                        element, on success is the new Account object, which will remain in
+                                                        an unregistered state until verify is called with the verification code.
+                                                        Upon failure, the second element will contain a string with an error
+                                                        message.
+                :raises: TypeError: If number or captcha are not strings, or if voice is not a boolean.
+                """
         # Type check arguments:
         if not isinstance(number, str):
             __type_error__("number", "str", number)
@@ -219,9 +225,12 @@ class SignalCli(object):
         # Value Check arguments:
         number_match = phone_number_regex.match(number)
         if number_match is None:
+            # noinspection SpellCheckingInspection
             return False, "number must be in format +nnnnnnnn...."
+        # noinspection SpellCheckingInspection
         if captcha[:16] == 'signalcaptcha://':
             captcha = captcha[16:]
+        # noinspection SpellCheckingInspection
         if captcha[:17] != 'signal-recaptcha-' and captcha[:15] != 'signal-hcaptcha':
             return False, "invalid captcha"
         # Check if account exists, and isn't registered.
