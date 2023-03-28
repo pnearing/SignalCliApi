@@ -181,18 +181,20 @@ class SignalCli(object):
         # try:
         __socket_close__(self._sync_socket)
         __socket_close__(self._command_socket)
+        print("Calling close twice.")
         __socket_close__(self._command_socket)
         # except:
         #     pass
-        try:
-            self._process.terminate()
-            self._link_process.terminate()
-        except Exception:
-            pass
+
+        self._process.terminate()
+        self._link_process.terminate()
+
         try:
             if isinstance(self._server_address, str):
                 os.remove(self._server_address)
-        except Exception:
+        except FileNotFoundError:
+            pass
+        except PermissionError:
             pass
         return
 

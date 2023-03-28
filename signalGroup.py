@@ -147,11 +147,10 @@ class Group(object):
     #################
 
     def __from_raw_group__(self, raw_group: dict) -> None:
-        print(raw_group)
-        print("DEBUG in __from_raw_group__")
-        exit(254)
-        print("DEBUG: in __from_raw_group__ after exit.")
-        # TODO: figure out group ID key.
+        # print(raw_group)
+        # print("DEBUG in __from_raw_group__")
+        # exit(254)
+        # print("DEBUG: in __from_raw_group__ after exit.")
         self.id = raw_group['id']
         self.name: Optional[str] = None
         if raw_group['name'] == '':
