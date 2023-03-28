@@ -320,9 +320,11 @@ class ReceiveThread(threading.Thread):
                         self._stry_msg_cb(self._account, message)
                 #### Call message ####
                 elif 'callMessage' in envelope_dict.keys():
+                    print(envelope_dict)
+                    exit(255)
                     # TODO: Create call message class.
                     message = None
-                    if self._call_msg_cb != None:
+                    if self._call_msg_cb is not None:
                         self._call_msg_cb(self._account, message)
                 #### Unrecognized message ####
                 else:
