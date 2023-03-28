@@ -186,7 +186,7 @@ if __name__ == '__main__':
         print("QRCODE: \n", response[1])
         print("pngCode: ", response[2])
 
-        response = signal.finsh_link()
+        response = signal.finish_link()
         print(response)
         exit(0)
     elif args.addContact is not None:
@@ -259,6 +259,6 @@ if __name__ == '__main__':
             pass
     except KeyboardInterrupt:
         print("\nKeyboard Interrupt")
-    signal.stopReceive(account)
+    signal.stop_receive(account)
     signal.stop_signal()
     exit(0)
