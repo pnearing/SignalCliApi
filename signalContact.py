@@ -85,7 +85,7 @@ class Contact(object):
             self.name = raw_contact['name']
         self.number = raw_contact['number']
         self.uuid = raw_contact['uuid']
-        self.is_blocked = raw_contact['is_blocked']
+        self.is_blocked = raw_contact['isBlocked']
         self.color = raw_contact['color']
         if raw_contact['messageExpirationTime'] == 0:
             self.expiration = None
