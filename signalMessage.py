@@ -31,6 +31,7 @@ class Message(object):
     TYPE_REACTION_MESSAGE: int = 7
     TYPE_GROUP_UPDATE_MESSAGE: int = 8
     TYPE_SYNC_MESSAGE: int = 9
+    TYPE_CALL_MESSAGE: int = 10
 
     def __init__(self,
                  command_socket: socket.socket,
