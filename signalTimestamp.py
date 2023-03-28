@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, IO
 import datetime
 import pytz
 
 try:
     from tzlocal import get_localzone
 except ModuleNotFoundError:
-    print("Module: tzlocal not found, you can install using 'sudo apt install python3-tzlocal', or by using")
+    print("Module: tzlocal not found, you can install using 'sudo apt install python3-tzlocal', or by using ", end='')
     print("pip install tzlocal")
 import sys
 
@@ -18,6 +18,7 @@ Self = TypeVar("Self", bound="Timestamp")
 
 class Timestamp(object):
     """Time stamp object."""
+
     def __init__(self,
                  timestamp: Optional[int] = None,
                  from_dict: Optional[dict[str, object]] = None,
@@ -119,15 +120,28 @@ class Timestamp(object):
     ##########################
 
     def get_timestamp(self) -> int:
-        """Get the timestamp int."""
+        """
+        Get the timestamp int.
+        :returns: int: Timestamp integer.
+        """
         return self.timestamp
 
     def get_datetime(self) -> datetime.datetime:
-        """Get the datetime.datetime object."""
+        """
+        Get the datetime.datetime object.
+        :returns: datetime.datetime: The datetime object representing this timestamp.
+        """
         return self.date_time
 
     def get_display_time(self, local_time: bool = True) -> str:
-        """Get the timestamp as a display string."""
+        """
+        Get the timestamp as a display string.
+        :param local_time: bool: True to convert to local time, False to leave as UTC.
+        :returns: str: A display version of the timestamp, optionally converting to localtime.
+        :raises: TypeError: If local_time is not a boolean.
+        """
+        if not isinstance(local_time, bool):
+            __type_error__("local_time", "bool", local_time)
         if local_time:
             display_time = self.get_local_time()
         else:
@@ -136,36 +150,46 @@ class Timestamp(object):
         return display_time_str
 
     def get_local_time(self) -> datetime.datetime:
-        """Get a datetime.datetime object that has been localized to the system timezone."""
+        """
+        Get a datetime.datetime object that has been localized to the system timezone.
+        :returns: datetime.datetime object representing the timestamp in local time.
+        """
         local_tz = get_localzone()
         return self.date_time.astimezone(local_tz)
 
     ########################
     # Method:
     ########################
-    def print(self, indent: int = 0, indent_char: str = ' ', file=sys.stdout) -> None:
+    def print(self, indent: int = 0, indent_char: str = ' ', local_time: bool = True, file: IO = sys.stdout) -> None:
         """
-        Print the timestamp.
+        Print out the timestamp.
         :param: int: indent: The number of 'indent_char' to indent each line with.
         :param: str: indent_char: The character to indent with, defaults to ' ' (space).
-        :param: IOObject: file: The io stream to output to, defaults to sys.stdout.
+        :param: bool: local_time: Convert to local time.
+        :param: IO: file: The io stream to output to, defaults to sys.stdout.
+        :raises: TypeError: If indent not an int, if indent_char not a string, or if file not an IO object.
+        :raises: ValueError: If indent char not a single character (len != 1).
         """
         # Arg Checks:
         if not isinstance(indent, int):
-            raise TypeError("indent must be of type int.")
+            __type_error__("indent", "int", indent)
         if not isinstance(indent_char, str):
-            raise TypeError("indent_char must be of type str.")
+            __type_error__("indent_char", "str", indent_char)
         if len(indent_char) != 1:
             raise ValueError("indent_char must be 1 character long.")
-        # Convert to local time:
-        local_tz = get_localzone()
-        local_datetime = self.date_time.astimezone(local_tz)
+        if not isinstance(local_time, bool):
+            __type_error__("local_time", "bool", local_time)
+        display_datetime: datetime.datetime
+        if local_time:
+            # Convert to local time:
+            local_tz = get_localzone()
+            display_datetime = self.date_time.astimezone(local_tz)
+        else:
+            display_datetime = self.date_time
         # Create indent string:
         indent_string: str = indent_char * indent
         print(indent_string, "--------Begin Timestamp--------", file=file)
-        display_line = "Timestamp: %i(%s)" % (self.timestamp, self.date_time.isoformat())
-        print(indent_string, display_line, file=file)
-        display_line = "Local Time: %s" % (local_datetime.isoformat())
+        display_line = "Timestamp: %i(%s)" % (self.timestamp, display_datetime.isoformat())
         print(indent_string, display_line, file=file)
         print(indent_string, "---------End Timestamp---------", file=file)
         return

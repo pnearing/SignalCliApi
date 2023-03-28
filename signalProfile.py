@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+"""File: signalProfile.py"""
 from typing import TypeVar, Optional
 import os
 import json
@@ -15,26 +15,58 @@ Self = TypeVar("Self", bound="Profile")
 
 
 class Profile(object):
+    """Class containing the profile for either a contact or the account."""
     def __init__(self,
                  sync_socket: socket.socket,
                  config_path: str,
                  account_id: str,
                  contact_id: str,
                  account_path: Optional[str] = None,
-                 from_dict: dict | None = None,
-                 raw_profile: dict | None = None,
+                 from_dict: Optional[dict] = None,
+                 raw_profile: Optional[dict] = None,
                  given_name: Optional[str] = None,
                  family_name: Optional[str] = None,
                  about: Optional[str] = None,
                  emoji: Optional[str] = None,
                  coin_address: Optional[str] = None,
                  avatar: Optional[str] = None,
-                 last_update: Timestamp | None = None,
+                 last_update: Optional[Timestamp] = None,
                  is_account_profile: bool = False,
                  do_load: bool = False,
                  ) -> None:
-        # TODO: Check args:
-
+        # Check args:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(account_id, str):
+            __type_error__("account_id", "str", account_id)
+        if not isinstance(contact_id, str):
+            __type_error__("contact_id", "str", contact_id)
+        if account_path is not None and not isinstance(account_path, str):
+            __type_error__("account_path", "str", account_path)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if raw_profile is not None and not isinstance(raw_profile, dict):
+            __type_error__("raw_profile", "dict", raw_profile)
+        if given_name is not None and not isinstance(given_name, str):
+            __type_error__("given_name", "str", given_name)
+        if family_name is not None and not isinstance(family_name, str):
+            __type_error__("family_name", "str", family_name)
+        if about is not None and not isinstance(about, str):
+            __type_error__("about", "str", about)
+        if emoji is not None and not isinstance(emoji, str):
+            __type_error__("emoji", "str", emoji)
+        if coin_address is not None and not isinstance(coin_address, str):
+            __type_error__("coin_address", "str", coin_address)
+        if avatar is not None and not isinstance(avatar, str):
+            __type_error__("avatar", "str", avatar)
+        if last_update is not None and not isinstance(last_update, Timestamp):
+            __type_error__("last_update", "Timestamp", last_update)
+        if not isinstance(is_account_profile, bool):
+            __type_error__("is_account_profile", "bool", is_account_profile)
+        if not isinstance(do_load, bool):
+            __type_error__("do_load", "bool", do_load)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._config_path: str = config_path
@@ -221,7 +253,6 @@ class Profile(object):
         return
 
     def __merge__(self, __o: Self) -> None:
-        # TODO: rewrite to be more mergey
         self.given_name = __o.given_name
         self.family_name = __o.family_name
         self.about = __o.about
@@ -236,6 +267,12 @@ class Profile(object):
     # Setters:
     ###############################
     def set_given_name(self, value: str) -> bool:
+        """
+        Set the given name for the account profile.
+        :param value: str: The value to set the given name to.
+        :returns: bool: True if successfully updated, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:
@@ -245,7 +282,7 @@ class Profile(object):
         # Create set given name object and json command string:
         set_given_name_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._account_id,
@@ -273,6 +310,12 @@ class Profile(object):
         return True
 
     def set_family_name(self, value: str) -> bool:
+        """
+        Set the family name for the account profile.
+        :param value: str: The value to set the family name to.
+        :returns: bool: True if successfully updated, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:
@@ -282,7 +325,7 @@ class Profile(object):
         # Create command object and json command string:
         set_family_name_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._account_id,
@@ -297,7 +340,7 @@ class Profile(object):
         response_obj: dict[str, object] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
-            if DEBUG == True:
+            if DEBUG:
                 error_message = "DEBUG: Signal error while setting family name. Code: %i Message: %s" % (
                     response_obj['error']['code'],
                     response_obj['error']['message']
@@ -309,6 +352,12 @@ class Profile(object):
         return True
 
     def set_about(self, value: str) -> bool:
+        """
+        Set the about for the account profile.
+        :param value: str: The value to set the about to.
+        :returns: bool: True if successfully updated, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:
@@ -318,7 +367,7 @@ class Profile(object):
         # Create command object and json command string:
         set_about_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._account_id,
@@ -333,7 +382,7 @@ class Profile(object):
         response_obj: dict[str, object] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
-            if DEBUG == True:
+            if DEBUG:
                 error_message = "DEBUG: Signal error while setting about. Code: %i Message: %s" % (
                     response_obj['error']['code'],
                     response_obj['error']['message']
@@ -345,6 +394,12 @@ class Profile(object):
         return True
 
     def set_emoji(self, value: str) -> bool:
+        """
+        Set the emoji for the account profile.
+        :param value: str: The value to set the emoji to.
+        :returns: bool: True if successfully set, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:
@@ -354,7 +409,7 @@ class Profile(object):
         # Create command object and json command string:
         set_emoji_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._account_id,
@@ -381,6 +436,12 @@ class Profile(object):
         return True
 
     def set_coin_address(self, value: str) -> bool:
+        """
+        Set the mobile coin address.
+        :param value: str: The value to set the mobile coin address to.
+        :returns: bool: True if successfully updated, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:
@@ -390,7 +451,7 @@ class Profile(object):
         # Create command object and json command string:
         set_coin_address_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "updateProfile",
             "params": {
                 "account": self._account_id,
@@ -417,6 +478,12 @@ class Profile(object):
         return True
 
     def set_avatar(self, value: str) -> bool:
+        """
+        Set the avatar for the account profile.
+        :param value: str: The path to the image to set the avatar to.
+        :returns: bool: True if successfully updated, False if not.
+        :raises: TypeError: If value is not a string.
+        """
         if not isinstance(value, str):
             __type_error__("value", "str", value)
         if not self._is_account_profile:

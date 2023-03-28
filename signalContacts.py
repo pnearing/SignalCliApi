@@ -16,6 +16,7 @@ DEBUG: bool = False
 
 
 class Contacts(object):
+    """Object to contain a contact list."""
     def __init__(self,
                  sync_socket: socket.socket,
                  config_path: str,
@@ -24,12 +25,25 @@ class Contacts(object):
                  do_load: bool = False,
                  do_sync: bool = False,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(account_id, str):
+            __type_error__("account_id", "str", account_id)
+        if not isinstance(account_path, str):
+            __type_error__("account_path", "str", account_path)
+        if not isinstance(do_load, bool):
+            __type_error__("do_load", "bool", do_load)
+        if not isinstance(do_sync, bool):
+            __type_error__("do_sync", "bool", do_sync)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._config_path: str = config_path
         self._account_id: str = account_id
         self._account_path: str = account_path
+        self._filename: str = "contacts-" + account_id + ".json"
         self._contacts: list[Contact] = []
         # Load from file:
         if do_load:
@@ -111,9 +125,8 @@ class Contacts(object):
         # Create the contacts object, and json string:
         contacts_obj = self.__to_dict__()
         contacts_json = json.dumps(contacts_obj, indent=4)
-        # Build the file Path:
-        file_name = "contacts-" + self._account_id + '.json'
-        file_path = os.path.join(self._account_path, file_name)
+        # Build the file Path:'
+        file_path = os.path.join(self._account_path, self._filename)
         # Try to open the file:
         try:
             file_handle = open(file_path, 'w')
@@ -127,8 +140,7 @@ class Contacts(object):
 
     def __load__(self) -> None:
         # Build the file Path:
-        file_name = 'contacts-' + self._account_id + '.json'
-        file_path = os.path.join(self._account_path, file_name)
+        file_path = os.path.join(self._account_path, self._filename)
         # Try and open the file for reading:
         try:
             file_handle = open(file_path, 'r')
@@ -152,7 +164,7 @@ class Contacts(object):
         # Create list contacts command object, and json command string:
         list_contacts_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "listContacts",
             "params": {
                 "account": self._account_id
@@ -255,6 +267,17 @@ class Contacts(object):
     # Getters:
     ##################################
     def get_by_number(self, number: str) -> Optional[Contact]:
+        """
+        Get a contact given a number.
+        :param number: str: The phone number of the contact.
+        :return: Optional[Contact]. Returns the contact, or None if not found.
+        :raises: TypeError: If phone number is not a string.
+        :raises: ValueError: If phone number not in proper format.
+        """
+        # Type check parameters:
+        if not isinstance(number, str):
+            __type_error__("number", "str", number)
+        # Value check number:
         number_match = phone_number_regex.match(number)
         if number_match is None:
             error_message = "number must be in format '+nnnnnnnn...'"
@@ -265,16 +288,38 @@ class Contacts(object):
         return None
 
     def get_by_uuid(self, uuid: str) -> Optional[Contact]:
+        """
+        Get a contact given a UUID.
+        :param uuid: str: The uuid of the contact.
+        :return Optional[Contact]: Returns the contact, or None if not found.
+        :raises: TypeError: If uuid is not a string.
+        :raises: ValueError: If uuid not in proper format.
+        """
+        # Type check arguments:
+        if not isinstance(uuid, str):
+            __type_error__("uuid", "str", uuid)
         uuid_match = uuid_regex.match(uuid)
+        # Value check uuid:
         if uuid_match is None:
-            errorMessage = "uuid must be in format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
-            raise ValueError(errorMessage)
+            error_message = "uuid must be in format: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
+            raise ValueError(error_message)
         for contact in self._contacts:
             if contact.uuid == uuid:
                 return contact
         return None
 
     def get_by_id(self, contact_id: str) -> Optional[Contact]:
+        """
+        Get a contact given either a phone number or an uuid.
+        :param contact_id: str: The id of the contact, either a phone number or an uuid.
+        :return Optional[Contact]: Returns the contact, or None if not found.
+        :raises: TypeError: If contact_id not a string.
+        :raises: ValueError: If contact_id not in phone number or uuid formats.
+        """
+        # Argument check:
+        if not isinstance(contact_id, str):
+            __type_error__("contact_id", "str", contact_id)
+        # Get contact:
         number_match = phone_number_regex.match(contact_id)
         uuidMatch = uuid_regex.match(contact_id)
         if number_match is not None:
@@ -282,27 +327,73 @@ class Contacts(object):
         elif uuidMatch is not None:
             return self.get_by_uuid(contact_id)
         else:
+            # Value error:
             errorMessage = "contact_id must be in format '+nnnnnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'"
             raise ValueError(errorMessage)
 
     def get_self(self) -> Contact:
+        """
+        Return the contact for the current account.
+        :return Contact: The 'self' contact.
+        :raises: RuntimeError, if self contact not found.
+        """
         for contact in self._contacts:
             if contact.is_self:
                 return contact
         raise RuntimeError("FATAL: Couldn't find self contact, should never get here.")
 
+    def get_by_name(self, name: str) -> Optional[Contact]:
+        """
+        Get a contact given a name.
+        :param name: str: The name to search for.
+        :returns: Optional[Contact]: The contact, or None if not found.
+        :raises: TypeError: If name is not a string.
+        :raises: ValueError: If name is an empty string.
+        """
+        if not isinstance(name, str):
+            __type_error__("name", "str", name)
+        elif name == '':
+            error_message = 'name cannot be an empty string.'
+            raise ValueError(error_message)
+        for contact in self._contacts:
+            if contact.name == name:
+                return contact
+        return None
     #########################
     # Methods:
     #########################
     def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, Contact]:
-        # TODO: Argument checks:
+        """
+        Add a contact.
+        :param name: str: The name to assign to the contact.
+        :param contact_id: str: The id of the contact, either a phone number or an uuid.
+        :param expiration: Optional[int]: The message expiration time in seconds.
+        :returns: tuple(bool, Contact): True if contact added, False if not, Either the existing contact, or the
+                                            new contact if added.
+        :raises: TypeError: If parameter invalid type.
+        :raises: ValueError: If contact id not in phone number or uuid formats.
+        """
+        # Argument checks:
+        if not isinstance(name, str):
+            __type_error__("name", "str", name)
+        if not isinstance(contact_id, str):
+            __type_error__("contact_id", "str", contact_id)
+        else:
+            phone_number_match = phone_number_regex.match(contact_id)
+            uuid_match = uuid_regex.match(contact_id)
+            if phone_number_match is None and uuid_match is None:
+                error_message = "contact_id must be in format '+nnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                ValueError(error_message)
+        if expiration is not None and not isinstance(expiration, int):
+            __type_error__("expiration", "Optional[int]", expiration)
+        # Check if contact already exists:
         old_contact = self.get_by_id(contact_id)
         if old_contact is not None:
             return False, old_contact
         # Create add contact command object and json command string:
         add_contact_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "updateContact",
             "params": {
                 "account": self._account_id,

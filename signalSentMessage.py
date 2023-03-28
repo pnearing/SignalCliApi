@@ -28,6 +28,7 @@ Self = TypeVar("Self", bound="SentMessage")
 
 
 class SentMessage(Message):
+    """Class to store a sent message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,

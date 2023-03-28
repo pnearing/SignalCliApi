@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterator
+from typing import Optional, Iterator, Iterable
 import sys
 import os
 import json
+from .signalCommon import __type_error__
 
 DEBUG: bool = False
 
@@ -22,7 +23,21 @@ class Sticker(object):
                  file_path: Optional[str] = None,
                  content_type: Optional[str] = None,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(pack_id, str):
+            __type_error__("pack_id", "str", pack_id)
+        if not isinstance(pack_path, str):
+            __type_error__("pack_path", "str", pack_path)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if from_manifest is not None and not isinstance(from_manifest, dict):
+            __type_error__("from_manifest", "dict", from_manifest)
+        if emoji is not None and not isinstance(emoji, str):
+            __type_error__("emoji", "str", emoji)
+        if file_path is not None and not isinstance(file_path, str):
+            __type_error__("file_path", "str", file_path)
+        if content_type is not None and not isinstance(content_type, str):
+            __type_error__("content_type", "str", content_type)
         # Set internal vars:
         self._pack_id: str = pack_id
         self._pack_path: str = pack_path
@@ -98,9 +113,31 @@ class StickerPack(object):
                  title: Optional[str] = None,
                  author: Optional[str] = None,
                  cover: Optional[Sticker] = None,
-                 stickers: Optional[list[Sticker] | tuple[Sticker]] = None,
+                 stickers: Optional[Iterable[Sticker]] = None,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if isinstance(pack_id, str):
+            __type_error__("pack_id", "str", pack_id)
+        if isinstance(pack_path, str):
+            __type_error__("pack_path", "str", pack_path)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if from_manifest is not None and not isinstance(from_manifest, dict):
+            __type_error__("from_manifest", "dict", from_manifest)
+        if title is not None and not isinstance(title, str):
+            __type_error__("title", "str", title)
+        if author is not None and not isinstance(author, str):
+            __type_error__("author", "str", author)
+        if cover is not None and not isinstance(cover, Sticker):
+            __type_error__("cover", "Sticker", cover)
+        if stickers is not None and not isinstance(stickers, Iterable):
+            __type_error__("stickers", "Iterable[Sticker]", stickers)
+        elif stickers is not None:
+            sticker_list: list[Sticker] = []
+            for i, sticker in enumerate(stickers):
+                if not isinstance(sticker, Sticker):
+                    __type_error__("stickers[%i]" % i, "Sticker", sticker)
+                sticker_list.append(sticker)
         # Set internal Vars:
         self._pack_path: str = pack_path
         # Set external properties:
@@ -108,7 +145,7 @@ class StickerPack(object):
         self.title: str = title
         self.author: str = author
         self.cover: Sticker = cover
-        self.stickers: list[Sticker] = stickers
+        self.stickers: list[Sticker] = sticker_list
         # Parse from_dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)
@@ -180,7 +217,15 @@ class StickerPack(object):
     #######################
     # Getters:
     #######################
-    def get_by_id(self, sticker_id: int):
+    def get_by_id(self, sticker_id: int) -> Optional[Sticker]:
+        """
+        Get a sticker given the sticker id.
+        :param sticker_id: int: The sticker id to get.
+        :returns: Optional[Sticker]: The sticker, or None if not found.
+        :raises: TypeError: If sticker_id not an int.
+        """
+        if not isinstance(sticker_id, int):
+            __type_error__("sticker_id", "int", sticker_id)
         for sticker in self.stickers:
             if sticker.id == sticker_id:
                 return sticker
@@ -194,7 +239,9 @@ class StickerPacks(object):
     def __init__(self,
                  config_path: str,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument check:
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
         # Set internal vars:
         self._config_path = config_path
         # Set external properties:
@@ -266,7 +313,7 @@ class StickerPacks(object):
         # Get the pack contact_id's and verify len is not 0:
         pack_ids: list[str] = os.listdir(stickers_path)
         if len(pack_ids) == 0:
-            error_message = "FATAL: no stickers syncronized"
+            error_message = "FATAL: no stickers synchronized"
             raise RuntimeError(error_message)
         # Check to see if there is a new contact_id:
         known_pack_ids = [pack.pack_id for pack in self.packs]  # Gather old contact_id's
@@ -304,8 +351,11 @@ class StickerPacks(object):
         """
         Get sticker pack by name.
         :param: str: name: The name to search for.
-        :returns: Optional[StickerPack]
+        :returns: Optional[StickerPack]: The sticker pack, or None if not found.
+        :raises: TypeError: If name not a string.
         """
+        if not isinstance(name, str):
+            __type_error__("name", "str", name)
         for pack in self.packs:
             if pack.title == name:
                 return pack
@@ -316,7 +366,10 @@ class StickerPacks(object):
         Get sticker pack by pack id.
         :param: str: pack_id: The pack id to search for.
         :returns: Optional[StickerPack]
+        :raises: TypeError: If pack_id is not a string.
         """
+        if not isinstance(pack_id, str):
+            __type_error__("pack_id", "str", pack_id)
         for pack in self.packs:
             if pack.pack_id == pack_id:
                 return pack
@@ -328,7 +381,12 @@ class StickerPacks(object):
         :param: str: pack_id: The pack id of the sticker.
         :param: int: sticker_id: The sticker id of the sticker.
         :returns: Optional[Sticker]
+        :raises: TypeError: If pack_id not a string, or if sticker_id not an int.
         """
+        if not isinstance(pack_id, str):
+            __type_error__("pack_id", "str", pack_id)
+        if not isinstance(sticker_id, int):
+            __type_error__("sticker_id", "int", sticker_id)
         pack = self.get_pack_by_id(pack_id)
         if pack is None:
             return None

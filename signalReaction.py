@@ -38,24 +38,8 @@ class Reaction(Message):
                  is_remove: bool = False,
                  ) -> None:
         # Argument checks:
-        if not isinstance(command_socket, socket.socket):
-            __type_error__("command_socket", "socket.socket", command_socket)
         if not isinstance(emoji, str):
             __type_error__("emoji", "str", emoji)
-        if not isinstance(config_path, str):
-            __type_error__("config_path", "str", config_path)
-        if not isinstance(contacts, Contacts):
-            __type_error__("contacts", "Contacts", contacts)
-        if not isinstance(devices, Devices):
-            __type_error__("devices", "Devices", devices)
-        if not isinstance(this_device, Device):
-            __type_error__("this_device", "Device", this_device)
-        if from_dict is not None and not isinstance(from_dict, dict):
-            __type_error__("from_dict", "dict", from_dict)
-        if raw_message is not None and not isinstance(raw_message):
-            __type_error__("raw_message", "dict", raw_message)
-        if recipient is not None and not isinstance(recipient, Contact) and not isinstance(recipient, Group):
-            __type_error__("recipient", "Contact | Group", recipient)
         if emoji is not None and not isinstance(emoji, str):
             __type_error__("emoji", 'str', emoji)
         if target_author is not None and not isinstance(target_author, Contact):
@@ -73,8 +57,7 @@ class Reaction(Message):
         self.previous_emoji: Optional[str] = None
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, contacts.get_self(), recipient, this_device, None,
-                         Message.TYPE_REACTION_MESSAGE)
+                         raw_message, contacts.get_self(), recipient, this_device, None, Message.TYPE_REACTION_MESSAGE)
 
         # Set body:
         self.__update_body__()
@@ -101,7 +84,7 @@ class Reaction(Message):
     # Overrides:
     ###############################
     def __eq__(self, __o: Self) -> bool:
-        if isinstance(__o, Reaction) == True:
+        if isinstance(__o, Reaction):
             if self.sender == __o.sender and self.emoji == __o.emoji:
                 return True
         return False
@@ -148,11 +131,14 @@ class Reaction(Message):
     # Send reaction:
     ###########################
     def send(self) -> tuple[bool, str]:
-        """Send the reaction"""
+        """
+        Send the reaction.
+        :returns: tuple[bool, str]: True/False for sent status, string for error message if False, or "SUCCESS" if True.
+        """
         # Create reaction command object and json command string:
         send_reaction_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 10,
+            "id": 10,
             "method": "sendReaction",
             "params": {
                 "account": self._account_id,
@@ -192,7 +178,7 @@ class Reaction(Message):
         return True, "SUCCESS"
 
     def remove(self) -> tuple[bool, str]:
-        # TODO: remove a reation.
+        # TODO: remove a reaction.
         return
 
     ###########################

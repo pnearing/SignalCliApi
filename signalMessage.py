@@ -16,10 +16,11 @@ from .signalGroup import Group
 from .signalTimestamp import Timestamp
 
 Self = TypeVar("Self", bound="Message")
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class Message(object):
+    """Base class for a message."""
     TYPE_NOT_SET: int = 0
     TYPE_SENT_MESSAGE: int = 1
     TYPE_RECEIVED_MESSAGE: int = 2
@@ -215,13 +216,13 @@ class Message(object):
             'recipient_type': self.recipient_type,
             'device': None,
             'timestamp': None,
-            'message_type': self.message_type,
-            'is_delivered': self.is_delivered,
-            'time_delivered': None,
-            'is_read': self.is_read,
-            'time_read': None,
-            'is_viewed': self.is_viewed,
-            'time_viewed': None,
+            'messageType': self.message_type,
+            'isDelivered': self.is_delivered,
+            'timeDelivered': None,
+            'isRead': self.is_read,
+            'timeRead': None,
+            'isViewed': self.is_viewed,
+            'timeViewed': None,
         }
         if self.sender is not None:
             message_dict['sender'] = self.sender.get_id()
@@ -232,11 +233,11 @@ class Message(object):
         if self.timestamp is not None:
             message_dict['timestamp'] = self.timestamp.__to_dict__()
         if self.time_delivered is not None:
-            message_dict['time_delivered'] = self.time_delivered.__to_dict__()
+            message_dict['timeDelivered'] = self.time_delivered.__to_dict__()
         if self.time_read is not None:
-            message_dict['time_read'] = self.time_read.__to_dict__()
+            message_dict['timeRead'] = self.time_read.__to_dict__()
         if self.time_viewed is not None:
-            message_dict['time_viewed'] = self.time_viewed.__to_dict__()
+            message_dict['timeViewed'] = self.time_viewed.__to_dict__()
         return message_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -262,23 +263,23 @@ class Message(object):
         # Parse timestamp:
         self.timestamp = Timestamp(from_dict=from_dict['timestamp'])
         # Parse message Type:
-        self.message_type = from_dict['message_type']
+        self.message_type = from_dict['messageType']
         # Parse Delivered: (is and time)
-        self.is_delivered = from_dict['is_delivered']
-        if from_dict['time_delivered'] is not None:
+        self.is_delivered = from_dict['isDelivered']
+        if from_dict['timeDelivered'] is not None:
             self.time_delivered = Timestamp(from_dict=from_dict['time_delivered'])
         else:
             self.time_delivered = None
         # Parse read (is and time):
-        self.is_read = from_dict['is_read']
-        if from_dict['time_read'] is not None:
-            self.time_read = Timestamp(from_dict=from_dict['time_read'])
+        self.is_read = from_dict['isRead']
+        if from_dict['timeRead'] is not None:
+            self.time_read = Timestamp(from_dict=from_dict['timeRead'])
         else:
             self.time_read = None
         # Parse viewed (is and time):
-        self.is_viewed = from_dict['is_viewed']
-        if from_dict['time_viewed'] is not None:
-            self.time_viewed = Timestamp(from_dict=from_dict['time_viewed'])
+        self.is_viewed = from_dict['isViewed']
+        if from_dict['timeViewed'] is not None:
+            self.time_viewed = Timestamp(from_dict=from_dict['timeViewed'])
         else:
             self.time_viewed = None
         return
@@ -287,6 +288,12 @@ class Message(object):
     # Methods:
     ###############################
     def mark_delivered(self, when: Timestamp) -> None:
+        """
+        Mark a message as delivered.
+        :param when: Timestamp: The time delivered.
+        :returns: None
+        :raises: TypeError: If when is not a Timestamp.
+        """
         if not isinstance(when, Timestamp):
             __type_error__('when', 'Timestamp', when)
         if self.is_delivered:
@@ -296,6 +303,12 @@ class Message(object):
         return
 
     def mark_read(self, when: Timestamp) -> None:
+        """
+        Mark a message as read.
+        :param when: Timestamp: The time read.
+        :returns: None
+        :raises: TypeError: If when is not a Timestamp.
+        """
         if not isinstance(when, Timestamp):
             __type_error__('when', 'Timestamp', when)
         if self.is_read:
@@ -305,6 +318,12 @@ class Message(object):
         return
 
     def mark_viewed(self, when: Timestamp) -> None:
+        """
+        Mark a message as viewed.
+        :param when: Timestamp: The time viewed.
+        :returns: None
+        :raises: TypeError if when is not a Timestamp.
+        """
         if not isinstance(when, Timestamp):
             __type_error__('when', 'Timestamp', when)
         if self.is_viewed:

@@ -3,7 +3,8 @@ from typing import TypeVar, Optional, Iterable
 import socket
 import json
 import sys
-from datetime import timedelta
+from datetime import timedelta, datetime
+import pytz
 
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
@@ -29,6 +30,8 @@ Self = TypeVar("Self", bound="ReceivedMessage")
 
 
 class ReceivedMessage(Message):
+    """Class to store a message that has been received."""
+
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
@@ -179,6 +182,8 @@ class ReceivedMessage(Message):
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)
+        # Check if this is expired:
+        self.__check_expired__()
         return
 
     ######################
@@ -188,42 +193,42 @@ class ReceivedMessage(Message):
         super().__from_raw_message__(raw_message)
         # print("ReceivedMessage.__from_raw_message__")
         # print(raw_message)
-        dataMessage: dict[str, object] = raw_message['dataMessage']
+        data_message: dict[str, object] = raw_message['dataMessage']
         # Parse body:
-        self.body = dataMessage['message']
+        self.body = data_message['message']
         # Parse expiry
-        if dataMessage['expiresInSeconds'] == 0:
+        if data_message['expiresInSeconds'] == 0:
             self.expiration = None
         else:
-            self.expiration = timedelta(seconds=dataMessage["expiresInSeconds"])
+            self.expiration = timedelta(seconds=data_message["expiresInSeconds"])
         # Parse attachments:
-        if 'attachments' in dataMessage.keys():
+        if 'attachments' in data_message.keys():
             # print("DEBUG: %s: Started attachment decoding." % __name__)
             self.attachments = []
-            for raw_attachment in dataMessage['attachments']:
+            for raw_attachment in data_message['attachments']:
                 attachment = Attachment(config_path=self._config_path, raw_attachment=raw_attachment)
                 self.attachments.append(attachment)
         # Parse mentions:
-        if 'mentions' in dataMessage.keys():
-            self.mentions = Mentions(contacts=self._contacts, raw_mentions=dataMessage['mentions'])
+        if 'mentions' in data_message.keys():
+            self.mentions = Mentions(contacts=self._contacts, raw_mentions=data_message['mentions'])
         # Parse sticker:
-        if 'sticker' in dataMessage.keys():
-            stickerDict: dict[str, object] = dataMessage['sticker']
+        if 'sticker' in data_message.keys():
+            stickerDict: dict[str, object] = data_message['sticker']
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
             self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['pack_id'],
                                                            sticker_id=stickerDict['sticker_id'])
         # Parse Quote
-        if 'quote' in dataMessage.keys():
+        if 'quote' in data_message.keys():
             if self.recipient_type == 'group':
                 self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                   raw_quote=dataMessage['quote'], conversation=self.recipient)
+                                   raw_quote=data_message['quote'], conversation=self.recipient)
             elif self.recipient_type == 'contact':
                 self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                   raw_quote=dataMessage['quote'], conversation=self.sender)
+                                   raw_quote=data_message['quote'], conversation=self.sender)
         # Parse preview:
         self.previews = []
-        if 'previews' in dataMessage.keys():
-            for rawPreview in dataMessage['previews']:
+        if 'previews' in data_message.keys():
+            for rawPreview in data_message['previews']:
                 preview = Preview(config_path=self._config_path, raw_preview=rawPreview)
                 self.previews.append(preview)
 
@@ -325,7 +330,7 @@ class ReceivedMessage(Message):
         # Create send receipt command object and json command string.
         send_receipt_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "send_receipt",
             "params": {
                 "account": self._account_id,
@@ -343,8 +348,8 @@ class ReceivedMessage(Message):
         # Check for error:
         if 'error' in response_obj.keys():
             error_message = "signal error while sending receipt. Code: %i Message: %s" % (response_obj['error']['code'],
-                                                                                         response_obj["error"][
-                                                                                             'message'])
+                                                                                          response_obj["error"][
+                                                                                              'message'])
             raise RuntimeError(error_message)
         # Result is a dict:
         # print(responseObj)
@@ -371,15 +376,41 @@ class ReceivedMessage(Message):
             self.expiration_timestamp = Timestamp(date_time=expiryDateTime)
         return
 
+    def __check_expired__(self) -> bool:
+        """
+        Check and set is_expired.
+        :returns: bool: True if this run has set the expired flag.
+        """
+        if self.expiration is None:
+            return False
+        now = datetime.now(tz=pytz.UTC)
+        if self.expiration_timestamp <= now:
+            self.is_expired = True
+            return True
+        return False
+
     #####################
     # Methods:
     #####################
     def mark_delivered(self, when: Timestamp) -> None:
-        """Mark message as delivered."""
+        """
+        Mark message as delivered.
+        :param when: Timestamp: When the message was delivered.
+        :returns: None
+        :raises: TypeError: If when is not a Timestamp object, raised by super()
+        """
         return super().mark_delivered(when)
 
     def mark_read(self, when: Timestamp = None, send_receipt: bool = True) -> None:
-        """Mark message as read."""
+        """
+        Mark message as read.
+        :param when: Timestamp: When the message was read.
+        :param send_receipt: bool: Send the read receipt.
+        :returns: None
+        :raises: TypeError: If when not a Timestamp object, raised by super(), or if send_receipt is not a bool.
+        """
+        if not isinstance(send_receipt, bool):
+            __type_error__("send_receipt", "bool", send_receipt)
         if send_receipt:
             when = self.__send_receipt__('read')
         elif when is None:
@@ -388,6 +419,15 @@ class ReceivedMessage(Message):
         return super().mark_read(when)
 
     def mark_viewed(self, when: Timestamp = None, send_receipt: bool = True) -> None:
+        """
+        Mark message as viewed.
+        :param when: Timestamp: When the message was viewed.
+        :param send_receipt: bool: Send a viewed receipt.
+        :returns: None
+        :raises: TypeError: If when not a Timestamp object, raised by super(), or if send_receipt is not a bool.
+        """
+        if not isinstance(send_receipt, bool):
+            __type_error__("send_receipt", "bool", send_receipt)
         if send_receipt:
             when = self.__send_receipt__('viewed')
         elif when is None:
@@ -396,7 +436,10 @@ class ReceivedMessage(Message):
         return super().mark_viewed(when)
 
     def get_quote(self) -> Quote:
-        """Get a quote object for this message."""
+        """
+        Get a quote object for this message.
+        :returns: Quote: This message as a quote.
+        """
         quote: Quote
         if self.recipient_type == 'contact':
             quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
@@ -410,12 +453,26 @@ class ReceivedMessage(Message):
             raise ValueError("invalid recipient_type in ReceivedMessage.get_quote")
         return quote
 
-    def parse_mentions(self) -> str:
-        """Parse the mentions."""
-        return self.mentions.__parse_mentions__(self.body)
+    def parse_mentions(self) -> Optional[str]:
+        """
+        Parse the mentions.
+        :returns: Optional[str]: The body with the mentions inserted, or None if body is None.
+        """
+        if self.body is not None:
+            return self.mentions.__parse_mentions__(self.body)
+        return None
 
     def react(self, emoji: str) -> tuple[bool, Reaction | str]:
-        """React to this message."""
+        """
+        Create and send a Reaction to this message.
+        :param emoji: str: The emoji to react with.
+        :returns: tuple[bool, Reaction | str]: Returns a tuple, the bool is True if reaction sent successfully, and
+                                                False if not.  If sent, the second element of the tuple will be the
+                                                Reaction object, otherwise, if not sent, the second element contains an
+                                                error message.
+        :raises: TypeError: If emoji is not a string.
+        :raises: ValueError: If emoji length is not one or two characters.
+        """
         # Argument check:
         if not isinstance(emoji, str):
             __type_error__('emoji', "str, len = 1|2", emoji)

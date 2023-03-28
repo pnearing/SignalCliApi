@@ -52,7 +52,7 @@ def find_qrencode() -> Optional[str]:
 # Signal cli helpers:
 ####################################
 def find_signal() -> str | NoReturn:
-    """Find signal-cli in it's many forms. Returns str, exeption FileNotFound if signal not found."""
+    """Find signal-cli in it's many forms. Returns str, exception FileNotFound if signal not found."""
     signal_path = None
     try:
         signal_path = check_output(['which', 'signal-cli'], text=True)

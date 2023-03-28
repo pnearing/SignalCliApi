@@ -5,7 +5,7 @@ import os
 import json
 import socket
 
-from .signalCommon import phone_number_regex, uuid_regex
+from .signalCommon import phone_number_regex, uuid_regex, __type_error__
 from .signalAccount import Account
 from .signalSticker import StickerPacks
 
@@ -14,6 +14,7 @@ ACCOUNTS: list[Account] = []
 
 
 class Accounts(object):
+    """Class to store the known accounts."""
     supported_accounts_version: int = 2
 
     def __init__(self,
@@ -23,7 +24,15 @@ class Accounts(object):
                  sticker_packs: StickerPacks,
                  do_load: bool = False,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(command_socket, socket.socket):
+            __type_error__("command_socket", "socket.socket", command_socket)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(do_load, bool):
+            __type_error__("do_load", "bool", do_load)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._command_socket: socket.socket = command_socket
@@ -72,7 +81,8 @@ class Accounts(object):
 
     def __sync__(self) -> list[Account]:
         global ACCOUNTS
-        new_account = None
+        new_account: Optional[Account] = None
+        new_accounts: list[Account] = []
         # Load accounts file:
         accounts_dict: dict = self.__load_accounts_file__()
         # Parse the accounts file looking for a new account.
@@ -86,8 +96,8 @@ class Accounts(object):
                                       config_path=self._config_path, sticker_packs=self._sticker_packs,
                                       signal_account_path=raw_account['path'], do_load=True)
                 ACCOUNTS.append(new_account)
-                # newAccounts.append(newAccount)
-        return new_account
+                new_accounts.append(new_account)
+        return new_accounts
 
     ##############################
     # Overrides:
@@ -99,12 +109,27 @@ class Accounts(object):
     ##############################
     # Getters:
     ##############################
-    def get_unregistered(self) -> list[Account]:
+    @staticmethod
+    def get_unregistered() -> list[Account]:
+        """
+        Get accounts that are unregistered, but known.
+        :returns: list[Account]: The unregistered accounts, or an empty list if none found.
+        """
         global ACCOUNTS
         return [acct for acct in ACCOUNTS if acct.registered is False]
 
-    def get_by_number(self, number: str) -> Optional[Account]:
+    @staticmethod
+    def get_by_number(number: str) -> Optional[Account]:
+        """
+        Get an account by phone number.
+        :param number: str: The phone number in format +nnnnnnnnn...
+        :returns: Optional[Account]: The account found or None if not found.
+        :raises: TypeError: If number not a string.
+        :raises: ValueError: If number not in proper format.
+        """
         global ACCOUNTS
+        if not isinstance(number, str):
+            __type_error__("number", "str", number)
         number_match = phone_number_regex.match(number)
         if number_match is None:
             error_message = "number must be in format: +nnnnnnnn..."

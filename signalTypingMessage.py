@@ -4,7 +4,6 @@ from typing import Optional, Iterable
 import sys
 import socket
 
-from .signalAttachment import Attachment
 from .signalCommon import __type_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
@@ -20,6 +19,7 @@ from .signalTimestamp import Timestamp
 
 
 class TypingMessage(Message):
+    """Class to store a typing message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,

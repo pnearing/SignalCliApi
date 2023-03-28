@@ -6,7 +6,7 @@ import json
 import sys
 import socket
 
-from .signalCommon import __socket_receive__, __socket_send__
+from .signalCommon import __socket_receive__, __socket_send__, __type_error__
 from .signalDevice import Device
 from .signalDevices import Devices
 from .signalContacts import Contacts
@@ -19,6 +19,7 @@ DEBUG: bool = False
 
 
 class Account(object):
+    """Class to store an account."""
     supportedAccountFileVersion: int = 6
 
     def __init__(self,
@@ -39,7 +40,39 @@ class Account(object):
                  groups: Optional[Groups] = None,
                  profile: Optional[Profile] = None,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(command_socket, socket.socket):
+            __type_error__("command_socket", "socket.socket", command_socket)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(sticker_packs, StickerPacks):
+            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
+        if not isinstance(signal_account_path, str):
+            __type_error__("signal_account_path", "str", signal_account_path)
+        if not isinstance(do_load, bool):
+            __type_error__("do_load", "bool", do_load)
+        if number is not None and not isinstance(number, str):
+            __type_error__("number", "str", number)
+        if uuid is not None and not isinstance(uuid, str):
+            __type_error__("uuid", "str", uuid)
+        if device_id is not None and not isinstance(device_id, int):
+            __type_error__("device_id", "str", device_id)
+        if device is not None and not isinstance(device, Device):
+            __type_error__("device", "Device", device)
+        if not isinstance(registered, bool):
+            __type_error__("registered", "bool", registered)
+        if config is not None and not isinstance(config, dict):
+            __type_error__("config", "dict", config)
+        if devices is not None and not isinstance(devices, Devices):
+            __type_error__("devices", "Devices", devices)
+        if contacts is not None and not isinstance(contacts, Contacts):
+            __type_error__("contacts", "Contacts", contacts)
+        if groups is not None and not isinstance(groups, Groups):
+            __type_error__("groups", "Groups", groups)
+        if profile is not None and not isinstance(profile, Profile):
+            __type_error__("profile", "Profile", profile)
         # Set internal Vars:
         self._sync_socket: socket.socket = sync_socket
         self._command_socket: socket.socket = command_socket
@@ -115,8 +148,9 @@ class Account(object):
             error_message = "FATAL: Failed to load json from '%s': %s" % (self._account_file_path, e.msg)
             raise RuntimeError(error_message)
         # Version check account file:
-        if (raw_account['version'] > 6):
-            error_message = "WARNING: Account detail file %s is of a different supported version. This may cause things to break."
+        if raw_account['version'] > 6:
+            error_message = "WARNING: Account detail file %s is of a different supported version."
+            error_message += "This may cause things to break."
             print(error_message, file=sys.stderr, flush=True)
         # Set the properties from the account json:
         self.number = raw_account['username']
@@ -129,11 +163,18 @@ class Account(object):
     ##########################
     # Methods:
     ##########################
-    def verify(self, code: str, pin: str | None = None) -> tuple[bool, str]:
+    def verify(self, code: str, pin: Optional[str] = None) -> tuple[bool, str]:
+        """
+        Verify an account.
+        :param code: str: The code sent via sms or voice call.
+        :param pin: Optional[str]: The registered pin for this account.
+        :returns: tuple[bool, str]: Boolean represents success or failure, str is error message on failure, or
+                                        "verification successful" on success.
+        """
         # Create verify command object:
         verify_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "verify",
             "params": {
                 "account": self.number,
@@ -155,6 +196,5 @@ class Account(object):
             if DEBUG:
                 print(error_message, file=sys.stderr)
             return False, error_message
-        print(response_obj)
-
+        # print(response_obj)
         return True, "verification successful"

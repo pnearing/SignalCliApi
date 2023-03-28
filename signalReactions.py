@@ -14,6 +14,7 @@ from .signalReaction import Reaction
 
 
 class Reactions(object):
+    """Class to store reactions to a message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
@@ -95,12 +96,12 @@ class Reactions(object):
         # Try to find a previous reaction:
         previousReaction = self.get_by_contact(reaction.sender)
         if previousReaction is None:
-            self.__add__(reaction)
+            self.__add_reaction__(reaction)
         else:
             self.__replace__(previousReaction, reaction)
         return
 
-    def __add__(self, newReaction: Reaction) -> None:
+    def __add_reaction__(self, newReaction: Reaction) -> None:
         if not isinstance(newReaction, Reaction):
             __type_error__("new_reaction", "Reaction", newReaction)
         if newReaction in self._reactions:
@@ -122,10 +123,18 @@ class Reactions(object):
         self.__remove__(old_reaction)
         new_reaction.is_change = True
         new_reaction.__update_body__()
-        self.__add__(new_reaction)
+        self.__add_reaction__(new_reaction)
         return
 
     def reaction_in(self, target_reaction: Reaction) -> bool:
+        """
+        Return True if a given reaction is in the reactions list.
+        :param target_reaction: Reaction: Reaction to search for.
+        :returns: bool: True if reaction in reaction list.
+        :raises: TypeError: If target_reaction is not a reaction object.
+        """
+        if not isinstance(target_reaction, Reaction):
+            __type_error__("target_reaction", "Reaction", target_reaction)
         return target_reaction in self._reactions
 
     ###########################
@@ -135,7 +144,9 @@ class Reactions(object):
     def get_by_contact(self, contact: Contact) -> Optional[Reaction]:
         """
         Get by contact
-        :param: str: contact: The contact to search by
+        :param: str: contact: The contact to search by.
+        :returns: The Reaction found or None if not found.
+        :raises: TypeError if contact is not a Contact object.
         """
         if not isinstance(contact, Contact):
             __type_error__("contact", "Contact | str", contact)
@@ -147,7 +158,9 @@ class Reactions(object):
     def get_by_emoji(self, emoji: str) -> tuple[Reaction]:
         """
         Get by emoji
-        :param: str: emmoji: The emoji to search for.
+        :param: str: emoji: The emoji to search for.
+        :returns: tuple[Reaction]: The reactions found. an empty tuple if not found.
+        :raises: TypeError: If emoji is not a string.
         """
         if not isinstance(emoji, str):
             __type_error__("emoji", "str", emoji)
@@ -160,6 +173,8 @@ class Reactions(object):
         """
         Get by recipient
         :param: Contact | Group: The recipient to search for.
+        :returns: tuple[Reaction]: The reactions found, or an empty tuple if not found.
+        :raises: TypeError: If recipient is not a Contact object.
         """
         if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
             __type_error__("recipient", "Contact | Group", recipient)

@@ -13,11 +13,13 @@ from .signalGroups import Groups
 from .signalMessage import Message
 from .signalSticker import StickerPacks
 from .signalTimestamp import Timestamp
+from .signalCommon import __type_error__
 
 DEBUG: bool = False
 
 
 class SyncMessage(Message):
+    """Class to store the different type of sync messages."""
     # Sync message types:
     TYPE_CONTACT_SYNC: int = 1
     TYPE_GROUPS_SYNC: int = 2
@@ -51,7 +53,11 @@ class SyncMessage(Message):
                  time_viewed: Optional[Timestamp] = None,
                  sync_type: int = Message.TYPE_NOT_SET,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(sticker_packs, StickerPacks):
+            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
+        if not isinstance(sync_type, int):
+            __type_error__("sync_type", "int", sync_type)
         # Set internal properties:
         # Set sticker packs:
         self._sticker_packs: StickerPacks = sticker_packs

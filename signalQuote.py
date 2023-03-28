@@ -16,6 +16,7 @@ DEBUG: bool = True
 
 
 class Quote(object):
+    """Class to store a quote for a message."""
     def __init__(self,
                  config_path: str,
                  contacts: Contacts,
@@ -129,12 +130,12 @@ class Quote(object):
     # Init:
     #################
     def __from_raw_quote__(self, raw_quote: dict[str, object]) -> None:
-        # print(raw_quote)
+        print(raw_quote)
+        exit(253)
         # Load timestamp
         # TODO: Look into this:
         self.timestamp = Timestamp(timestamp=raw_quote['contact_id'])
         # Load author
-        # 'authorNumber': '+16134548055', 'authorUuid'
         author_number: str = raw_quote['authorNumber']
         author_uuid: str = raw_quote['authorUuid']
         added, self.author = self._contacts.__get_or_add__(
@@ -201,7 +202,7 @@ class Quote(object):
             self.attachments.append(Attachment(config_path=self._config_path, from_dict=attachment_dict))
         # Set mentions:
         self.mentions = None
-        if from_dict['mentions'] != None:
+        if from_dict['mentions'] is not None:
             mentions_dict: dict[str, object] = from_dict['mentions']
             self.mentions = Mentions(contacts=self._contacts, from_dict=mentions_dict)
         # Set conversation:
@@ -217,4 +218,8 @@ class Quote(object):
     # Methods:
     ##########################
     def parse_mentions(self) -> str:
+        """
+        Parse the mentions contained in the quote.
+        :returns: str: The text with the mentions inserted.
+        """
         return self.mentions.__parse_mentions__(self.text)

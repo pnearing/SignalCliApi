@@ -4,7 +4,7 @@ from typing import Optional, Iterator
 import socket
 import json
 
-from .signalCommon import __socket_receive__, __socket_send__
+from .signalCommon import __socket_receive__, __socket_send__, __type_error__
 from .signalGroup import Group
 from .signalContacts import Contacts
 
@@ -14,6 +14,7 @@ DEBUG: bool = True
 
 
 class Groups(object):
+    """Object containing all the groups acting like a list."""
     def __init__(self,
                  sync_socket: socket.socket,
                  config_path: str,
@@ -22,7 +23,19 @@ class Groups(object):
                  from_dict: Optional[dict] = None,
                  do_sync: bool = False
                  ) -> None:
-        # TODO: Arg checks:
+        # Arg checks:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if not isinstance(account_id, str):
+            __type_error__("account_id", "str", account_id)
+        if not isinstance(account_contacts, Contacts):
+            __type_error__("account_contacts", "Contacts", account_contacts)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "Optional[dict]", from_dict)
+        if not isinstance(do_sync, bool):
+            __type_error__("do_sync", "bool", do_sync)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._config_path: str = config_path
@@ -69,7 +82,7 @@ class Groups(object):
         # Create command object and json command string:
         list_groups_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "listGroups",
             "params": {
                 "account": self._account_id,
@@ -115,12 +128,28 @@ class Groups(object):
     # Getters:
     ##############################
     def get_by_id(self, group_id: str) -> Optional[Group]:
+        """
+        Get a group by id.
+        :param group_id: str: The id to search for.
+        :returns: Optional[group]: The group, or None if not found.
+        :raises: TypeError: If group_id is not a string.
+        """
+        if not isinstance(group_id, str):
+            __type_error__("group_id", "str", group_id)
         for group in self._groups:
             if group.id == group_id:
                 return group
         return None
 
     def get_by_name(self, name: str) -> Optional[Group]:
+        """
+        Get a group given a name.
+        :param name: str: The name of the group to search for.
+        :returns: Optional[group]: The group, or None if not found.
+        :raises: TypeError: If name is not a string.
+        """
+        if not isinstance(name, str):
+            __type_error__("name", "str", name)
         for group in self._groups:
             if group.name == name:
                 return group

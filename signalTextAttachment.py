@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-
+"""File: signalTextAttachment.py"""
 from typing import Optional
 
 from .signalCommon import __type_error__
 
 
 class TextAttachment(object):
+    """"Class to store a 'text attachment' from story messages."""
     def __init__(self,
                  from_dict: Optional[dict[str, object]] = None,
                  raw_attachment: Optional[dict[str, object]] = None,
@@ -13,7 +14,7 @@ class TextAttachment(object):
                  style: Optional[str] = None,
                  text_foreground_color: Optional[str] = None,
                  text_background_color: Optional[str] = None,
-                 backgroud_color: Optional[str] = None,
+                 background_color: Optional[str] = None,
                  ) -> None:
         # Argument checks:
         # Check text:
@@ -29,8 +30,8 @@ class TextAttachment(object):
         if text_background_color is not None and not isinstance(text_background_color, str):
             __type_error__("text_background_color", "str", text_background_color)
         # Check bg Colour:
-        if backgroud_color is not None and not isinstance(backgroud_color, str):
-            __type_error__("background_color", "str", backgroud_color)
+        if background_color is not None and not isinstance(background_color, str):
+            __type_error__("background_color", "str", background_color)
         # Set external properties
         # Set text:
         self.text: str = text
@@ -41,8 +42,7 @@ class TextAttachment(object):
         # Set text fg colour:
         self.text_foreground_color = text_foreground_color
         # Set background colour:
-        self.background_color = backgroud_color
-
+        self.background_color = background_color
         # Parse from_dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)

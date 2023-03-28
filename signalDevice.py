@@ -4,7 +4,7 @@ from typing import TypeVar, Optional
 import socket
 
 from .signalTimestamp import Timestamp
-
+from .signalCommon import __type_error__
 Self = TypeVar("Self", bound="Device")
 
 
@@ -23,7 +23,29 @@ class Device(object):
                  is_account_device: Optional[bool] = None,
                  is_primary_device: Optional[bool] = None,
                  ) -> None:
-        # TODO: Argument checks
+        # Argument checks
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(account_id, str):
+            __type_error__("account_id", "str", account_id)
+        if account_device is not None and not isinstance(account_device, int):
+            __type_error__("account_device", "Optional[int]", account_device)
+        if raw_device is not None and not isinstance(raw_device, dict):
+            __type_error__("raw_device", "Optional[dict]", raw_device)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "Optional[dict]", from_dict)
+        if device_id is not None and not isinstance(device_id, int):
+            __type_error__("device_id", "Optional[int]", device_id)
+        if name is not None and not isinstance(name, str):
+            __type_error__("name", "Optional[str]", name)
+        if created is not None and not isinstance(created, Timestamp):
+            __type_error__("created", "Optional[Timestamp]", created)
+        if last_seen is not None and not isinstance(last_seen, Timestamp):
+            __type_error__("last_seen", "Optional[Timestamp]", last_seen)
+        if is_account_device is not None and not isinstance(is_account_device, bool):
+            __type_error__("is_account_device", "Optional[bool]", is_account_device)
+        if is_primary_device is not None and not isinstance(is_primary_device, bool):
+            __type_error__("is_primary_device", "Optional[bool]", is_primary_device)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._account_id: str = account_id
@@ -116,6 +138,13 @@ class Device(object):
     # Methods:
     ########################
     def seen(self, time_seen: Timestamp) -> None:
+        """
+        Update the last time this device has been seen.
+        :param time_seen: Timestamp: The time this device was seen at.
+        :raises TypeError: If time_seen not a Timestamp.
+        """
+        if not isinstance(time_seen, Timestamp):
+            __type_error__("time_seen", "Timestamp", time_seen)
         if self.last_seen is not None:
             if self.last_seen < time_seen:
                 self.last_seen = time_seen
@@ -124,4 +153,7 @@ class Device(object):
         return
 
     def get_display_name(self) -> str:
+        """
+        Return a pretty name to display.
+        """
         return "%i<%s>" % (self.id, self.name)

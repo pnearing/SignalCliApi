@@ -1,30 +1,30 @@
 #!/usr/bin/env python3
-
-global CAN_PREVIEW
-CAN_PREVIEW: bool = False
-
+"""File: signalPreview.py"""
 from typing import Optional, Iterable
-
-try:
-    from linkpreview import link_preview
-
-    CAN_PREVIEW = True
-except ModuleNotFoundError:
-    pass
-
 import urllib.request
 import hashlib
 import os
 import shutil
 import sys
 
+global CAN_PREVIEW
+CAN_PREVIEW: bool = False
+DEBUG: bool = False
+try:
+    from linkpreview import link_preview
+
+    CAN_PREVIEW = True
+except ModuleNotFoundError:
+    if DEBUG:
+        print("Cannot preview links, linkpreview is not installed.")
+        print("This can be installed using pip3 install linkpreview.")
+
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__
 
-DEBUG: bool = False
-
 
 class Preview(object):
+    """Class containing a preview of a link."""
     def __init__(self,
                  config_path: str,
                  from_dict: dict[str, object] = None,
@@ -114,7 +114,7 @@ class Preview(object):
             except Exception as e:
                 error_message = "FATAL: Failed to create preview directory '%s': %s" % (preview_path, str(e.args))
                 raise RuntimeError(error_message)
-        # Create the file_name by hashing the url, and create the absolute path:
+        # Create the filename by hashing the url, and create the absolute path:
         hash_result = hashlib.md5(preview.image.encode())
         preview_image_file_name = hash_result.hexdigest()
         preview_image_file_path = os.path.join(preview_path, preview_image_file_name)
@@ -137,7 +137,8 @@ class Preview(object):
             fileHandle = open(preview_image_file_path, 'wb')
         except Exception as e:
             if DEBUG:
-                error_message = "Failed to open file '%s' for writing(binary): %s" % (preview_image_file_path, str(e.args))
+                error_message = "Failed to open file '%s' for writing(binary): %s" % (
+                preview_image_file_path, str(e.args))
                 print(error_message, file=sys.stderr)
             self.image = None
             return

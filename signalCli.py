@@ -282,7 +282,11 @@ class SignalCli(object):
         return_code = self._link_process.wait()
         # Parse return_code:
         if return_code == 0:
-            new_account = self.accounts.__sync__()
+            new_accounts = self.accounts.__sync__()
+            if len(new_accounts != 0):
+                new_account = new_accounts[0]
+            else:
+                new_account = None
             response_line = self._link_process.stdout.readline()
             print(response_line)
             if new_account is None:

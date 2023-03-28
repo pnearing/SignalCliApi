@@ -15,6 +15,7 @@ from .signalTimestamp import Timestamp
 
 
 class Receipt(Message):
+    """Class to store a receipt."""
     TYPE_DELIVERY: int = 1
     TYPE_READ: int = 2
     TYPE_VIEWED: int = 3

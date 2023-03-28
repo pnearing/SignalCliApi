@@ -18,6 +18,7 @@ from .signalTimestamp import Timestamp
 
 
 class StoryMessage(Message):
+    """Class to store a story message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
@@ -66,6 +67,7 @@ class StoryMessage(Message):
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
         print(raw_message)
+        exit(251)
         # Load allows replies:
         raw_story_message: dict[str, object] = raw_message['storyMessage']
         self.allows_replies = raw_story_message['allows_replies']

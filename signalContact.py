@@ -79,7 +79,7 @@ class Contact(object):
     ##################
     def __from_raw_contact__(self, raw_contact: dict) -> None:
         # print(raw_contact)
-        if (raw_contact['name'] == ''):
+        if raw_contact['name'] == '':
             self.name = None
         else:
             self.name = raw_contact['name']
@@ -87,12 +87,14 @@ class Contact(object):
         self.uuid = raw_contact['uuid']
         self.is_blocked = raw_contact['is_blocked']
         self.color = raw_contact['color']
-        if (raw_contact['messageExpirationTime'] == 0):
+        if raw_contact['messageExpirationTime'] == 0:
             self.expiration = None
         else:
             self.expiration = raw_contact['messageExpirationTime']
         self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
                                contact_id=self.get_id(), raw_profile=raw_contact['profile'])
+        if self.name is None and self.profile.name != '':
+            self.set_name(self.profile.name)
         return
 
     ##########################
@@ -157,7 +159,8 @@ class Contact(object):
             self.profile = None
         # Load Devices:
         if from_dict['devices'] is not None:
-            self.devices = Devices(sync_socket=self._sync_socket, account_id=self._account_id, from_dict=from_dict['devices'])
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self._account_id,
+                                   from_dict=from_dict['devices'])
         else:
             self.devices = None
         # Load last typing change:
@@ -176,11 +179,19 @@ class Contact(object):
     # Getters:
     ########################
     def get_id(self) -> str:
+        """
+        Get the id, prefering the phone number, otherwise the uuid of the contact.
+        :returns: str: The number or uuid.
+        """
         if self.number is not None:
             return self.number
         return self.uuid
 
     def get_display_name(self) -> str:
+        """
+        Get a display version of the contact name.
+        :returns: str: The display name.
+        """
         if self.is_self:
             if self.profile is not None and self.profile.name != '':
                 return self.profile.name
@@ -197,13 +208,21 @@ class Contact(object):
     # Setters:
     ##########################
     def set_name(self, name: str) -> bool:
+        """
+        Set the name of the contact.
+        :param name: str: The name to assign to the contact.
+        :raises: TypeError if name not a string.
+        """
+        # Type check name:
+        if not isinstance(name, str):
+            __type_error__("name", "str", name)
         # If name hasn't changed return false:
         if self.name == name:
             return False
         # create command object and json command string:
         set_name_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "updateContact",
             "params": {
                 "account": self._account_id,
@@ -246,6 +265,11 @@ class Contact(object):
     # Methods:
     ############################
     def seen(self, time_seen: Timestamp) -> None:
+        """
+        Update the last time this contact has been seen.
+        :param time_seen: Timestamp: The time this contact was seen at.
+        :raises: TypeError: If time_seen is not a Timestamp object.
+        """
         if not isinstance(time_seen, Timestamp):
             __type_error__('time_seen', 'Timestamp', time_seen)
         if self.last_seen is not None:

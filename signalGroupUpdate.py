@@ -13,6 +13,7 @@ from .signalTimestamp import Timestamp
 
 
 class GroupUpdate(Message):
+    """Class for a group update message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
@@ -34,6 +35,7 @@ class GroupUpdate(Message):
                  is_viewed: bool = False,
                  time_viewed: Optional[Timestamp] = None
                  ) -> None:
+        # No argument checks required. Body is created.
         # Set external properties:
         self.body: str = ''
         # Run super init:
@@ -52,3 +54,4 @@ class GroupUpdate(Message):
             )
         else:
             self.body = "Invalid group update."
+        return

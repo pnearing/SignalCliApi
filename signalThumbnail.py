@@ -8,6 +8,7 @@ from .signalCommon import __type_error__, find_xdgopen
 
 
 class Thumbnail(object):
+    """Class to store a thumbnail."""
     def __init__(self,
                  config_path: str,
                  from_dict: Optional[dict[str, object]] = None,
@@ -17,7 +18,21 @@ class Thumbnail(object):
                  local_path: Optional[str] = None,
                  size: Optional[int] = None,
                  ) -> None:
-        # TODO Argument checks
+        # Argument checks:
+        if not isinstance(config_path, str):
+            __type_error__("config_path", "str", config_path)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "dict", from_dict)
+        if raw_thumbnail is not None and not isinstance(raw_thumbnail, dict):
+            __type_error__("raw_thumbnail", "dict", raw_thumbnail)
+        if content_type is not None and not isinstance(content_type, str):
+            __type_error__("content_type", "str", content_type)
+        if filename is not None and not isinstance(filename, str):
+            __type_error__("filename", "str", filename)
+        if local_path is not None and not isinstance(local_path, str):
+            __type_error__("local_path", "str", local_path)
+        if size is not None and not isinstance(size, int):
+            __type_error__("size", "int", size)
         # Set internal vars:
         self._config_path: str = config_path
         self._xdgopen_path: Optional[str] = find_xdgopen()
@@ -43,7 +58,7 @@ class Thumbnail(object):
     def __from_raw_thumbnail__(self, raw_thumbnail: dict[str, object]) -> None:
         # print(raw_thumbnail)
         self.content_type = raw_thumbnail['content_type']
-        self.filename = raw_thumbnail['file_name']
+        self.filename = raw_thumbnail['filename']
         self.local_path = os.path.join(self._config_path, 'attachments', raw_thumbnail['contact_id'])
         self.exists = os.path.exists(self.local_path)
         self.size = raw_thumbnail['size']
@@ -55,7 +70,7 @@ class Thumbnail(object):
     def __to_dict__(self) -> dict[str, object]:
         thumbnail_dict = {
             'content_type': self.content_type,
-            'file_name': self.filename,
+            'filename': self.filename,
             'local_path': self.local_path,
             'size': self.size,
         }
@@ -63,7 +78,7 @@ class Thumbnail(object):
 
     def __from_dict__(self, fromDict: dict[str, object]) -> None:
         self.content_type = fromDict['content_type']
-        self.filename = fromDict['file_name']
+        self.filename = fromDict['filename']
         self.local_path = fromDict['local_path']
         self.exists = False
         if self.local_path is not None:

@@ -4,12 +4,13 @@ from typing import Optional
 import json
 import socket
 
-from .signalCommon import __socket_receive__, __socket_send__
+from .signalCommon import __socket_receive__, __socket_send__, __type_error__
 from .signalDevice import Device
 from .signalTimestamp import Timestamp
 
 
 class Devices(object):
+    """An object containing the devices list."""
     def __init__(self,
                  sync_socket: socket.socket,
                  account_id: str,
@@ -17,7 +18,17 @@ class Devices(object):
                  from_dict: Optional[dict] = None,
                  do_sync: bool = False,
                  ) -> None:
-        # TODO: Argument checking:
+        # Argument checking:
+        if not isinstance(sync_socket, socket.socket):
+            __type_error__("sync_socket", "socket.socket", sync_socket)
+        if not isinstance(account_id, str):
+            __type_error__("account_id", "str", account_id)
+        if account_device is not None and not isinstance(account_device, int):
+            __type_error__("account_device", "Optional[int]", account_device)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "Optional[dict]", from_dict)
+        if not isinstance(do_sync, bool):
+            __type_error__("do_sync", "bool", do_sync)
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
         self._account_id: str = account_id
@@ -58,7 +69,7 @@ class Devices(object):
         # Create list devices command Obj:
         list_devices_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 0,
+            "id": 0,
             "method": "listDevices",
             'params': {'account': self._account_id}
         }
@@ -104,6 +115,10 @@ class Devices(object):
     # Getters:
     ########################
     def get_account_device(self) -> Optional[Device]:
+        """
+        Get the device associated with the current account.
+        :returns: Optional[Device]: Returns the device, or None if not found, which shouldn't happen.
+        """
         for device in self._devices:
             if device.is_account_device:
                 return device

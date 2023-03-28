@@ -37,8 +37,8 @@ def received_msg_cb(account: Account, message: ReceivedMessage):
         if message.quote.attachments is not None:
             for attachment in message.quote.attachments:
                 displayName = "<UNKNOWN-ATTACHMENT>"
-                if attachment.file_name is not None and attachment.file_name != '':
-                    displayName = attachment.file_name
+                if attachment.filename is not None and attachment.filename != '':
+                    displayName = attachment.filename
                 elif attachment.local_path is not None and attachment.exists:
                     displayName = attachment.local_path
                 elif attachment.thumbnail is not None and attachment.thumbnail.exists:
@@ -71,8 +71,8 @@ def received_msg_cb(account: Account, message: ReceivedMessage):
     if message.attachments is not None:
         for attachment in message.attachments:
             displayName = "<UNKNOWN-ATTACHMENT>"
-            if attachment.file_name is not None and attachment.file_name != '':
-                displayName = attachment.file_name
+            if attachment.filename is not None and attachment.filename != '':
+                displayName = attachment.filename
             elif attachment.local_path is not None and attachment.exists:
                 displayName = attachment.local_path
             elif attachment.thumbnail is not None and attachment.thumbnail.exists:

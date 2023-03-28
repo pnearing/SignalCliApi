@@ -37,9 +37,9 @@ class Attachment(object):
         # Check content type:
         if content_type is not None and not isinstance(content_type, str):
             __type_error__("content_type", "str", content_type)
-        # Check file_name:
+        # Check filename:
         if file_name is not None and not isinstance(file_name, str):
-            __type_error__("file_name", "str", file_name)
+            __type_error__("filename", "str", file_name)
         # Check size:
         if size is not None and  not isinstance(size, int):
             __type_error__("size", "int", size)
@@ -55,7 +55,7 @@ class Attachment(object):
         self._xdgopen_path: Optional[str] = find_xdgopen()
         # Set external vars:
         self.content_type: Optional[str] = content_type
-        self.file_name: Optional[str] = file_name
+        self.filename: Optional[str] = file_name
         self.size: Optional[int] = size
         self.local_path: Optional[str] = local_path
         self.exists: bool = False
@@ -74,7 +74,7 @@ class Attachment(object):
                 self.exists = os.path.exists(self.local_path)
                 if self.exists:
                     self.content_type = mimetypes.guess_type(local_path)
-                    self.file_name = os.path.split(local_path)[-1]
+                    self.filename = os.path.split(local_path)[-1]
                     self.size = os.path.getsize(local_path)
             else:
                 self.exists = False
@@ -82,9 +82,9 @@ class Attachment(object):
 
     def __from_raw_attachment__(self, raw_attachment: dict) -> None:
         print(raw_attachment)
-        raise NotImplemented
+        exit(252)
         self.content_type = raw_attachment['contentType']
-        self.file_name = raw_attachment['filename']
+        self.filename = raw_attachment['filename']
         if 'size' in raw_attachment.keys():
             self.size = raw_attachment['size']
         else:
@@ -106,7 +106,7 @@ class Attachment(object):
     def __to_dict__(self) -> dict:
         attachment_dict = {
             'content_type': self.content_type,
-            'filename': self.file_name,
+            'filename': self.filename,
             'size': self.size,
             'localPath': self.local_path,
             'thumbnail': None,
@@ -118,7 +118,7 @@ class Attachment(object):
     def __from_dict__(self, from_dict: dict) -> None:
         self.content_type = from_dict['contentType']
         # self.id = from_dict['contact_id']
-        self.file_name = from_dict['filename']
+        self.filename = from_dict['filename']
         self.size = from_dict['size']
         self.local_path = from_dict['localPath']
         if self.local_path is not None:
@@ -136,6 +136,8 @@ class Attachment(object):
     def get_file_path(self) -> Optional[str]:
         """
         Get the local path.
+        :returns: Optional[str]: The path to the local copy of the file, if not found, and a thumbnail exists it will
+                                    return the path to the local thumbnail file, otherwise it will return None.
         """
         if self.local_path is not None:
             return self.local_path
@@ -148,7 +150,9 @@ class Attachment(object):
     ########################
     def display(self) -> bool:
         """
-        call xdg open on the local file.
+        Call xdg-open on the local copy of the attachment if it exists, if it doesn't exist and a thumbnail does, it
+            will try to call xdg-open on the thumbnail.
+        :returns: bool: True if xdg-open was successfully called.
         """
         if self._xdgopen_path is None:
             return False

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-
+"""Signal Mention"""
 from typing import TypeVar, Optional, Any
 from .signalContacts import Contacts
 from .signalContact import Contact
-
+from .signalCommon import __type_error__
 Self = TypeVar("Self", bound="Mention")
 
 
 class Mention(object):
+    """Object for a mention."""
     def __init__(self,
                  contacts: Contacts,
                  from_dict: Optional[dict[str, Any]] = None,
@@ -16,7 +17,19 @@ class Mention(object):
                  start: Optional[int] = None,
                  length: Optional[int] = None,
                  ) -> None:
-        # TODO: Argument checks:
+        # Argument checks:
+        if not isinstance(contacts, Contacts):
+            __type_error__("contacts", "Contacts", contacts)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            __type_error__("from_dict", "Optional[dict]", from_dict)
+        if raw_mention is not None and not isinstance(raw_mention, dict):
+            __type_error__("raw_mention", "Optional[dict]", raw_mention)
+        if contact is not None and not isinstance(contact, Contact):
+            __type_error__("contact", "Optional[Contact]", contact)
+        if start is not None and not isinstance(start, int):
+            __type_error__("start", "Optional[int]", start)
+        if length is not None and not isinstance(length, int):
+            __type_error__("length", "Optional[int]", length)
         # Set internal properties:
         self._contacts: Contacts = contacts
         # Set external properties:
