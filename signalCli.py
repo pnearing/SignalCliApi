@@ -191,9 +191,8 @@ class SignalCli(object):
         # Remove socket file:
         try:
             if isinstance(self._server_address, str):
-                os.remove(self._server_address)
-        except FileNotFoundError:
-            pass
+                if os.path.exists(self._server_address):
+                    os.remove(self._server_address)
         except PermissionError:
             pass
         return
