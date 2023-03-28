@@ -178,17 +178,17 @@ class SignalCli(object):
         Stop the signal-cli process.
         :returns: None
         """
-        # try:
+        # Close the sockets:
         __socket_close__(self._sync_socket)
         __socket_close__(self._command_socket)
-        print("Calling close twice.")
-        __socket_close__(self._command_socket)
-        # except:
-        #     pass
-
-        self._process.terminate()
-        self._link_process.terminate()
-
+        # Terminate processes:
+        if self._process is not None:
+            self._process.terminate()
+            self._process = None
+        if self._link_process is not None:
+            self._link_process.terminate()
+            self._link_process = None
+        # Remove socket file:
         try:
             if isinstance(self._server_address, str):
                 os.remove(self._server_address)
