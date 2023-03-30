@@ -166,6 +166,7 @@ class Message(object):
         print("Message.__from_raw_message__")
         print(raw_message)
         # Parse Sender
+        print("DEBUG: %s" % raw_message['sourceNumber'])
         added, self.sender = self._contacts.__get_or_add__(
             name=raw_message['sourceName'],
             number=raw_message['sourceNumber'],
