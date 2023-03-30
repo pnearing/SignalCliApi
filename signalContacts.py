@@ -257,8 +257,8 @@ class Contacts(object):
                     contact.name = name
                     self.__save__()
         # If contact found:
-        print("DEBUG: Contacts.__get_or_add__ contact is :", str(contact), "after search.")
-        if contact is not None:
+        print("DEBUG: Contacts.__get_or_add__ found_contact is :", str(found_contact), "after search.")
+        if found_contact is not None:
             return False, found_contact
         # Set contact_id:
         print("DEBUG: Contact.__get_or_add__ number=%s uuid=%s name=%s" % (number, uuid, name))
