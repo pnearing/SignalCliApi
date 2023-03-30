@@ -241,6 +241,7 @@ class Contacts(object):
                 uuid = contact_id
         # Search for contact:
         found_contact = None
+        print
         for contact in self._contacts:
             if contact.number == number or contact.uuid == uuid:
                 found_contact = contact
@@ -256,9 +257,11 @@ class Contacts(object):
                     contact.name = name
                     self.__save__()
         # If contact found:
+        print("DEBUG: Contacts.__get_or_add__ contact is :", str(contact), "after search.")
         if contact is not None:
-            return False, contact
+            return False, found_contact
         # Set contact_id:
+        print("DEBUG: Contact.__get_or_add__ number=%s uuid=%s name=%s" % (number, uuid, name))
         if number is not None:
             contact_id = number
         else:
