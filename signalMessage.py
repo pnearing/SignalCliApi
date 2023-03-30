@@ -172,7 +172,7 @@ class Message(object):
             number=raw_message['sourceNumber'],
             uuid=raw_message['sourceUuid']
         )
-        print("DEBUG:", self.sender.get_display_name())
+        print("DEBUG:", self.sender.number)
         if added:
             self._contacts.__save__()
         # Parse recipient:
