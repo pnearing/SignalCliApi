@@ -163,14 +163,15 @@ class Message(object):
     # Init:
     #######################
     def __from_raw_message__(self, raw_message: dict) -> None:
-        # print("Message.__from_raw_message__")
-        # print(raw_message)
+        print("Message.__from_raw_message__")
+        print(raw_message)
         # Parse Sender
         added, self.sender = self._contacts.__get_or_add__(
             name=raw_message['sourceName'],
             number=raw_message['sourceNumber'],
             uuid=raw_message['sourceUuid']
         )
+        print("DEBUG:", self.sender.get_display_name())
         if added:
             self._contacts.__save__()
         # Parse recipient:
