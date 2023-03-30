@@ -225,31 +225,35 @@ class Contacts(object):
                        ) -> tuple[bool, Contact]:
         # Argument check
         if number is None and uuid is None and contact_id is None:
-            RuntimeError("Either number or uuid, or contact_id must be defined.")
+            RuntimeError("Either number, uuid, or contact_id must be defined.")
         # Check contact_id type:
         if contact_id is not None:
-            numberMatch = phone_number_regex.match(contact_id)
-            uuidMatch = uuid_regex.match(contact_id)
-            if numberMatch is None and uuidMatch is None:
-                errorMessage = "contact_id must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
-                raise ValueError(errorMessage)
-            elif numberMatch is not None:
+            number_match = phone_number_regex.match(contact_id)
+            uuid_match = uuid_regex.match(contact_id)
+            if number_match is None and uuid_match is None:
+                error_message = "contact_id must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
+                raise ValueError(error_message)
+            elif number_match is not None:
                 number = contact_id
                 uuid = None
-            elif uuidMatch is not None:
+            elif uuid_match is not None:
                 number = None
                 uuid = contact_id
         # Search for contact:
-        contact = None
+        found_contact = None
         for contact in self._contacts:
             if contact.number == number or contact.uuid == uuid:
-                contact = contact
+                found_contact = contact
+                print("DEBUG: found contact:", contact.name, contact.uuid, contact.number)
                 # Merge contact if more info found:
                 if contact.number is None and number is not None:
                     contact.number = number
                     self.__save__()
                 if contact.uuid is None and uuid is not None:
                     contact.uuid = uuid
+                    self.__save__()
+                if contact.name is None and name is not None:
+                    contact.name = name
                     self.__save__()
         # If contact found:
         if contact is not None:
@@ -261,7 +265,7 @@ class Contacts(object):
             contact_id = uuid
         # add to signal:
         (addedToSignal, contact) = self.add(name, contact_id)
-        return True, contact
+        return addedToSignal, contact
 
     ##################################
     # Getters:
