@@ -338,9 +338,8 @@ class ReceiveThread(threading.Thread):
                 if self._all_msg_cb is not None:
                     self._all_msg_cb(self._account, message)
             else:
-                if DEBUG:
-                    info_message = "DEBUG: Incoming data that's not a message.\nDEBUG: DATA =\n%s" % message_str
-                    print(info_message, file=sys.stderr)
+                info_message = "DEBUG: Incoming data that's not a message.\nDEBUG: DATA =\n%s" % message_str
+                print(info_message, file=sys.stderr)
             #### Check for expired messages:
             self._account.messages.__check_expiries__()
             if self._do_expunge:

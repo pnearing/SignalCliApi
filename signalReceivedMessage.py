@@ -383,10 +383,11 @@ class ReceivedMessage(Message):
         """
         if self.expiration is None:
             return False
-        now = datetime.now(tz=pytz.UTC)
-        if self.expiration_timestamp <= now:
-            self.is_expired = True
-            return True
+        if self.expiration_timestamp is not None:
+            now = datetime.now(tz=pytz.UTC)
+            if self.expiration_timestamp.get_datetime() <= now:
+                self.is_expired = True
+                return True
         return False
 
     #####################
@@ -503,3 +504,5 @@ class ReceivedMessage(Message):
         # Parse reaction:
         self.reactions.__parse__(reaction)
         return True, reaction
+
+    # TODO: Reply to this message, create a sent message with this as an attached quote.

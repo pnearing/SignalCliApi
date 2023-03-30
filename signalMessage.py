@@ -55,6 +55,30 @@ class Message(object):
                  is_viewed: bool = False,
                  time_viewed: Optional[Timestamp] = None,
                  ) -> None:
+        """
+        Initialize a message.
+        :param command_socket: socket.socket,
+        :param account_id: str,
+        :param config_path: str,
+        :param contacts: Contacts,
+        :param groups: Groups,
+        :param devices: Devices,
+        :param this_device: Device,
+        :param from_dict: Optional[dict] = None,
+        :param raw_message: Optional[dict] = None,
+        :param sender: Optional[Contact] = None,
+        :param recipient: Optional[Contact | Group] = None,
+        :param device: Optional[Device] = None,
+        :param timestamp: Optional[Timestamp] = None,
+        :param message_type: int = TYPE_NOT_SET,
+        :param is_delivered: bool = False,
+        :param time_delivered: Optional[Timestamp] = None,
+        :param is_read: bool = False,
+        :param time_read: Optional[Timestamp] = None,
+        :param is_viewed: bool = False,
+        :param time_viewed: Optional[Timestamp] = None,
+        :returns: None
+        """
         # Arg Type Checks:
         if not isinstance(command_socket, socket.socket):
             __type_error__('command_socket', 'socket', command_socket)
@@ -332,3 +356,4 @@ class Message(object):
         self.is_viewed = True
         self.time_viewed = when
         return
+
