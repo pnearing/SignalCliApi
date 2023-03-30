@@ -7,6 +7,7 @@ import threading
 import json
 
 from .signalAccount import Account
+from .signalCallMessage import CallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, __type_error__
 from .signalGroupUpdate import GroupUpdate
 from .signalMessage import Message
@@ -19,7 +20,7 @@ from .signalSyncMessage import SyncMessage
 from .signalTypingMessage import TypingMessage
 from .signalTimestamp import Timestamp
 
-DEBUG: bool = False
+DEBUG: bool = True
 
 
 # noinspection SpellCheckingInspection
@@ -321,9 +322,11 @@ class ReceiveThread(threading.Thread):
                 #### Call message ####
                 elif 'callMessage' in envelope_dict.keys():
                     print(envelope_dict)
-                    exit(255)
-                    # TODO: Create call message class.
-                    message = None
+
+                    message = CallMessage(command_socket=self._command_socket, account_id=self._account.number,
+                                          config_path=self._config_path, contacts=self._account.contacts,
+                                          groups=self._account.groups, devices=self._account.devices,
+                                          this_device=self._account.device, raw_message=envelope_dict)
                     if self._call_msg_cb is not None:
                         self._call_msg_cb(self._account, message)
                 #### Unrecognized message ####
