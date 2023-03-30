@@ -223,6 +223,8 @@ class Contacts(object):
                        uuid: Optional[str] = None,
                        contact_id: Optional[str] = None
                        ) -> tuple[bool, Contact]:
+        print("DEBUG: Contact.__get_or_add__ number=%s uuid=%s name=%s" % (number, uuid, name))
+
         # Argument check
         if number is None and uuid is None and contact_id is None:
             RuntimeError("Either number, uuid, or contact_id must be defined.")
@@ -261,7 +263,6 @@ class Contacts(object):
         if found_contact is not None:
             return False, found_contact
         # Set contact_id:
-        print("DEBUG: Contact.__get_or_add__ number=%s uuid=%s name=%s" % (number, uuid, name))
         if number is not None:
             contact_id = number
         else:
