@@ -75,8 +75,8 @@ class Accounts(object):
         for raw_account in accounts_dict['accounts']:
             count += 1
             account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                              config_path=self._config_path,
-                              sticker_packs=self._sticker_packs, signal_account_path=raw_account['path'], do_load=True)
+                              config_path=self._config_path, sticker_packs=self._sticker_packs,
+                              signal_account_path=raw_account['path'], do_load=True)
             ACCOUNTS.append(account)
         return
 

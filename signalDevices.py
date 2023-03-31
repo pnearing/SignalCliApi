@@ -117,7 +117,8 @@ class Devices(object):
     def get_account_device(self) -> Optional[Device]:
         """
         Get the device associated with the current account.
-        :returns: Optional[Device]: Returns the device, or None if not found, which shouldn't happen.
+        :returns: Optional[Device]: Returns the device, or None if not found, which would happen for the devices of a
+                                    contact.
         """
         for device in self._devices:
             if device.is_account_device:

@@ -16,6 +16,7 @@ DEBUG: bool = True
 
 
 class Contact(object):
+    """Class to store a contact."""
     def __init__(self,
                  sync_socket: socket.socket,
                  config_path: str,
@@ -70,7 +71,7 @@ class Contact(object):
                 self.name = self.profile.name  # Force the name for this session if setting failed.
         # If devices isn't yet set create empty devices:
         if self.devices is None:
-            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number)
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.uuid)
 
         return
 

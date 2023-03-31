@@ -189,8 +189,8 @@ class Contacts(object):
         for raw_contact in response_obj['result']:
             # Create new contact:
             new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                  account_id=self._account_id,
-                                  account_path=self._account_path, raw_contact=raw_contact)
+                                  account_id=self._account_id, account_path=self._account_path,
+                                  raw_contact=raw_contact)
             # Check for existing contact:
             contact_found = False
             for contact in self._contacts:
