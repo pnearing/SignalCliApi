@@ -184,6 +184,11 @@ class ReceivedMessage(Message):
             self.mark_delivered(self.timestamp)
         # Check if this is expired:
         self.__check_expired__()
+        # Check if this is a group invite, it'll be a group message with no: body, attachment, sticker etc.
+        self.is_group_invite = self.__check_invite__()
+        if self.is_group_invite:
+            self.body = "Group invite from: %s<%s>" % (self.sender.get_display_name(), self.sender.get_id())
+
         return
 
     ######################
@@ -390,6 +395,24 @@ class ReceivedMessage(Message):
                 return True
         return False
 
+    def __check_invite__(self) -> bool:
+        """
+        Check if this is a group invite, it's an invitation if it's a group message without a body, a sticker, etc.
+        :returns: bool: True if this is an invitation.
+        """
+        if self.recipient_type != 'group':
+            return False
+        if self.body is not None:
+            return False
+        if self.attachments is not None:
+            return False
+        if len(self.mentions) != 0:
+            return False
+        if self.sticker is not None:
+            return False
+        if self.quote is not None:
+            return False
+        return True
     #####################
     # Methods:
     #####################
