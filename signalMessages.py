@@ -483,7 +483,7 @@ class Messages(object):
         """
         # Validate recipients:
         recipient_type: str
-        target_recipients: list[Contact | Group]
+        target_recipients: list[Contact | Group] = []
         if isinstance(recipients, Contact):
             recipient_type = 'contact'
             target_recipients = [recipients]
@@ -492,9 +492,8 @@ class Messages(object):
             target_recipients = [recipients]
         elif isinstance(recipients, Iterable):
             target_recipients = []
-            i = 0
             checkType = None
-            for recipient in recipients:
+            for i, recipient in enumerate(recipients):
                 if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
                     __type_error__("recipients[%i]" % i, "Contact | Group", recipient)
                 if i == 0:
@@ -505,7 +504,6 @@ class Messages(object):
                         recipient_type = 'group'
                 elif not isinstance(recipient, checkType):
                     __type_error__("recipients[%i]", str(type(checkType)), recipient)
-                i += 1
                 target_recipients.append(recipient)
         else:
             __type_error__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
@@ -525,8 +523,7 @@ class Messages(object):
                 target_attachments = [Attachment(config_path=self._config_path, local_path=attachments)]
             elif isinstance(attachments, Iterable):
                 target_attachments = []
-                i = 0
-                for attachment in attachments:
+                for i, attachment in enumerate(attachments):
                     if not isinstance(attachment, Attachment) and not isinstance(attachment, str):
                         __type_error__("attachments[%i]" % i, "Attachment | str", attachment)
                     if isinstance(attachment, Attachment):
