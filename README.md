@@ -1,7 +1,7 @@
 # SignalCliApi
  Python 3 API for the signal-cli messaging utility
 
-Requires python3, qrencode, linkpreview python library, and of course signal-cli to be installed.
+Requires python3, qrencode application, linkpreview, pytz and tzlocal python libraries, and of course signal-cli to be installed.
 
 linkpreview can be installed with pip: 'pip install linkpreview'
 
