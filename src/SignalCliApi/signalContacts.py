@@ -243,7 +243,7 @@ class Contacts(object):
                 uuid = contact_id
         # Search for contact:
         found_contact = None
-        print
+        # print
         for contact in self._contacts:
             if contact.number == number or contact.uuid == uuid:
                 found_contact = contact
@@ -370,17 +370,21 @@ class Contacts(object):
             if contact.name == name:
                 return contact
         return None
+
     #########################
     # Methods:
     #########################
-    def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, Contact]:
+    def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, Contact | str]:
         """
         Add a contact.
         :param name: str: The name to assign to the contact.
         :param contact_id: str: The id of the contact, either a phone number or an uuid.
         :param expiration: Optional[int]: The message expiration time in seconds.
-        :returns: tuple(bool, Contact): True if contact added, False if not, Either the existing contact, or the
-                                            new contact if added.
+        :returns: tuple(bool, Contact | str): The first element is True if the contact was added to signal, and False if
+                                                not.  The second element is either a contact or a string. If the first
+                                                element is True, the second element contains the new contact, otherwise
+                                                if the first element is False, this will either be the existing contact,
+                                                or a string with an error message from signal.
         :raises: TypeError: If parameter invalid type.
         :raises: ValueError: If contact id not in phone number or uuid formats.
         """
@@ -423,27 +427,24 @@ class Contacts(object):
         response_obj: dict = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
+            error_message = "signal error. Code: %i, Message: %s" % (
+                response_obj['error']['code'], response_obj['error']['message'])
             if DEBUG:
-                error_message = "signal error. Code: %i, Message: %s" % (
-                    response_obj['error']['code'], response_obj['error']['message'])
                 print(error_message, file=sys.stderr)
-            number_match = phone_number_regex.match(contact_id)
-            uuid_match = uuid_regex.match(contact_id)
-            if number_match is not None:
-                new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                      account_id=self._account_id,
-                                      account_path=self._account_path, name=name, number=contact_id)
-            elif uuid_match is not None:
-                new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                      account_id=self._account_id,
-                                      account_path=self._account_path, name=name, uuid=contact_id)
-            else:
-                # noinspection SpellCheckingInspection
-                error_message = "contact_id must be in format '+nnnnnn...' or 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                raise ValueError(error_message)
-            self._contacts.append(new_contact)
-            return False, new_contact
-        # Parse result:
+            return False, error_message
+        number_match = phone_number_regex.match(contact_id)
+        uuid_match = uuid_regex.match(contact_id)
+        new_contact = None
+        if number_match is not None:
+            new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
+                                  account_id=self._account_id,
+                                  account_path=self._account_path, name=name, number=contact_id)
+        elif uuid_match is not None:
+            new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
+                                  account_id=self._account_id,
+                                  account_path=self._account_path, name=name, uuid=contact_id)
+        self._contacts.append(new_contact)
+    # Parse result:
         self.__sync__()
         self.__save__()
         new_contact = self.get_by_id(contact_id)
