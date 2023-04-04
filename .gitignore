@@ -156,3 +156,4 @@ sentMessages.json
 run/
 
 SignalCliApiEnv/
+/signalTest.py
