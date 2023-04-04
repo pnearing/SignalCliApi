@@ -351,7 +351,7 @@ class SignalCli(object):
         # Parse return_code:
         if return_code == 0:
             new_accounts = self.accounts.__sync__()
-            if len(new_accounts != 0):
+            if len(new_accounts) != 0:
                 new_account = new_accounts[0]
             else:
                 new_account = None
