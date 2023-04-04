@@ -20,7 +20,7 @@ from .signalSyncMessage import SyncMessage
 from .signalTypingMessage import TypingMessage
 from .signalTimestamp import Timestamp
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 # noinspection SpellCheckingInspection

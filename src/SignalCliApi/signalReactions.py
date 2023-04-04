@@ -11,6 +11,7 @@ from .signalDevices import Devices
 from .signalGroup import Group
 from .signalGroups import Groups
 from .signalReaction import Reaction
+DEBUG: bool = False
 
 
 class Reactions(object):

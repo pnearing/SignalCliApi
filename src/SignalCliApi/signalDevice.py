@@ -6,6 +6,7 @@ import socket
 from .signalTimestamp import Timestamp
 from .signalCommon import __type_error__
 Self = TypeVar("Self", bound="Device")
+DEBUG: bool = False
 
 
 class Device(object):

@@ -10,7 +10,7 @@ from .signalContacts import Contacts
 
 # from signalSyncMessage import SyncMessage
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class Groups(object):

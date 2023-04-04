@@ -16,6 +16,7 @@ from .signalMessage import Message
 from .signalReaction import Reaction
 from .signalSticker import Sticker
 from .signalTimestamp import Timestamp
+DEBUG: bool = False
 
 
 class TypingMessage(Message):

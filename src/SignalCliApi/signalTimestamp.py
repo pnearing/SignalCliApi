@@ -3,6 +3,7 @@
 from typing import TypeVar, Optional, IO
 import datetime
 import pytz
+DEBUG: bool = False
 
 try:
     from tzlocal import get_localzone

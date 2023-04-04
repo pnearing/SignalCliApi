@@ -6,6 +6,7 @@ from .signalCommon import __type_error__, phone_number_regex, uuid_regex
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalMention import Mention
+DEBUG: bool = False
 
 
 class Mentions(object):

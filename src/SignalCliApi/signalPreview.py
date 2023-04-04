@@ -7,7 +7,6 @@ import os
 import shutil
 import sys
 
-global CAN_PREVIEW
 CAN_PREVIEW: bool = False
 DEBUG: bool = False
 try:

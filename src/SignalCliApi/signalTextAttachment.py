@@ -3,6 +3,7 @@
 from typing import Optional
 
 from .signalCommon import __type_error__
+DEBUG: bool = False
 
 
 class TextAttachment(object):

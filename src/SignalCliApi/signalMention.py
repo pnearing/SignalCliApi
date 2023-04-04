@@ -4,6 +4,7 @@ from typing import TypeVar, Optional, Any
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalCommon import __type_error__
+DEBUG: bool = False
 Self = TypeVar("Self", bound="Mention")
 
 

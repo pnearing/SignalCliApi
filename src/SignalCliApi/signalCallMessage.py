@@ -11,6 +11,8 @@ from .signalGroup import Group
 from .signalGroups import Groups
 from .signalMessage import Message
 
+DEBUG: bool = False
+
 
 class CallMessage(Message):
     """Class to store a call message."""

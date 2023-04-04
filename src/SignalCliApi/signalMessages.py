@@ -30,7 +30,7 @@ from .signalSyncMessage import SyncMessage
 from .signalTimestamp import Timestamp
 from .signalTypingMessage import TypingMessage
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class Messages(object):

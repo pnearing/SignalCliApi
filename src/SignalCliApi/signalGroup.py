@@ -10,7 +10,7 @@ from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalTimestamp import Timestamp
 
-DEBUG: bool = True
+DEBUG: bool = False
 Self = TypeVar("Self", bound="Group")
 
 

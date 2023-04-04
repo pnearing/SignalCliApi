@@ -9,7 +9,7 @@ import socket
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalTimestamp import Timestamp
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 Self = TypeVar("Self", bound="Profile")
 

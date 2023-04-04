@@ -5,6 +5,7 @@ import os
 from subprocess import check_call, CalledProcessError
 
 from .signalCommon import __type_error__, find_xdgopen
+DEBUG: bool = False
 
 
 class Thumbnail(object):

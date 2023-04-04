@@ -12,7 +12,7 @@ from .signalMention import Mention
 from .signalMentions import Mentions
 from .signalTimestamp import Timestamp
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class Quote(object):

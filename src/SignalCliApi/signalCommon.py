@@ -5,6 +5,8 @@ from typing import Pattern, NoReturn, Optional, Any
 import socket
 import select
 import re
+
+DEBUG:bool = False
 ###################
 # Version:
 ###################

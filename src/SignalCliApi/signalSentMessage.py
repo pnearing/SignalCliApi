@@ -23,7 +23,7 @@ from .signalReactions import Reactions
 from .signalReceipt import Receipt
 from .signalSticker import Sticker, StickerPacks
 from .signalTimestamp import Timestamp
-
+DEBUG: bool = False
 Self = TypeVar("Self", bound="SentMessage")
 
 

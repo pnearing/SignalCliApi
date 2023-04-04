@@ -15,7 +15,7 @@ from .signalCommon import __type_error__, find_signal, find_qrencode, parse_sign
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class SignalCli(object):

@@ -7,6 +7,7 @@ import socket
 from .signalCommon import __socket_receive__, __socket_send__, __type_error__
 from .signalDevice import Device
 from .signalTimestamp import Timestamp
+DEBUG: bool = False
 
 
 class Devices(object):

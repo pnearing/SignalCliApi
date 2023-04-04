@@ -10,6 +10,7 @@ from .signalGroup import Group
 from .signalGroups import Groups
 from .signalMessage import Message
 from .signalTimestamp import Timestamp
+DEBUG: bool = False
 
 
 class GroupUpdate(Message):

@@ -12,7 +12,7 @@ from .signalDevices import Devices
 
 Self = TypeVar("Self", bound="Contact")
 
-DEBUG: bool = True
+DEBUG: bool = False
 
 
 class Contact(object):

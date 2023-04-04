@@ -15,6 +15,7 @@ from .signalMessage import Message
 from .signalPreview import Preview
 from .signalTextAttachment import TextAttachment
 from .signalTimestamp import Timestamp
+DEBUG: bool = False
 
 
 class StoryMessage(Message):

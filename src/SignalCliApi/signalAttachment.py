@@ -10,6 +10,8 @@ from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
 
+DEBUG: bool = False
+
 
 class Attachment(object):
     """
