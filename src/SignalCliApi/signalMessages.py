@@ -365,7 +365,7 @@ class Messages(object):
              author: Contact,
              timestamp: Timestamp,
              conversation: Contact | Group,
-             ) -> Optional[SentMessage | ReceivedMessage]:
+             ) -> Optional[SentMessage | ReceivedMessage | Message]:
         """
         Get a message, given an author, a timestamp, and a conversation.
         :param author: Contact: The author of the message we're looking for.
@@ -376,13 +376,13 @@ class Messages(object):
                                 conversation os not a Contact or Group object.
         """
         # Validate  author:
-        target_author: Contact
+        target_author: Optional[Contact] = None
         if isinstance(author, Contact):
             target_author = author
         else:
             __type_error__("author", "Contact", author)
         # Validate recipient:
-        target_conversation: Contact | Group
+        target_conversation: Optional[Contact | Group] = None
         if isinstance(conversation, Contact):
             target_conversation = conversation
         elif isinstance(conversation, Group):
@@ -390,7 +390,7 @@ class Messages(object):
         else:
             __type_error__("recipient", "Contact | Group", conversation)
         # Validate timestamp:
-        targetTimestamp: Timestamp
+        targetTimestamp: Optional[Timestamp] = None
         if isinstance(timestamp, Timestamp):
             targetTimestamp = timestamp
         else:
