@@ -5,7 +5,10 @@ from typing import Pattern, NoReturn, Optional, Any
 import socket
 import select
 import re
-
+###################
+# Version:
+###################
+VERSION: str = '0.1.1'
 ########################################
 # Regex:
 ########################################
