@@ -103,12 +103,18 @@ class Contact(object):
     ##########################
     def __eq__(self, __o: Self) -> bool:
         if isinstance(__o, Contact):
+            number_match: bool = False
+            uuid_match: bool = False
             if self.number is not None and __o.number is not None:
-                if self.number == __o.number:
-                    return True
-            elif self.uuid is not None and __o.uuid is not None:
-                if self.uuid == __o.uuid:
-                    return True
+                number_match = self.number == __o.number
+            if self.uuid is not None and __o.uuid is not None:
+                uuid_match = self.uuid == __o.uuid
+            if self.uuid is None or __o.uuid is None:
+                return number_match
+            elif self.number is None or __o.number is None:
+                return uuid_match
+            else:
+                return number_match and uuid_match
         return False
 
     #########################
