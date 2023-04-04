@@ -86,7 +86,7 @@ class Messages(object):
         if do_load:
             try:
                 self.__load__()
-            except Exception:
+            except RuntimeError:
                 if DEBUG:
                     errorMessage = "warning, creating empy messages: %s" % self._file_path
                     print(errorMessage, file=sys.stderr)
@@ -234,7 +234,7 @@ class Messages(object):
             error_message = "Invalid reaction cannot parse."
             raise RuntimeError(error_message)
         # Find the message that was reacted to:
-        reactedMessage = None
+        reactedMessage: Optional[SentMessage | ReceivedMessage | Message] = None
         for message in search_messages:
             if message.sender == reaction.target_author:
                 if message.timestamp == reaction.target_timestamp:
@@ -459,7 +459,9 @@ class Messages(object):
                      quote: Optional[Quote] = None,
                      sticker: Optional[Sticker] = None,
                      preview: Optional[Preview] = None,
-                     ) -> tuple[tuple[bool, Contact | Group, str | SentMessage]]:
+                     ) -> tuple[
+        tuple[bool, Contact, str] | tuple[bool, Contact | Group, str] | tuple[bool, Contact, SentMessage] | tuple[
+            bool, Contact, object], ...]:
         """
         Send a message.
         :param recipients: Iterable[Contact | Group] | Contact | Group: The recipients of the message.
@@ -482,7 +484,7 @@ class Messages(object):
                                 list.
         """
         # Validate recipients:
-        recipient_type: str
+        recipient_type: str = ''
         target_recipients: list[Contact | Group] = []
         if isinstance(recipients, Contact):
             recipient_type = 'contact'
@@ -580,7 +582,7 @@ class Messages(object):
         # Create send message command object:
         send_command_obj = {
             "jsonrpc": "2.0",
-            "contact_id": 2,
+            "id": 2,
             "method": "send",
             "params": {
                 "account": self._account_id,
@@ -638,6 +640,8 @@ class Messages(object):
         response_str = __socket_receive__(self._command_socket)
         # Parse response:
         response_obj: dict[str, object] = json.loads(response_str)
+        # Mark system as finished sending
+        self._sending = False
         # print(responseObj)
         # Check for error:
         if 'error' in response_obj.keys():
@@ -646,16 +650,15 @@ class Messages(object):
                 response_obj['error']['message'])
             if DEBUG:
                 print(error_message, file=sys.stderr)
-                self._sending = False
-                return_value = []
-                for recipient in target_recipients:
-                    if recipient_type == 'group':
-                        for member in group.members:
-                            return_value.append((False, member, error_message))
-                    else:
-                        return_value.append((False, recipient, error_message))
-                return_value = tuple(return_value)
-                return tuple(return_value)
+            return_value = []
+            for recipient in target_recipients:
+                if recipient_type == 'group':
+                    for member in recipient.members:
+                        return_value.append((False, member, error_message))
+                else:
+                    return_value.append((False, recipient, error_message))
+            return_value = tuple(return_value)
+            return return_value
         # Some messages sent, some may have failed.
         results_list: list[dict[str, object]] = response_obj['result']['results']
         # Gather timestamp:
@@ -693,11 +696,12 @@ class Messages(object):
                     return_value.append((False, contact, result['type']))
             self._sending = False
             return tuple(return_value)
+        # Recipient type == Contact
         else:
             for result in results_list:
                 # Gather contact:
                 contact_id = result['recipientAddress']['number']
-                if contact_id is None:
+                if contact_id is None or contact_id == '':
                     contact_id = result['recipientAddress']['uuid']
                 added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
 
@@ -706,18 +710,16 @@ class Messages(object):
                     # Create sent message
                     sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                                config_path=self._config_path, contacts=self._contacts,
-                                               groups=self._groups,
-                                               devices=self._devices, this_device=self._this_device,
-                                               sticker_packs=self._sticker_packs, recipient=contact,
-                                               timestamp=timestamp, body=body, attachments=target_attachments,
-                                               mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True,
-                                               sent_to=target_recipients, preview=preview)
+                                               groups=self._groups, devices=self._devices,
+                                               this_device=self._this_device, sticker_packs=self._sticker_packs,
+                                               recipient=contact, timestamp=timestamp, body=body,
+                                               attachments=target_attachments, mentions=target_mentions, quote=quote,
+                                               sticker=sticker, is_sent=True, sent_to=target_recipients,
+                                               preview=preview)
                     return_value.append((True, contact, sent_message))
                     self.append(sent_message)
                     self.__save__()
                 # Message failed to send:
                 else:
                     return_value.append((False, contact, result['type']))
-            # Mark sending finished.
-            self._sending = False
             return tuple(return_value)
