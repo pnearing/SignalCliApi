@@ -5,7 +5,7 @@ import sys
 import os
 import socket
 import json
-
+from syslog import syslog, LOG_INFO
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__
 from .signalContact import Contact
@@ -402,7 +402,7 @@ class Messages(object):
                 return message
         return None
 
-    def get_quoted(self, quote: Quote) -> Optional[SentMessage | ReceivedMessage]:
+    def get_quoted(self, quote: Quote) -> Optional[SentMessage | ReceivedMessage | Message]:
         """
         Get a message that contains a given Quote.
         :param quote: Quote: The quote we're looking for.
@@ -642,7 +642,9 @@ class Messages(object):
         response_obj: dict[str, object] = json.loads(response_str)
         # Mark system as finished sending
         self._sending = False
-        # print(responseObj)
+        #***********************DEBUG:**************************************
+        debug_message = "DEBUG: response_obj = '%s'" % str(response_obj)
+        syslog(LOG_INFO, debug_message)
         # Check for error:
         if 'error' in response_obj.keys():
             error_message = "ERROR: failed to send message, signal error. Code: %i Message: %s" % (
