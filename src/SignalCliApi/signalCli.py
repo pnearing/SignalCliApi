@@ -94,18 +94,18 @@ class SignalCli(object):
         # set var to hold main signal process
         self._process: Optional[Popen] = None
         # Set sync socket:
-        self._sync_socket: socket.socket = None
+        self._sync_socket: Optional[socket.socket] = None
         # Set command socket:
-        self._command_socket: socket.socket = None
+        self._command_socket: Optional[socket.socket] = None
         # Set var to hold link process:
         self._link_process: Optional[Popen] = None
         # Set qrencode exec path:
         self._qrencode_exec_path: Optional[str] = find_qrencode()
         # Set external properties and objects:
         # Set accounts:
-        self.accounts: Accounts = None
+        self.accounts: Optional[Accounts] = None
         # Set sticker packs:
-        self.sticker_packs: StickerPacks = None
+        self.sticker_packs: Optional[StickerPacks] = None
 
         # Start signal-cli if requested:
         if start_signal:
