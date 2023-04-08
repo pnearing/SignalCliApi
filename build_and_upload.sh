@@ -1,4 +1,6 @@
 #!/bin/bash
+rm dist/*
+
 python3 -m build
 if [ $? -gt 0 ]; then
 	echo "Build failed. Abort."
