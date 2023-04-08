@@ -134,14 +134,14 @@ class Messages(object):
         # Load messages: SentMessage | ReceivedMessage
         self.messages = []
         for message_dict in fromDict['messages']:
-            if message_dict['message_type'] == Message.TYPE_SENT_MESSAGE:
+            if message_dict['messageType'] == Message.TYPE_SENT_MESSAGE:
                 message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,
                                       sticker_packs=self._sticker_packs,
                                       from_dict=message_dict)
 
-            elif message_dict['message_type'] == Message.TYPE_RECEIVED_MESSAGE:
+            elif message_dict['messageType'] == Message.TYPE_RECEIVED_MESSAGE:
                 message = ReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
                                           config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                           devices=self._devices, this_device=self._this_device,
@@ -153,11 +153,11 @@ class Messages(object):
         # Load sync messages: GroupUpdate | SyncMessage
         self.sync = []
         for message_dict in fromDict['syncMessages']:
-            if message_dict['message_type'] == Message.TYPE_GROUP_UPDATE_MESSAGE:
+            if message_dict['messageType'] == Message.TYPE_GROUP_UPDATE_MESSAGE:
                 message = GroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device, from_dict=message_dict)
-            elif message_dict['message_type'] == Message.TYPE_SYNC_MESSAGE:
+            elif message_dict['messageType'] == Message.TYPE_SYNC_MESSAGE:
                 message = SyncMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,
