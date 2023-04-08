@@ -2,19 +2,24 @@
 
 from typing import TypeVar, Optional, IO
 import datetime
-import pytz
-DEBUG: bool = False
-
+import sys
+try:
+    import pytz
+except ModuleNotFoundError:
+    print("Module: pytz not found, you can install using pip3 install pytz")
+    exit(1)
 try:
     from tzlocal import get_localzone
 except ModuleNotFoundError:
     print("Module: tzlocal not found, you can install using 'sudo apt install python3-tzlocal', or by using ", end='')
     print("pip install tzlocal")
-import sys
+    exit(1)
+
 
 from .signalCommon import __type_error__
 
 Self = TypeVar("Self", bound="Timestamp")
+DEBUG: bool = False
 
 
 class Timestamp(object):
@@ -101,20 +106,29 @@ class Timestamp(object):
     def __str__(self) -> str:
         return self.date_time.isoformat()
 
-    def __eq__(self, __o: Self) -> bool:
-        if not isinstance(__o, Timestamp):
+    def __eq__(self, __o: Self | int) -> bool:
+        if not isinstance(__o, Timestamp) and not isinstance(__o, int):
             return False
-        return self.date_time == __o.date_time
+        if isinstance(__o, Timestamp):
+            return self.date_time == __o.date_time
+        else:
+            return self.timestamp == __o
 
-    def __lt__(self, __o: Self) -> bool:
-        if not isinstance(__o, Timestamp):
-            raise TypeError("FATAL: only Timestamp is supported.")
-        return self.date_time < __o.date_time
+    def __lt__(self, __o: Self | int) -> bool:
+        if not isinstance(__o, Timestamp) and not isinstance(__o, int):
+            raise TypeError("FATAL: only Timestamp and int are supported.")
+        if isinstance(__o, Timestamp):
+            return self.date_time < __o.date_time
+        else:
+            return self.timestamp < __o
 
     def __gt__(self, __o: Self | int) -> bool:
-        if not isinstance(__o, Timestamp):
+        if not isinstance(__o, Timestamp) and not isinstance(__o, int):
             raise TypeError("FATAL: Only SignalTimestamp and int are supported.")
-        return self.date_time > __o.datetime
+        if isinstance(__o, Timestamp):
+            return self.date_time > __o.datetime
+        else:
+            return self.timestamp > __o
 
     ##########################
     # Getters:
