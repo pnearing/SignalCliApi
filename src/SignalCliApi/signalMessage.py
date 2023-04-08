@@ -163,16 +163,19 @@ class Message(object):
     # Init:
     #######################
     def __from_raw_message__(self, raw_message: dict) -> None:
-        print("Message.__from_raw_message__")
-        print(raw_message)
+        global DEBUG
+        if DEBUG:
+            print("Message.__from_raw_message__")
+            print(raw_message)
         # Parse Sender
-        print("DEBUG: %s" % raw_message['sourceNumber'])
+            print("DEBUG: %s" % raw_message['sourceNumber'])
         added, self.sender = self._contacts.__get_or_add__(
             name=raw_message['sourceName'],
             number=raw_message['sourceNumber'],
             uuid=raw_message['sourceUuid']
         )
-        print("DEBUG:", self.sender.number)
+        if DEBUG:
+            print("DEBUG:", self.sender.number)
         if added:
             self._contacts.__save__()
         # Parse recipient:
@@ -240,7 +243,7 @@ class Message(object):
         message_dict = {
             'sender': None,
             'recipient': None,
-            'recipient_type': self.recipient_type,
+            'recipientType': self.recipient_type,
             'device': None,
             'timestamp': None,
             'messageType': self.message_type,
@@ -271,7 +274,7 @@ class Message(object):
         # Parse sender:
         added, self.sender = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=from_dict['sender'])
         # Parse recipient type:
-        self.recipient_type = from_dict['recipient_type']
+        self.recipient_type = from_dict['recipientType']
         # Parse recipient:
         if from_dict['recipient'] is not None:
             if self.recipient_type == 'contact':
@@ -294,7 +297,7 @@ class Message(object):
         # Parse Delivered: (is and time)
         self.is_delivered = from_dict['isDelivered']
         if from_dict['timeDelivered'] is not None:
-            self.time_delivered = Timestamp(from_dict=from_dict['time_delivered'])
+            self.time_delivered = Timestamp(from_dict=from_dict['timeDelivered'])
         else:
             self.time_delivered = None
         # Parse read (is and time):

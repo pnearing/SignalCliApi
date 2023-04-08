@@ -59,9 +59,9 @@ class TextAttachment(object):
         # Load text:
         self.text = raw_attachment['text']
         self.style = raw_attachment['style']
-        self.text_background_color = raw_attachment['text_background_color']
-        self.text_foreground_color = raw_attachment['text_foreground_color']
-        self.background_color = raw_attachment['background_color']
+        self.text_background_color = raw_attachment['textBackgroundColor']
+        self.text_foreground_color = raw_attachment['textForegroundColor']
+        self.background_color = raw_attachment['backgroundColor']
         return
 
     ####################
@@ -71,9 +71,9 @@ class TextAttachment(object):
         textAttachmentDict = {
             'text': self.text,
             'style': self.style,
-            'text_background_color': self.text_background_color,
-            'text_foreground_color': self.text_foreground_color,
-            'background_color': self.background_color,
+            'textBackgroundColor': self.text_background_color,
+            'textForegroundColor': self.text_foreground_color,
+            'backgroundColor': self.background_color,
         }
         return textAttachmentDict
 
@@ -83,9 +83,9 @@ class TextAttachment(object):
         # Load style:
         self.style = from_dict['style']
         # Load text bg colour:
-        self.text_background_color = from_dict['text_background_color']
+        self.text_background_color = from_dict['textBackgroundColor']
         # Load text fg colour:
-        self.text_foreground_color = from_dict['text_foreground_color']
+        self.text_foreground_color = from_dict['textForegroundColor']
         # Load background colour:
-        self.background_color = from_dict['background_color']
+        self.background_color = from_dict['backgroundColor']
         return

@@ -220,8 +220,8 @@ class ReceivedMessage(Message):
         if 'sticker' in data_message.keys():
             stickerDict: dict[str, object] = data_message['sticker']
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
-            self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['pack_id'],
-                                                           sticker_id=stickerDict['sticker_id'])
+            self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['packId'],
+                                                           sticker_id=stickerDict['stickerId'])
         # Parse Quote
         if 'quote' in data_message.keys():
             if self.recipient_type == 'group':
@@ -262,21 +262,21 @@ class ReceivedMessage(Message):
         received_message_dict['sticker'] = None
         if self.sticker is not None:
             received_message_dict['sticker'] = {
-                'pack_id': self.sticker._pack_id,
-                'sticker_id': self.sticker.id
+                'packId': self.sticker._pack_id,
+                'stickerId': self.sticker.id
             }
         # Set quote:
         received_message_dict['quote'] = None
         if self.quote is not None:
             received_message_dict['quote'] = self.quote.__to_dict__()
         # Set expiration:
-        received_message_dict['is_expired'] = self.is_expired
+        received_message_dict['isExpired'] = self.is_expired
         received_message_dict['expiration'] = None
-        received_message_dict['expiration_timestamp'] = None
+        received_message_dict['expirationTimestamp'] = None
         if self.expiration is not None:
             received_message_dict['expiration'] = self.expiration.seconds
         if self.expiration_timestamp is not None:
-            received_message_dict['expiration_timestamp'] = self.expiration_timestamp.__to_dict__()
+            received_message_dict['expirationTimestamp'] = self.expiration_timestamp.__to_dict__()
         # Set previews:
         received_message_dict['previews'] = []
         for preview in self.previews:
@@ -301,13 +301,13 @@ class ReceivedMessage(Message):
         # if (from_dict['reactions'] != None):
         self.reactions = Reactions(command_socket=self._command_socket, account_id=self._account_id,
                                    contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                   from_dict=from_dict['reactions'])
+                                   this_device=self._this_device, from_dict=from_dict['reactions'])
         # Load sticker:
         self.sticker = None
         if from_dict['sticker'] is not None:
             self.sticker = self._sticker_packs.get_sticker(
-                pack_id=from_dict['sticker']['pack_id'],
-                sticker_id=from_dict['sticker']['sticker_id']
+                pack_id=from_dict['sticker']['packId'],
+                sticker_id=from_dict['sticker']['stickerId']
             )
         # Load quote
         self.quote = None
@@ -315,13 +315,13 @@ class ReceivedMessage(Message):
             self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                from_dict=from_dict['quote'])
         # Load expiration:
-        self.is_expired = from_dict['is_expired']
+        self.is_expired = from_dict['isExpired']
         self.expiration = None
         if from_dict['expiration'] is not None:
             self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expiration_timestamp = None
-        if from_dict['expiration_timestamp'] is not None:
-            self.expiration_timestamp = Timestamp(from_dict=from_dict['expiration_timestamp'])
+        if from_dict['expirationTimestamp'] is not None:
+            self.expiration_timestamp = Timestamp(from_dict=from_dict['expirationTimestamp'])
         # Load previews:
         self.previews = []
         for preview_dict in from_dict['previews']:
@@ -336,12 +336,12 @@ class ReceivedMessage(Message):
         send_receipt_command_obj = {
             "jsonrpc": "2.0",
             "id": 0,
-            "method": "send_receipt",
+            "method": "sendReceipt",
             "params": {
                 "account": self._account_id,
                 "recipient": self.sender.get_id(),
                 "type": receipt_type,
-                "target_timestamp": self.timestamp.timestamp,
+                "targetTimestamp": self.timestamp.timestamp,
             }
         }
         json_command_str = json.dumps(send_receipt_command_obj) + '\n'
@@ -413,6 +413,7 @@ class ReceivedMessage(Message):
         if self.quote is not None:
             return False
         return True
+
     #####################
     # Methods:
     #####################

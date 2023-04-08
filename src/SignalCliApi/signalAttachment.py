@@ -107,7 +107,7 @@ class Attachment(object):
     #########################
     def __to_dict__(self) -> dict:
         attachment_dict = {
-            'content_type': self.content_type,
+            'contentType': self.content_type,
             'id': self.id,
             'filename': self.filename,
             'size': self.size,

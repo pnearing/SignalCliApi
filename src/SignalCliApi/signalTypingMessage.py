@@ -71,16 +71,16 @@ class TypingMessage(Message):
         typing_message = super().__to_dict__()
         typing_message['action'] = self.action
         if self.time_changed is not None:
-            typing_message['time_changed'] = self.time_changed.__to_dict__()
+            typing_message['timeChanged'] = self.time_changed.__to_dict__()
         else:
-            typing_message['time_changed'] = None
+            typing_message['timeChanged'] = None
         return typing_message
 
     def __from_dict__(self, from_dict: dict) -> None:
         super().__from_dict__(from_dict)
         self.action = from_dict['action']
-        if from_dict['time_changed'] is not None:
-            self.time_changed = Timestamp(from_dict=from_dict['time_changed'])
+        if from_dict['timeChanged'] is not None:
+            self.time_changed = Timestamp(from_dict=from_dict['timeChanged'])
         else:
             self.time_changed = None
         return

@@ -83,14 +83,14 @@ class Mention(object):
     ######################
     def __to_dict__(self) -> dict[str, object]:
         mention_dict = {
-            "contact_id": self.contact.get_id(),
+            "contactId": self.contact.get_id(),
             "start": self.start,
             "length": self.length,
         }
         return mention_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
-        added, self.contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['contact_id'])
+        added, self.contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['contactId'])
         self.start = from_dict['start']
         self.length = from_dict['length']
         return

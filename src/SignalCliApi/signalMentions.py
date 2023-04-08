@@ -94,7 +94,7 @@ class Mentions(object):
             mentions_dict['mentions'].append(mention.__to_dict__())
         return mentions_dict
 
-    def __from_dict__(self, fromDict: dict[str, object]) -> None:
+    def __from_dict__(self, fromDict: dict[str, list]) -> None:
         self._mentions = []
         for mention_dict in fromDict['mentions']:
             self._mentions.append(Mention(contacts=self._contacts, from_dict=mention_dict))

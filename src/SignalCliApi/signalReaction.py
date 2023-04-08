@@ -78,7 +78,7 @@ class Reaction(Message):
             uuid=reactionDict['targetAuthorUuid'],
         )
         self.target_timestamp = Timestamp(timestamp=reactionDict['targetSentTimestamp'])
-        self.is_remove = reactionDict['is_remove']
+        self.is_remove = reactionDict['isRemove']
         return
 
     ###############################
@@ -97,14 +97,14 @@ class Reaction(Message):
         reaction_dict = super().__to_dict__()
         reaction_dict['emoji'] = self.emoji
         reaction_dict['targetAuthorId'] = None
-        reaction_dict['target_timestamp'] = None
-        reaction_dict['is_remove'] = self.is_remove
-        reaction_dict['is_change'] = self.is_change
-        reaction_dict['previous_emoji'] = self.previous_emoji
+        reaction_dict['targetTimestamp'] = None
+        reaction_dict['isRemove'] = self.is_remove
+        reaction_dict['isChange'] = self.is_change
+        reaction_dict['previousEmoji'] = self.previous_emoji
         if self.target_author is not None:
             reaction_dict['targetAuthorId'] = self.target_author.get_id()
         if self.target_timestamp is not None:
-            reaction_dict['target_timestamp'] = self.target_timestamp.__to_dict__()
+            reaction_dict['targetTimestamp'] = self.target_timestamp.__to_dict__()
         return reaction_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -118,14 +118,14 @@ class Reaction(Message):
         else:
             self.target_author = None
         # Parse target timestamp:
-        if from_dict['target_timestamp'] is not None:
-            self.target_timestamp = Timestamp(from_dict=from_dict['target_timestamp'])
+        if from_dict['targetTimestamp'] is not None:
+            self.target_timestamp = Timestamp(from_dict=from_dict['targetTimestamp'])
         # Parse is remove:
-        self.is_remove = from_dict['is_remove']
+        self.is_remove = from_dict['isRemove']
         # Parse is change:
-        self.is_change = from_dict['is_change']
+        self.is_change = from_dict['isChange']
         # Parse previous emoji:
-        self.previous_emoji = from_dict['previous_emoji']
+        self.previous_emoji = from_dict['previousEmoji']
         return
 
     ###########################
@@ -144,8 +144,8 @@ class Reaction(Message):
             "params": {
                 "account": self._account_id,
                 "emoji": self.emoji,
-                "target_author": self.target_author.get_id(),
-                "target_timestamp": self.target_timestamp.timestamp,
+                "targetAuthor": self.target_author.get_id(),
+                "targetTimestamp": self.target_timestamp.timestamp,
             }
         }
         if self.recipient_type == 'contact':

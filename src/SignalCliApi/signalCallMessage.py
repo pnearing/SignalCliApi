@@ -75,7 +75,7 @@ class CallMessage(Message):
     ###############################
     def __to_dict__(self) -> dict:
         call_message_dict: dict[str, object] = super().__to_dict__()
-        call_message_dict['offer_id'] = self.offer_id
+        call_message_dict['offerId'] = self.offer_id
         call_message_dict['sdp'] = self.sdp
         call_message_dict['type'] = self.call_type
         call_message_dict['opaque'] = self.opaque
@@ -83,7 +83,7 @@ class CallMessage(Message):
 
     def __from_dict__(self, from_dict: dict) -> None:
         super().__from_dict__(from_dict)
-        self.offer_id = from_dict['offer_id']
+        self.offer_id = from_dict['offerId']
         self.sdp = from_dict['sdp']
         self.call_type = from_dict['type']
         self.opaque = from_dict['opaque']

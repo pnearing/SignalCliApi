@@ -58,11 +58,11 @@ class Sticker(object):
     # Init:
     ##########################
     def __from_manifest__(self, from_manifest: dict[str, str]) -> None:
-        self.id = from_manifest['contact_id']
+        self.id = from_manifest['id']
         self.emoji = from_manifest['emoji']
         file_name = from_manifest['file']
         self.file_path = os.path.join(self._pack_path, file_name)
-        self.content_type = from_manifest['content_type']
+        self.content_type = from_manifest['contentType']
         return
 
     #######################
@@ -84,20 +84,20 @@ class Sticker(object):
     #######################
     def __to_dict__(self) -> dict[str, object]:
         sticker_dict = {
-            "_pack_id": self._pack_id,
-            "contact_id": self.id,
+            "_packId": self._pack_id,
+            "contactId": self.id,
             "emoji": self.emoji,
-            "file_path": self.file_path,
-            "content_type": self.content_type
+            "filePath": self.file_path,
+            "contentType": self.content_type
         }
         return sticker_dict
 
     def __from_dict__(self, from_dict: dict[str, object]) -> None:
-        self._pack_id = from_dict['_pack_id']
-        self.id = from_dict['contact_id']
+        self._pack_id = from_dict['_packId']
+        self.id = from_dict['contactId']
         self.emoji = from_dict['emoji']
-        self.file_path = from_dict['file_path']
-        self.content_type = from_dict['content_type']
+        self.file_path = from_dict['filePath']
+        self.content_type = from_dict['contentType']
         return
 
 
@@ -130,10 +130,10 @@ class StickerPack(object):
             __type_error__("author", "str", author)
         if cover is not None and not isinstance(cover, Sticker):
             __type_error__("cover", "Sticker", cover)
+        sticker_list: list[Sticker] = []
         if stickers is not None and not isinstance(stickers, Iterable):
             __type_error__("stickers", "Iterable[Sticker]", stickers)
         elif stickers is not None:
-            sticker_list: list[Sticker] = []
             for i, sticker in enumerate(stickers):
                 if not isinstance(sticker, Sticker):
                     __type_error__("stickers[%i]" % i, "Sticker", sticker)
@@ -189,7 +189,7 @@ class StickerPack(object):
     ####################
     def __to_dict__(self) -> dict:
         sticker_pack_dict = {
-            'pack_id': self.pack_id,
+            'packId': self.pack_id,
             'title': self.title,
             'author': self.author,
             'cover': None,
@@ -202,7 +202,7 @@ class StickerPack(object):
         return sticker_pack_dict
 
     def __from_dict__(self, from_dict: dict[str, object]) -> None:
-        self.pack_id = from_dict['pack_id']
+        self.pack_id = from_dict['packId']
         self.title = from_dict['title']
         self.author = from_dict['author']
         if from_dict['cover'] is not None:

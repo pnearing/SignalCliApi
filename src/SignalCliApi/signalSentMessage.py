@@ -287,8 +287,8 @@ class SentMessage(Message):
         sent_message_dict['sticker'] = None
         if self.sticker is not None:
             sent_message_dict['sticker'] = {
-                'pack_id': self.sticker._pack_id,
-                'sticker_id': self.sticker.id
+                'packId': self.sticker._pack_id,
+                'stickerId': self.sticker.id
             }
         # Set quote:
         sent_message_dict['quote'] = None
@@ -296,30 +296,30 @@ class SentMessage(Message):
             sent_message_dict['quote'] = self.quote.__to_dict__()
         # Set expiration:
         sent_message_dict['expiration'] = None
-        sent_message_dict['expiration_timestamp'] = None
-        sent_message_dict['is_expired'] = self.is_expired
+        sent_message_dict['expirationimestamp'] = None
+        sent_message_dict['isExpired'] = self.is_expired
         if self.expiration is not None:
             sent_message_dict['expiration'] = self.expiration.seconds
         if self.expiration_timestamp is not None:
-            sent_message_dict['expiration_timestamp'] = self.expiration_timestamp.__to_dict__()
+            sent_message_dict['expirationTimestamp'] = self.expiration_timestamp.__to_dict__()
         # Set is sent:
-        sent_message_dict['is_sent'] = self.is_sent
+        sent_message_dict['isSent'] = self.is_sent
         # Set sent_to list:
-        sent_message_dict['sent_to'] = []
+        sent_message_dict['sentTo'] = []
         for contact in self.sent_to:
-            sent_message_dict['sent_to'].append(contact.get_id())
+            sent_message_dict['sentTo'].append(contact.get_id())
         # Set delivery_receipts list:
-        sent_message_dict['delivery_receipts'] = []
+        sent_message_dict['deliveryReceipts'] = []
         for receipt in self.delivery_receipts:
-            sent_message_dict['delivery_receipts'].append(receipt.__to_dict__())
+            sent_message_dict['deliveryReceipts'].append(receipt.__to_dict__())
         # Set read_receipts list:
-        sent_message_dict['read_receipts'] = []
+        sent_message_dict['readReceipts'] = []
         for receipt in self.read_receipts:
-            sent_message_dict['read_receipts'].append(receipt.__to_dict__())
+            sent_message_dict['readReceipts'].append(receipt.__to_dict__())
         # Set viewed_receipts list:
-        sent_message_dict['viewed_receipts'] = []
+        sent_message_dict['viewedReceipts'] = []
         for receipt in self.viewed_receipts:
-            sent_message_dict['viewed_receipts'].append(receipt.__to_dict__())
+            sent_message_dict['viewedReceipts'].append(receipt.__to_dict__())
         return sent_message_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
@@ -347,8 +347,8 @@ class SentMessage(Message):
         self.sticker = None
         if from_dict['sticker'] is not None:
             self.sticker = self._sticker_packs.get_sticker(
-                pack_id=from_dict['sticker']['pack_id'],
-                sticker_id=from_dict['sticker']['sticker_id']
+                pack_id=from_dict['sticker']['packId'],
+                sticker_id=from_dict['sticker']['stickerId']
             )
         # Load Quote:
         self.quote = None
@@ -359,20 +359,20 @@ class SentMessage(Message):
         if from_dict['expiration'] is not None:
             self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expiration_timestamp = None
-        if from_dict['expiration_timestamp'] is not None:
-            self.expiration_timestamp = Timestamp(from_dict=from_dict['expiration_timestamp'])
-        self.is_expired = from_dict['is_expired']
+        if from_dict['expirationTimestamp'] is not None:
+            self.expiration_timestamp = Timestamp(from_dict=from_dict['expirationTimestamp'])
+        self.is_expired = from_dict['isExpired']
         # Load is_sent:
-        self.is_sent = from_dict['is_sent']
+        self.is_sent = from_dict['isSent']
         # Load sent_to:
         self.sent_to = []
-        if from_dict['sent_to'] is not None:
-            for contactId in from_dict['sent_to']:
+        if from_dict['sentTo'] is not None:
+            for contactId in from_dict['sentTo']:
                 added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
                 self.sent_to.append(contact)
         # Load delivery_receipts:
         self.delivery_receipts = []
-        for receiptDict in from_dict['delivery_receipts']:
+        for receiptDict in from_dict['deliveryReceipts']:
             receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id,
                               config_path=self._config_path,
                               contacts=self._contacts, groups=self._groups, devices=self._devices,
@@ -380,7 +380,7 @@ class SentMessage(Message):
             self.delivery_receipts.append(receipt)
         # Load read_receipts:
         self.read_receipts = []
-        for receiptDict in from_dict['read_receipts']:
+        for receiptDict in from_dict['readReceipts']:
             receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id,
                               config_path=self._config_path,
                               contacts=self._contacts, groups=self._groups, devices=self._devices,
@@ -388,7 +388,7 @@ class SentMessage(Message):
             self.read_receipts.append(receipt)
         # Load viewed_receipts:
         self.viewed_receipts = []
-        for receiptDict in from_dict['viewed_receipts']:
+        for receiptDict in from_dict['viewedReceipts']:
             receipt = Receipt(command_socket=self._command_socket, account_id=self._account_id,
                               config_path=self._config_path,
                               contacts=self._contacts, groups=self._groups, devices=self._devices,

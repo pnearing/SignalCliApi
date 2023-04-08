@@ -24,6 +24,7 @@ from .signalCommon import __type_error__
 
 class Preview(object):
     """Class containing a preview of a link."""
+
     def __init__(self,
                  config_path: str,
                  from_dict: dict[str, object] = None,
@@ -137,7 +138,7 @@ class Preview(object):
         except Exception as e:
             if DEBUG:
                 error_message = "Failed to open file '%s' for writing(binary): %s" % (
-                preview_image_file_path, str(e.args))
+                    preview_image_file_path, str(e.args))
                 print(error_message, file=sys.stderr)
             self.image = None
             return

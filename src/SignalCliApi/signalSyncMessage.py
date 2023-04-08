@@ -134,35 +134,35 @@ class SyncMessage(Message):
     def __to_dict__(self) -> dict:
         sync_message_dict = super().__to_dict__()
         # Store sync type:
-        sync_message_dict['sync_type'] = self.sync_type
+        sync_message_dict['syncType'] = self.sync_type
         # Store sent message properties:
-        sync_message_dict['raw_sent_message'] = self.raw_sent_message
+        sync_message_dict['rawSentMessage'] = self.raw_sent_message
         # Store the read messages list:
         # Store the list as a list of tuples[contactID:str, timestampDict:dict]
-        sync_message_dict['read_messages'] = []
+        sync_message_dict['readMessages'] = []
         for (contact, timestamp) in self.read_messages:
             target_message_tuple = (contact.get_id(), timestamp.__to_dict__())
-            sync_message_dict['read_messages'].append(target_message_tuple)
+            sync_message_dict['readMessages'].append(target_message_tuple)
         # Store Blocked contacts and groups lists:
-        sync_message_dict['blocked_contacts'] = self.blocked_contacts
-        sync_message_dict['blocked_groups'] = self.blocked_groups
+        sync_message_dict['blockedContacts'] = self.blocked_contacts
+        sync_message_dict['blockedGroups'] = self.blocked_groups
         return sync_message_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
         super().__from_dict__(from_dict)
         # Load sync type:
-        self.sync_type = from_dict['sync_type']
+        self.sync_type = from_dict['syncType']
         # Load sent message properties:
-        self.raw_sent_message = from_dict['raw_sent_message']
+        self.raw_sent_message = from_dict['rawSentMessage']
         # Set read messages list:
         # Load read messages:
         self.read_messages = []
-        for (contact_id, timestamp_dict) in from_dict['read_messages']:
+        for (contact_id, timestamp_dict) in from_dict['readMessages']:
             added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
             timestamp = Timestamp(from_dict=timestamp_dict)
             self.read_messages.append((contact, timestamp))
         # Set blocked groups and contacts:
-        self.blocked_contacts = from_dict['blocked_contacts']
-        self.blocked_groups = from_dict['blocked_groups']
+        self.blocked_contacts = from_dict['blockedContacts']
+        self.blocked_groups = from_dict['blockedGroups']
 
         return

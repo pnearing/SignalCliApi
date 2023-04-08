@@ -57,10 +57,11 @@ class Thumbnail(object):
     # Init:
     ###################
     def __from_raw_thumbnail__(self, raw_thumbnail: dict[str, object]) -> None:
-        # print(raw_thumbnail)
-        self.content_type = raw_thumbnail['content_type']
+        if DEBUG:
+            print(raw_thumbnail)
+        self.content_type = raw_thumbnail['contentType']
         self.filename = raw_thumbnail['filename']
-        self.local_path = os.path.join(self._config_path, 'attachments', raw_thumbnail['contact_id'])
+        self.local_path = os.path.join(self._config_path, 'attachments', raw_thumbnail['id'])
         self.exists = os.path.exists(self.local_path)
         self.size = raw_thumbnail['size']
         return
@@ -70,17 +71,17 @@ class Thumbnail(object):
     ############################
     def __to_dict__(self) -> dict[str, object]:
         thumbnail_dict = {
-            'content_type': self.content_type,
+            'contentType': self.content_type,
             'filename': self.filename,
-            'local_path': self.local_path,
+            'localPath': self.local_path,
             'size': self.size,
         }
         return thumbnail_dict
 
     def __from_dict__(self, fromDict: dict[str, object]) -> None:
-        self.content_type = fromDict['content_type']
+        self.content_type = fromDict['contentType']
         self.filename = fromDict['filename']
-        self.local_path = fromDict['local_path']
+        self.local_path = fromDict['localPath']
         self.exists = False
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)
