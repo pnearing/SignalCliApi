@@ -27,8 +27,8 @@ class Preview(object):
 
     def __init__(self,
                  config_path: str,
-                 from_dict: dict[str, object] = None,
-                 raw_preview: dict[str, object] = None,
+                 from_dict: dict[str, str | dict] = None,
+                 raw_preview: dict[str, str | dict] = None,
                  generate_preview: bool = False,
                  url: Optional[str] = None,
                  title: Optional[str] = None,
@@ -83,12 +83,15 @@ class Preview(object):
                 raise RuntimeError(error_message)
             if CAN_PREVIEW:
                 self.__generate_preview__()
+            else:
+                error_message = "linkpreview not installed, cannot generate preview."
+                raise RuntimeError(error_message)
         return
 
     ####################
     # Init:
     ####################
-    def __from_raw_preview__(self, raw_preview: dict[str, object]) -> None:
+    def __from_raw_preview__(self, raw_preview: dict[str, str | dict]) -> None:
         # print(raw_preview)
         self.url = raw_preview['url']
         self.title = raw_preview['title']
