@@ -6,7 +6,7 @@ import re
 import socket
 from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
 from time import sleep
-from typing import Optional, Callable, Tuple, List
+from typing import Optional, Callable
 
 from .signalAccount import Account
 from .signalAccounts import Accounts
@@ -26,7 +26,18 @@ class SignalCli(object):
                  server_address: Optional[list[str, int] | tuple[str, int] | str] = None,
                  log_file_path: Optional[str] = None,
                  start_signal: bool = True,
+                 debug: bool = False
                  ) -> None:
+        """
+        Initialize signal-cli, starting the process if required.
+        :param signal_config_path: Optional[str]: The path to the directory signal-cli should use.
+        :param signal_exec_path: Optional[str]: The path to the signal-cli executable.
+        :param server_address: Optional[list[str , int] | tuple[str, int] | str]: If signal-cli is already started,
+            the address of the server, if a unix socket, use a str, otherwise use a tuple/list[hostname:str,port:int]
+        :param log_file_path: Optional[str]: The path to the signal log file, if None, no logging is preformed.
+        :param start_signal: Bool: True = start a signal-cli process, False = signal-cli is already running.
+        :param debug: Bool: Produce debug output on stdout.
+        """
         # Argument checks:
         # Check signal config path:
         if signal_config_path is not None:
@@ -51,8 +62,8 @@ class SignalCli(object):
                     __type_error__("server_address[1]", "int", server_address[1])
             elif isinstance(server_address, str):
                 if os.path.exists(server_address) and start_signal:
-                    # noinspection PyPep8
-                    error_message = "socket path '%s' already exists. Perhaps signal is already running." % server_address
+                    error_message = "socket path '%s' already exists. Perhaps signal is already running." \
+                                    % server_address
                     raise FileExistsError(error_message)
         # Check log file path:
         if log_file_path is not None:
@@ -153,7 +164,7 @@ class SignalCli(object):
         self.accounts = Accounts(sync_socket=self._sync_socket, command_socket=self._command_socket,
                                  config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)
         # Create dict to hold processes:
-        self._receive_threads: dict[str, ReceiveThread] = {}
+        self._receive_threads: dict[str, Optional[ReceiveThread]] = {}
         return
 
     #################################
@@ -204,7 +215,6 @@ class SignalCli(object):
                          captcha: str,
                          voice: bool = False
                          ) -> tuple[bool, Account | str]:
-        # noinspection SpellCheckingInspection
         """
                 Register a new account. NOTE: Subject to rate limiting.
                 :param number: str: The phone number to register.

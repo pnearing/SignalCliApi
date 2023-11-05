@@ -94,7 +94,7 @@ class Account(object):
         # Do load:
         if do_load:
             self.__do_load__()
-        # If the account is registered load account data from signal:
+        # If the account is registered, load account data from signal:
         if self.registered:
             # Load devices from signal:
             self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, account_device=self.device_id,

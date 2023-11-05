@@ -6,7 +6,7 @@ import socket
 import select
 import re
 
-DEBUG:bool = False
+DEBUG: bool = False
 ###################
 # Version:
 ###################
@@ -21,10 +21,8 @@ uuid_regex: Pattern = re.compile(
 #########################
 # Strings:
 #########################
-# noinspection SpellCheckingInspection
-UUID_FORMAT_STR = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-# noinspection SpellCheckingInspection
-NUMBER_FORMAT_STR = "+nnnnnnn..."
+UUID_FORMAT_STR: str = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+NUMBER_FORMAT_STR: str = "+nnnnnnn..."
 
 
 ####################################
@@ -34,7 +32,7 @@ def find_xdgopen() -> Optional[str]:
     """Use which to find xdg-open"""
     xdgopen_path: Optional[str]
     try:
-        xdgopen_path = check_output(['which', 'xdg-open'])
+        xdgopen_path = check_output(['which', 'xdg-open'], text=True)
         xdgopen_path = xdgopen_path.rstrip()
     except CalledProcessError:
         xdgopen_path = None
@@ -48,7 +46,7 @@ def find_qrencode() -> Optional[str]:
     """Use which to fild qrencode."""
     qrencode_path: Optional[str]
     try:
-        qrencode_path = check_output(['which', 'qrencode'])
+        qrencode_path = check_output(['which', 'qrencode'], text=True)
         qrencode_path = qrencode_path.rstrip()
     except CalledProcessError:
         qrencode_path = None
@@ -118,7 +116,6 @@ def parse_signal_return_code(return_code: int, command_line: str | list[str], ou
 ####################################
 # Socket helpers:
 ####################################
-
 def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
     """Create a socket.socket object based on server address type."""
     if isinstance(server_address, tuple):
@@ -151,7 +148,7 @@ def __socket_send__(sock: socket.socket, message: str) -> int:
     return bytes_sent
 
 
-def __socket_receive__(sock: socket.socket) -> str:
+def __socket_receive__(sock: socket.socket) -> Optional[str]:
     """Read a string from a socket. Blocks until msg read."""
     try:
         while True:
@@ -164,13 +161,12 @@ def __socket_receive__(sock: socket.socket) -> str:
                     try:
                         if data.decode() == '\n':
                             break
-                    except Exception as err:
+                    except UnicodeDecodeError:
                         pass
                 return message.decode()
     except socket.error as err:
         error_message = "FATAL: Failed to read from socket: %s" % (str(err.args))
         raise RuntimeError(error_message)
-    return None
 
 
 def __socket_close__(sock: socket.socket) -> None:
