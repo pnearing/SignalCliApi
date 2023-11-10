@@ -4,3 +4,21 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "SignalCliAPi"
+version = "0.1.7"
+authors = [
+        { name="Peter Nearing", email="me@peternearing.ca" }
+]
+description = "A python3 API to the signal-cli application."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/pnearing/SignalCliApi/issues"
+
