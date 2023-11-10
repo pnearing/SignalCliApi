@@ -104,8 +104,40 @@ class Accounts(object):
     # Overrides:
     ##############################
     def __iter__(self) -> Iterator:
+        """
+        Return an iterator over the accounts.
+        :return: Iterator: The iterator.
+        """
         global ACCOUNTS
         return iter(ACCOUNTS)
+
+    def __len__(self) -> int:
+        """
+        Return the length or number of accounts.
+        :return: int: The len of ACCOUNTS.
+        """
+        global ACCOUNTS
+        return len(ACCOUNTS)
+
+    def __getitem__(self, item: int | str) -> Account:
+        """
+        Index accounts by int or str.
+        :param item: int | str: If int: index as a list; If str: index by phone number.
+        :return: Account: The selected account.
+        :raises IndexError: If selected by int, and index out of range.
+        :raises KeyError: If selected by str, and phone number doesn't exist.
+        :raises TypeError: If item is not an int or str.
+        :raises ValueError: If iteme is a str and is not in proper phone number format.
+        """
+        global ACCOUNTS
+        if isinstance(item, int):
+            return ACCOUNTS[item]  # Raises IndexError if index out of range.
+        elif isinstance(item, str):
+            account = self.get_by_number(item)  # Raises ValueError if the number is not in proper format.
+            if account is None:
+                raise KeyError("Key '%s' not found." % item)
+            return account
+        __type_error__('item', 'int | str', item)
 
     ##############################
     # Getters:
