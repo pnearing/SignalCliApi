@@ -31,6 +31,7 @@ NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 CB_CALLABLE: Final[int] = 0
 CB_PARAMS: Final[int] = 1
 
+
 ####################################
 # xdg-open helper:
 ####################################
@@ -64,26 +65,26 @@ def find_qrencode() -> Optional[str]:
 ####################################
 def find_signal() -> str | NoReturn:
     """Find signal-cli in it's many forms. Returns str, exception FileNotFound if signal not found."""
-    signal_path = None
+    signal_path: Optional[str] = None
     try:
         signal_path = check_output(['which', 'signal-cli'], text=True)
         signal_path = signal_path.strip()
-    except CalledProcessError as e:
-        signal_path = None
+    except CalledProcessError:
+        pass
     # Check for 'signal-cli-native':
     if signal_path is None:
         try:
             signal_path = check_output(['which', 'signal-cli-native'], text=True)
             signal_path = signal_path.strip()
-        except CalledProcessError as e:
-            signal_path = None
+        except CalledProcessError:
+            pass
     # Check for 'signal-cli-jre':
     if signal_path is None:
         try:
             signal_path = check_output(['which', 'signal-cli-jre'], text=True)
             signal_path = signal_path.strip()
-        except CalledProcessError as e:
-            signal_path = None
+        except CalledProcessError:
+            pass
     # Exit if we couldn't find signal
     if signal_path is None:
         error_message = "FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ]."
