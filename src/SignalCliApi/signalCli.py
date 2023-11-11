@@ -169,8 +169,8 @@ class SignalCli(object):
             except CalledProcessError as e:
                 parse_signal_return_code(e.returncode, signal_command_line, e.output)
         # Give signal 5 seconds to start
-        self._run_callback('signal-cli started')
         sleep(5)
+        self._run_callback('signal-cli started')
         # Wait for the socket to appear:
         if isinstance(self._server_address, str):
             if start_signal:
