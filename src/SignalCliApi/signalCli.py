@@ -100,7 +100,7 @@ class SignalCli(object):
         DEBUG = debug
 
         # Set internal vars:
-        # Set config path:
+        # Set the config path:
         self.configPath: str
         if signal_config_path is not None:
             self.config_path = signal_config_path
@@ -459,6 +459,7 @@ class SignalCli(object):
                       ) -> None:
         """
         Start receiving messages for the given account.
+        NOTE: Callback signature is (account: Account, message: Message)
         :param account: Account: The account to receive messages for.
         :param all_messages_callback: Optional[Callable]: Callback for all messages received.
         :param received_message_callback: Optional[Callable]: Callback for received messages. (regular message)
