@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from subprocess import check_output, CalledProcessError
-from typing import Pattern, NoReturn, Optional, Any
+from typing import Pattern, NoReturn, Optional, Any, Final
 import socket
 import select
 import re
@@ -10,20 +10,26 @@ DEBUG: bool = False
 ###################
 # Version:
 ###################
-VERSION: str = '0.1.6'
+VERSION: Final[str] = '0.1.9'
 ########################################
 # Regex:
 ########################################
-phone_number_regex: Pattern = re.compile(r'(?P<number>\+\d+)')
-uuid_regex: Pattern = re.compile(
-    r'(?P<uuid>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-f0-9]{12})')
+phone_number_regex: Final[Pattern] = re.compile(r'(?P<number>\+\d+)')
+uuid_regex: Final[Pattern] = re.compile(
+    r'(?P<uuid>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-f0-9]{12})'
+)
 
 #########################
 # Strings:
 #########################
-UUID_FORMAT_STR: str = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-NUMBER_FORMAT_STR: str = "+nnnnnnn..."
+UUID_FORMAT_STR: Final[str] = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 
+###########################
+# Index's:
+###########################
+CB_CALLABLE: Final[int] = 0
+CB_PARAMS: Final[int] = 1
 
 ####################################
 # xdg-open helper:
@@ -117,7 +123,7 @@ def parse_signal_return_code(return_code: int, command_line: str | list[str], ou
 # Socket helpers:
 ####################################
 def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
-    """Create a socket.socket object based on server address type."""
+    """Create a socket.socket object based on the server address type."""
     if isinstance(server_address, tuple):
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     elif isinstance(server_address, str):
