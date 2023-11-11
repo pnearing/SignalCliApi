@@ -4,14 +4,16 @@ import json
 import os
 import re
 import socket
+from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
 from time import sleep
-from typing import Optional, Callable
+from typing import Optional, Callable, Any
 
 from .signalAccount import Account
 from .signalAccounts import Accounts
 from .signalCommon import __type_error__, find_signal, find_qrencode, parse_signal_return_code, __socket_create__, \
-    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex
+    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, CB_CALLABLE, \
+    CB_PARAMS
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 
@@ -20,12 +22,14 @@ DEBUG: bool = False
 
 class SignalCli(object):
     """Signal cli object."""
+
     def __init__(self,
                  signal_config_path: Optional[str] = None,
                  signal_exec_path: Optional[str] = None,
                  server_address: Optional[list[str, int] | tuple[str, int] | str] = None,
                  log_file_path: Optional[str] = None,
                  start_signal: bool = True,
+                 callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  debug: bool = False
                  ) -> None:
         """
@@ -36,8 +40,15 @@ class SignalCli(object):
             the address of the server, if a unix socket, use a str, otherwise use a tuple/list[hostname:str,port:int]
         :param log_file_path: Optional[str]: The path to the signal log file, if None, no logging is preformed.
         :param start_signal: Bool: True = start a signal-cli process, False = signal-cli is already running.
+        :param callback: Optional[tuple[Callable, Optional[list[Any]]]]: The call back as a tuple, the first element
+            being the callable, and the second element; If not None, is a list of any parameters to provide to the
+            callback.  The callback signature is: (status: str, *params)
         :param debug: Bool: Produce debug output on stdout.
         :raises TypeError: If a parameter is of invalid type.
+        :raises FileNotFoundError: If a file / directory doesn't exist when it should.
+        :raises FileExistsError: If a socket file exists when it shouldn't.
+        :raises RuntimeError: If an error occurs while loading signal data.
+        More information in the error message.
         """
         # Argument checks:
         # Check signal config path:
@@ -73,6 +84,13 @@ class SignalCli(object):
         # Check start signal:
         if not isinstance(start_signal, bool):
             __type_error__("start_signal", "bool", start_signal)
+        # Check callback:
+        if callback is not None and not isinstance(callback, tuple):
+            __type_error__('callback', 'Optional[tuple[Callable, Optional[list[Any]]]]', callback)
+        elif callback is not None and not isinstance(callback[CB_CALLABLE], Callable):
+            __type_error__('callback[0]', 'Callable', callback[CB_CALLABLE])
+        elif callback is not None and callback[CB_PARAMS] is not None and not isinstance(callback[CB_PARAMS], list):
+            __type_error__('callback[1]', 'Optional[list[Any]]', callback[CB_PARAMS])
         # Chck debug:
         if not isinstance(debug, bool):
             __type_error__('debug', 'bool', debug)
@@ -107,9 +125,11 @@ class SignalCli(object):
         if isinstance(self._server_address, str) and start_signal:
             if os.path.exists(self._server_address):
                 # noinspection PyPep8
-                error_message = "socket path '%s' already exists. Perhaps signal is already running." % self._server_address
+                error_message = "socket path '%s' already exists. Perhaps signal is already running." \
+                                % self._server_address
                 raise FileExistsError(error_message)
-
+        # Store callback:
+        self._callback: Optional[tuple[Callable, Optional[list[Any]]]] = callback
         # set var to hold the main signal process
         self._process: Optional[Popen] = None
         # Set sync socket:
@@ -128,6 +148,7 @@ class SignalCli(object):
 
         # Start signal-cli if requested:
         if start_signal:
+            self._run_callback('starting signal-cli')
             # Build signal-cli command line:
             signal_command_line = [self._signal_exec_path]
             if log_file_path is not None:
@@ -148,24 +169,30 @@ class SignalCli(object):
             except CalledProcessError as e:
                 parse_signal_return_code(e.returncode, signal_command_line, e.output)
         # Give signal 5 seconds to start
+        self._run_callback('signal-cli started')
         sleep(5)
         # Wait for the socket to appear:
         if isinstance(self._server_address, str):
             if start_signal:
                 while not os.path.exists(self._server_address):
+                    self._run_callback('wait for socket')
                     if DEBUG:
                         print("Waiting for socket to appear at: %s" % self._server_address)
                         sleep(0.5)
                 sleep(1)
+                self._run_callback('socket found')
             else:
                 if not os.path.exists(self._server_address):
+                    self._run_callback('FATAL: socket not found')
                     error_message = "Failed to to locate socket at '%s'" % self._server_address
-                    raise RuntimeError(error_message)
+                    raise FileNotFoundError(error_message)
         # Create sockets and connect to them:
+        self._run_callback('connecting to socket')
         self._sync_socket = __socket_create__(self._server_address)
         __socket_connect__(self._sync_socket, self._server_address)
         self._command_socket = __socket_create__(self._server_address)
         __socket_connect__(self._command_socket, self._server_address)
+        self._run_callback('connected to socket')
         # Load stickers:
         self.sticker_packs = StickerPacks(config_path=self.config_path)
         # Load accounts:
@@ -173,6 +200,22 @@ class SignalCli(object):
                                  config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)
         # Create dict to hold processes:
         self._receive_threads: dict[str, Optional[ReceiveThread]] = {}
+        return
+
+    #################################
+    # Internal methods:
+    #################################
+    def _run_callback(self, status: str) -> None:
+        try:
+            if self._callback is not None and self._callback[CB_PARAMS] is not None:
+                self._callback[CB_CALLABLE](status, *self._callback[CB_PARAMS])
+            elif self._callback is not None and self._callback[CB_PARAMS] is None:
+                self._callback[CB_CALLABLE](status)
+        except TypeError:
+            warn("Callback is not callable.", RuntimeWarning)
+        except Exception as e:
+            warn("Callback raise exception: %s" % str(type(e)), RuntimeWarning)
+            raise e
         return
 
     #################################
@@ -203,11 +246,11 @@ class SignalCli(object):
         # Terminate processes:
         if self._process is not None:
             self._process.terminate()  # Kill the process (Sends SigTerm)
-            out, err = self._process.communicate()  # Flush the pipes.
+            _, err = self._process.communicate()  # Flush the pipes.
             self._process = None  # Clear the process.
         if self._link_process is not None:
             self._link_process.terminate()
-            out, err = self._link_process.communicate()
+            _, err = self._link_process.communicate()
             self._link_process = None
         # Remove socket file:
         try:
@@ -292,7 +335,7 @@ class SignalCli(object):
             json_command_str = json.dumps(delete_local_data_command_obj) + '\n'
             # Communicate with signal:
             __socket_send__(self._sync_socket, json_command_str)
-            response_str = __socket_receive__(self._sync_socket)
+            __socket_receive__(self._sync_socket)  # output unused, we don't care if it failed.
             # print(responseStr)
             return False, error_message
         # No error found, get the new account:
