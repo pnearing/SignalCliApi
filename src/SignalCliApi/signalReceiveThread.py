@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 import sys
 import socket
 import threading
@@ -8,9 +8,10 @@ import json
 
 from .signalAccount import Account
 from .signalCallMessage import CallMessage
-from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, __type_error__
+from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, \
+    __socket_send__, __type_error__
 from .signalGroupUpdate import GroupUpdate
-from .signalMessage import Message
+# from .signalMessage import Message
 from .signalReaction import Reaction
 from .signalReceipt import Receipt
 from .signalReceivedMessage import ReceivedMessage
@@ -18,7 +19,7 @@ from .signalSticker import StickerPacks
 from .signalStoryMessage import StoryMessage
 from .signalSyncMessage import SyncMessage
 from .signalTypingMessage import TypingMessage
-from .signalTimestamp import Timestamp
+# from .signalTimestamp import Timestamp
 
 DEBUG: bool = False
 
@@ -117,7 +118,7 @@ class ReceiveThread(threading.Thread):
             __socket_send__(self._receive_socket, json_command_str)
             response_str = __socket_receive__(self._receive_socket)
             # Parse response:
-            message_obj: dict[str, object] = json.loads(response_str)
+            message_obj: dict[str, Any] = json.loads(response_str)
             # print(responseObj)
             # Check for error:
             if 'error' in message_obj.keys():
@@ -136,7 +137,7 @@ class ReceiveThread(threading.Thread):
                 "account": self._account.number,
             }
         }
-        json_command_str = json.dumps(start_receive_command_object) + '\n'
+        json_command_str: str = json.dumps(start_receive_command_object) + '\n'
         # Communicate start receive with signal:
         __socket_send__(self._receive_socket, json_command_str)
         response_str = __socket_receive__(self._receive_socket)
@@ -144,11 +145,12 @@ class ReceiveThread(threading.Thread):
         response_obj: dict = json.loads(response_str)
         self._subscription_id = response_obj['result']
         ########### START RECEIVE LOOP ##################
+        message = None
         while self._subscription_id is not None:
-            # Blocks until message received:
+            # Blocks until a message received:
             try:
                 message_str = __socket_receive__(self._receive_socket)
-            except:
+            except Exception:
                 break
             # Delay processing until messages are finished sending:
             if self._account.messages.sending:
@@ -158,12 +160,12 @@ class ReceiveThread(threading.Thread):
             while self._account.messages.sending:
                 pass
             # Parse incoming message:
-            message_obj: dict = json.loads(message_str)
+            message_obj: dict[str, Any] = json.loads(message_str)
             if 'method' in message_obj.keys() and message_obj['method'] == 'receive':
                 envelope_dict: dict = message_obj['params']['envelope']
                 #### Data Message #####
                 if 'dataMessage' in envelope_dict.keys():
-                    data_message: dict[str, object] = envelope_dict['dataMessage']
+                    data_message: dict[str, Any] = envelope_dict['dataMessage']
                     ############### REACTIONS ##########################
                     # Create reaction Message:
                     if 'reaction' in data_message.keys():
@@ -205,7 +207,7 @@ class ReceiveThread(threading.Thread):
                                 self._sync_msg_cb(self._account, message)
                         ########################### Received Message ###################
                         else:
-                            # Create Received message:
+                            # Create a Received message:
                             message = ReceivedMessage(
                                 command_socket=self._command_socket, account_id=self._account.number,
                                 config_path=self._config_path, contacts=self._account.contacts,
@@ -357,4 +359,3 @@ class ReceiveThread(threading.Thread):
         self._subscription_id = None
         __socket_close__(self._receive_socket)
         return
-
