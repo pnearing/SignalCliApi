@@ -37,7 +37,7 @@ class Attachment(object):
         # Check raw Attachment:
         if raw_attachment is not None and not isinstance(raw_attachment, dict):
             __type_error__("raw_attachment", "dict[str, object]", raw_attachment)
-        # Check content type:
+        # Check the content type:
         if content_type is not None and not isinstance(content_type, str):
             __type_error__("content_type", "str", content_type)
         # Check filename:
@@ -71,7 +71,7 @@ class Attachment(object):
         # Parse from raw Attachment
         elif raw_attachment is not None:
             self.__from_raw_attachment__(raw_attachment)
-        # Set properties from local path:
+        # Set properties from the local path:
         else:
             if self.local_path is not None:
                 self.exists = os.path.exists(self.local_path)

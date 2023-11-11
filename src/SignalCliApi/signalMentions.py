@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Optional, Iterable, Iterator
+from typing import Optional, Iterable, Iterator, Any
 import re
 
 from .signalCommon import __type_error__, phone_number_regex, uuid_regex
@@ -14,8 +14,8 @@ class Mentions(object):
 
     def __init__(self,
                  contacts: Contacts,
-                 from_dict: Optional[dict[str, object]] = None,
-                 raw_mentions: Optional[list[dict[str, object]]] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_mentions: Optional[list[dict[str, Any]]] = None,
                  mentions: Optional[Iterable[Mention]] = None,
                  ) -> None:
         # Argument check contacts:
@@ -180,8 +180,8 @@ class Mentions(object):
         Append a mention to the mention list.
         :param mention: Mention: The mention to append.
         :returns: None
-        :raises: TypeError if mention is not a Mention object.
-        :raises: RuntimeError is mention already in the mention list.
+        :raises: TypeError if the mention is not a Mention object.
+        :raises: RuntimeError is the mention already in the mention list.
         """
         if not isinstance(mention, Mention):
             __type_error__("mention", "Mention", mention)
@@ -215,7 +215,8 @@ class Mentions(object):
         if not isinstance(body, str):
             __type_error__("body", "str", body)
         regex = re.compile(
-            r'(@<(\+\d+|[0-9a-fA-F]{8}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{12}|[\"\'].+[\"\']))')
+          r'(@<(\+\d+|[0-9a-fA-F]{8}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{4}-[0-9a-f-A-F]{12}|[\"\'].+[\"\']))'
+        )
         match_list = regex.findall(body)
         last_find = 0
         return_value = []

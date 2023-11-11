@@ -114,7 +114,7 @@ class Account(object):
                                      groups=self.groups, devices=self.devices,
                                      this_device=self.devices.get_account_device(),
                                      sticker_packs=self._sticker_packs, do_load=True)
-            # Load profile from file and merge self contact.
+            # Load profile from file and merge self-contact.
             self.profile = Profile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                    contact_id=self.number, account_path=self._account_path, do_load=True,
                                    is_account_profile=True)
@@ -169,10 +169,10 @@ class Account(object):
         Verify an account.
         :param code: str: The code sent via sms or voice call.
         :param pin: Optional[str]: The registered pin for this account.
-        :returns: tuple[bool, str]: Boolean represents success or failure, str is error message on failure, or
+        :returns: tuple[bool, str]: Boolean represents success or failure, str is an error message on failure, or
                                         "verification successful" on success.
         """
-        # Create verify command object:
+        # Create a verify command object:
         verify_command_obj = {
             "jsonrpc": "2.0",
             "id": 0,

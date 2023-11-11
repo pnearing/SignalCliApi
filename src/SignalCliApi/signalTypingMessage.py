@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterable
-import sys
+from typing import Optional, Any
 import socket
 
 from .signalCommon import __type_error__
@@ -11,10 +10,10 @@ from .signalDevice import Device
 from .signalDevices import Devices
 from .signalGroup import Group
 from .signalGroups import Groups
-from .signalMention import Mention
+# from .signalMention import Mention
 from .signalMessage import Message
-from .signalReaction import Reaction
-from .signalSticker import Sticker
+# from .signalReaction import Reaction
+# from .signalSticker import Sticker
 from .signalTimestamp import Timestamp
 DEBUG: bool = False
 
@@ -62,7 +61,7 @@ class TypingMessage(Message):
 
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
-        typing_dict: dict[str, object] = raw_message['typingMessage']
+        typing_dict: dict[str, Any] = raw_message['typingMessage']
         self.action = typing_dict['action']
         self.time_changed = Timestamp(timestamp=typing_dict['timestamp'])
         return

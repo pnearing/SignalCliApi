@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional
+from typing import Optional, Any
 import os
 from subprocess import check_call, CalledProcessError
 
@@ -56,7 +56,7 @@ class Thumbnail(object):
     ###################
     # Init:
     ###################
-    def __from_raw_thumbnail__(self, raw_thumbnail: dict[str, object]) -> None:
+    def __from_raw_thumbnail__(self, raw_thumbnail: dict[str, Any]) -> None:
         if DEBUG:
             print(raw_thumbnail)
         self.content_type = raw_thumbnail['contentType']
@@ -78,7 +78,7 @@ class Thumbnail(object):
         }
         return thumbnail_dict
 
-    def __from_dict__(self, fromDict: dict[str, object]) -> None:
+    def __from_dict__(self, fromDict: dict[str, Any]) -> None:
         self.content_type = fromDict['contentType']
         self.filename = fromDict['filename']
         self.local_path = fromDict['localPath']

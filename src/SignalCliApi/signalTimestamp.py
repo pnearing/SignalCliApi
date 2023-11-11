@@ -126,7 +126,7 @@ class Timestamp(object):
         if not isinstance(__o, Timestamp) and not isinstance(__o, int):
             raise TypeError("FATAL: Only SignalTimestamp and int are supported.")
         if isinstance(__o, Timestamp):
-            return self.date_time > __o.datetime
+            return self.date_time > __o.date_time
         else:
             return self.timestamp > __o
 
@@ -152,7 +152,7 @@ class Timestamp(object):
         """
         Get the timestamp as a display string.
         :param local_time: bool: True to convert to local time, False to leave as UTC.
-        :returns: str: A display version of the timestamp, optionally converting to localtime.
+        :returns: str: A display version of the timestamp, optionally converted to localtime.
         :raises: TypeError: If local_time is not a boolean.
         """
         if not isinstance(local_time, bool):
@@ -211,5 +211,5 @@ class Timestamp(object):
 
 
 if __name__ == '__main__':
-    timestamp = Timestamp(now=True)
-    timestamp.print()
+    _timestamp = Timestamp(now=True)
+    _timestamp.print()

@@ -68,8 +68,8 @@ class Contact(object):
         if self.name == "<UNKNOWN-CONTACT>":
             if self.profile is not None:
                 self.set_name(self.profile.name)
-                self.name = self.profile.name  # Force the name for this session if setting failed.
-        # If devices isn't yet set create empty devices:
+                self.name = self.profile.name  # Force the name for this session if setting it failed.
+        # If 'devices' isn't created yet, create empty devices:
         if self.devices is None:
             self.devices = Devices(sync_socket=self._sync_socket, account_id=self.uuid)
 
@@ -92,8 +92,9 @@ class Contact(object):
             self.expiration = None
         else:
             self.expiration = raw_contact['messageExpirationTime']
-        self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
-                               contact_id=self.get_id(), raw_profile=raw_contact['profile'])
+        self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path,
+                               account_id=self._account_id, contact_id=self.get_id(), raw_profile=raw_contact['profile']
+                               )
         if self.name is None and self.profile.name != '':
             self.set_name(self.profile.name)
         return

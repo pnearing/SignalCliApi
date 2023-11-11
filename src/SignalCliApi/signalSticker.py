@@ -100,7 +100,9 @@ class Sticker(object):
         self.content_type = from_dict['contentType']
         return
 
-
+    @property
+    def pack_id(self) -> str:
+        return self._pack_id
 #############################################################################################
 class StickerPack(object):
     """Sticker Pack object."""

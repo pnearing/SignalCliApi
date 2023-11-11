@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from typing import TypeVar, Optional, Iterable
+from typing import TypeVar, Optional, Any
 import socket
-import json
-import sys
 
-from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -87,7 +84,7 @@ class Message(object):
         if not isinstance(config_path, str):
             __type_error__('config_path', 'str', config_path)
         if not isinstance(contacts, Contacts):
-            __type_error__("contacts" "Contacts", contacts)
+            __type_error__("contacts", "Contacts", contacts)
         if not isinstance(groups, Groups):
             __type_error__("groups", "Groups", groups)
         if not isinstance(devices, Devices):
@@ -181,7 +178,7 @@ class Message(object):
         # Parse recipient:
         self.recipient = None
         if 'dataMessage' in raw_message.keys():
-            dataMessage: dict[str, object] = raw_message['dataMessage']
+            dataMessage: dict[str, Any] = raw_message['dataMessage']
             if 'groupInfo' in dataMessage.keys():
                 added, self.recipient = self._groups.__get_or_add__("<UNKNOWN-GROUP>",
                                                                     dataMessage['groupInfo']['groupId'])
@@ -216,7 +213,7 @@ class Message(object):
             # Check device:
             if self.device != __o.device:
                 return False
-            # Check message type:
+            # Check the message type:
             if self.message_type != __o.message_type:
                 return False
             # Check Delivered (is and time):
@@ -361,4 +358,3 @@ class Message(object):
         self.is_viewed = True
         self.time_viewed = when
         return
-

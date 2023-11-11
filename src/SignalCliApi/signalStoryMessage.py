@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional
+from typing import Optional, Any
 import socket
 
 from .signalAttachment import Attachment
@@ -83,9 +83,10 @@ class StoryMessage(Message):
         super().__from_raw_message__(raw_message)
         if DEBUG:
             print(raw_message)
-        exit(251)
+            raise NotImplementedError
+        # TODO: Look into this.
         # Load allows replies:
-        raw_story_message: dict[str, object] = raw_message['storyMessage']
+        raw_story_message: dict[str, Any] = raw_message['storyMessage']
         self.allows_replies = raw_story_message['allowsReplies']
         # Attachment:
         self.attachment = None
@@ -126,7 +127,7 @@ class StoryMessage(Message):
         self.allows_replies = from_dict['allowsReplies']
         self.preview = None
         if from_dict['preview'] is not None:
-            self.preview = Preview(config_path=self._config_path,from_dict=from_dict['preview'])
+            self.preview = Preview(config_path=self._config_path, from_dict=from_dict['preview'])
         self.attachment = None
         self.attachment_type = from_dict['attachmentType']
         if from_dict['attachment'] is not None:

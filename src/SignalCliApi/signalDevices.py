@@ -89,13 +89,13 @@ class Devices(object):
             new_device = Device(sync_socket=self._sync_socket, account_id=self._account_id,
                                 account_device=self._account_device,
                                 raw_device=raw_device)
-            # Check for existing device:
+            # Check for an existing device:
             device_found = False
             for device in self._devices:
                 if device.id == new_device.id:
                     device.__merge__(new_device)
                     device_found = True
-            # Add device if not found:
+            # Add the device if not found:
             if not device_found:
                 self._devices.append(new_device)
         return True

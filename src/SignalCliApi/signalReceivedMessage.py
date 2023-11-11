@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import TypeVar, Optional, Iterable
+from typing import TypeVar, Optional, Iterable, Any
 import socket
 import json
 import sys
@@ -158,12 +158,13 @@ class ReceivedMessage(Message):
         if isinstance(reactions, Reactions):
             self.reactions = reactions
         if len(reaction_list) == 0:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
-                                       groups=groups, devices=devices, this_device=this_device)
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
+                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
+                                       this_device=this_device)
         else:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
-                                       groups=groups, devices=devices, this_device=this_device,
-                                       reactions=reaction_list)
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
+                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
+                                       this_device=this_device, reactions=reaction_list)
         # Set sticker:
         self.sticker: Optional[Sticker] = sticker
         # Set quote:
@@ -198,7 +199,7 @@ class ReceivedMessage(Message):
         super().__from_raw_message__(raw_message)
         print("ReceivedMessage.__from_raw_message__")
         print(raw_message)
-        data_message: dict[str, object] = raw_message['dataMessage']
+        data_message: dict[str, Any] = raw_message['dataMessage']
         # Parse body:
         self.body = data_message['message']
         # Parse expiry
@@ -218,7 +219,7 @@ class ReceivedMessage(Message):
             self.mentions = Mentions(contacts=self._contacts, raw_mentions=data_message['mentions'])
         # Parse sticker:
         if 'sticker' in data_message.keys():
-            stickerDict: dict[str, object] = data_message['sticker']
+            stickerDict: dict[str, Any] = data_message['sticker']
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
             self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['packId'],
                                                            sticker_id=stickerDict['stickerId'])
@@ -262,7 +263,7 @@ class ReceivedMessage(Message):
         received_message_dict['sticker'] = None
         if self.sticker is not None:
             received_message_dict['sticker'] = {
-                'packId': self.sticker._pack_id,
+                'packId': self.sticker.pack_id,
                 'stickerId': self.sticker.id
             }
         # Set quote:
@@ -300,8 +301,10 @@ class ReceivedMessage(Message):
         # self.reactions = None
         # if (from_dict['reactions'] != None):
         self.reactions = Reactions(command_socket=self._command_socket, account_id=self._account_id,
-                                   contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                   this_device=self._this_device, from_dict=from_dict['reactions'])
+                                   config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                   devices=self._devices, this_device=self._this_device,
+                                   from_dict=from_dict['reactions']
+                                   )
         # Load sticker:
         self.sticker = None
         if from_dict['sticker'] is not None:
@@ -419,7 +422,7 @@ class ReceivedMessage(Message):
     #####################
     def mark_delivered(self, when: Timestamp) -> None:
         """
-        Mark message as delivered.
+        Mark the message as delivered.
         :param when: Timestamp: When the message was delivered.
         :returns: None
         :raises: TypeError: If when is not a Timestamp object, raised by super()
@@ -428,7 +431,7 @@ class ReceivedMessage(Message):
 
     def mark_read(self, when: Timestamp = None, send_receipt: bool = True) -> None:
         """
-        Mark message as read.
+        Mark the message as read.
         :param when: Timestamp: When the message was read.
         :param send_receipt: bool: Send the read receipt.
         :returns: None
@@ -445,7 +448,7 @@ class ReceivedMessage(Message):
 
     def mark_viewed(self, when: Timestamp = None, send_receipt: bool = True) -> None:
         """
-        Mark message as viewed.
+        Mark the message as viewed.
         :param when: Timestamp: When the message was viewed.
         :param send_receipt: bool: Send a viewed receipt.
         :returns: None
@@ -481,7 +484,7 @@ class ReceivedMessage(Message):
     def parse_mentions(self) -> Optional[str]:
         """
         Parse the mentions.
-        :returns: Optional[str]: The body with the mentions inserted, or None if body is None.
+        :returns: Optional[str]: The body with the mentions inserted, or None if the body is None.
         """
         if self.body is not None:
             return self.mentions.__parse_mentions__(self.body)

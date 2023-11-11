@@ -30,7 +30,7 @@ class CallMessage(Message):
                  sender: Optional[Contact] = None,
                  recipient: Optional[Contact | Group] = None,
                  offer_id: Optional[int] = None,
-                 sdp: Optional[object] = None,
+                 sdp: Optional[Any] = None,
                  call_type: Optional[str] = None,
                  opaque: Optional[str] = None,
                  ) -> None:
@@ -46,7 +46,7 @@ class CallMessage(Message):
             __type_error__("opaque", "Optional[str]", opaque)
         # Set external properties:
         self.offer_id: Optional[int] = offer_id
-        self.sdp: Optional[object] = sdp
+        self.sdp: Optional[Any] = sdp
         self.call_type: Optional[str] = call_type
         self.opaque: Optional[str] = opaque
         # Run super init:

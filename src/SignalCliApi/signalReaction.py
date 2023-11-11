@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Any
 import socket
 import json
 import sys
@@ -134,7 +134,8 @@ class Reaction(Message):
     def send(self) -> tuple[bool, str]:
         """
         Send the reaction.
-        :returns: tuple[bool, str]: True/False for sent status, string for error message if False, or "SUCCESS" if True.
+        :returns: tuple[bool, str]: True/False for sent status, string for an error message if False, or "SUCCESS"
+            if True.
         """
         # Create reaction command object and json command string:
         send_reaction_command_obj = {
@@ -159,7 +160,7 @@ class Reaction(Message):
         __socket_send__(self._command_socket, json_command_str)
         response_str = __socket_receive__(self._command_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # print (responseObj)
         # Check for error:
         if 'error' in response_obj.keys():
@@ -171,7 +172,7 @@ class Reaction(Message):
                 print(errorMessage, file=sys.stderr)
             return False, response_obj['error']['message']
         # Response:
-        resultObj: dict[str, object] = response_obj['result']
+        resultObj: dict[str, Any] = response_obj['result']
         self.timestamp = Timestamp(timestamp=resultObj['timestamp'])
         # Check for delivery error:
         if resultObj['results'][0]['type'] != 'SUCCESS':
@@ -179,8 +180,13 @@ class Reaction(Message):
         return True, "SUCCESS"
 
     def remove(self) -> tuple[bool, str]:
+        """
+        Remove a reaction.
+        :return: tuple[bool, str]: The first element is a boolean indicating success or failure; The second element is
+            a string, either 'SUCCESS' on success, or an error message on failure.
+        """
         # TODO: remove a reaction.
-        return
+        return False, "NOT-IMPLEMENTED"
 
     ###########################
     # Helpers:

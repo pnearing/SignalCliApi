@@ -5,7 +5,7 @@ import os
 import json
 import socket
 
-from .signalCommon import phone_number_regex, uuid_regex, __type_error__
+from .signalCommon import phone_number_regex, uuid_regex, __type_error__, UUID_FORMAT_STR
 from .signalAccount import Account
 from .signalSticker import StickerPacks
 
@@ -82,7 +82,6 @@ class Accounts(object):
 
     def __sync__(self) -> list[Account]:
         global ACCOUNTS
-        new_account: Optional[Account] = None
         new_accounts: list[Account] = []
         # Load accounts file:
         accounts_dict: dict = self.__load_accounts_file__()
@@ -93,9 +92,9 @@ class Accounts(object):
                 if account.number == raw_account['number']:
                     account_found = True
             if not account_found:
-                new_account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                      config_path=self._config_path, sticker_packs=self._sticker_packs,
-                                      signal_account_path=raw_account['path'], do_load=True)
+                new_account: Account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                               config_path=self._config_path, sticker_packs=self._sticker_packs,
+                                               signal_account_path=raw_account['path'], do_load=True)
                 ACCOUNTS.append(new_account)
                 new_accounts.append(new_account)
         return new_accounts
@@ -153,14 +152,13 @@ class Accounts(object):
 
     @staticmethod
     def get_by_number(number: str) -> Optional[Account]:
-        # noinspection SpellCheckingInspection
         """
-                Get an account by phone number.
-                :param number: str: The phone number in format +nnnnnnnnn...
-                :returns: Optional[Account]: The account found or None if not found.
-                :raises: TypeError: If number not a string.
-                :raises: ValueError: If number not in proper format.
-                """
+        Get an account by phone number.
+        :param number: str: The phone number in format +nnnnnnnnn...
+        :returns: Optional[Account]: The account found or None if not found.
+        :raises: TypeError: If number is not a string.
+        :raises: ValueError: If number not in proper format.
+        """
         global ACCOUNTS
         if not isinstance(number, str):
             __type_error__("number", "str", number)
@@ -170,5 +168,26 @@ class Accounts(object):
             raise ValueError(error_message)
         for account in ACCOUNTS:
             if account.number == number:
+                return account
+        return None
+
+    @staticmethod
+    def get_by_uuid(uuid: str) -> Optional[Account]:
+        """
+        Get an account by UUID.
+        :param uuid: str: the UUID to search for.
+        :return: Optional[Account]
+        :raises TypeError: if the uuid is not a string.
+        :raises ValueError: if the uuid is not in the correct format.
+        """
+        global ACCOUNTS
+        if not isinstance(uuid, str):
+            __type_error__('uuid', 'str', uuid)
+        uuid_match = uuid_regex.match(uuid)
+        if uuid_match is None:
+            error_message = "UUID must be in format: %s" % UUID_FORMAT_STR
+            raise ValueError(error_message)
+        for account in ACCOUNTS:
+            if account.uuid == uuid:
                 return account
         return None

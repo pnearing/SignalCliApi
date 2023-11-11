@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Any
 
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__
@@ -67,7 +67,7 @@ class Quote(object):
                     attachment_list.append(attachment)
                     i += 1
             else:
-                __type_error__("attachments", "Iterable[Attachment] | Attachment")
+                __type_error__("attachments", "Iterable[Attachment] | Attachment", attachments)
         # Check mentions:
         mention_list: list[Mention] = []
         if mentions is not None:
@@ -129,9 +129,10 @@ class Quote(object):
     #################
     # Init:
     #################
-    def __from_raw_quote__(self, raw_quote: dict[str, object]) -> None:
-        print(raw_quote)
-        exit(253)
+    def __from_raw_quote__(self, raw_quote: dict[str, Any]) -> None:
+        if DEBUG:
+            print(raw_quote)
+        # exit(253)
         # Load timestamp
         # TODO: Look into this:
         self.timestamp = Timestamp(timestamp=raw_quote['contact_id'])
@@ -183,7 +184,7 @@ class Quote(object):
             quote_dict['conversation'] = self.conversation.get_id()
         return quote_dict
 
-    def __from_dict__(self, from_dict: dict[str, object]) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         # Set timestamp:
         self.timestamp = None
         if from_dict['timestamp'] is not None:

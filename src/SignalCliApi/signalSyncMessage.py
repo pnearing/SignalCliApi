@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional
+from typing import Optional, Any
 import socket
 import sys
 
@@ -88,12 +88,12 @@ class SyncMessage(Message):
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
         # print("DEBUG: %s" % __name__)
-        raw_sync_message: dict[str, object] = raw_message['sync_message']
+        raw_sync_message: dict[str, Any] = raw_message['sync_message']
         ######## Read messages #########
         if 'read_messages' in raw_sync_message.keys():
             # print(rawSyncMessage['read_messages'])
             self.sync_type = self.TYPE_READ_MESSAGE_SYNC
-            read_message_list: list[dict[str, object]] = raw_sync_message['read_messages']
+            read_message_list: list[dict[str, Any]] = raw_sync_message['read_messages']
             self.read_messages: list[tuple[Contact, Timestamp]] = []
             for read_message_dict in read_message_list:
                 added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", read_message_dict['sender'])

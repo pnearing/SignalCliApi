@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
 """File: signalPreview.py"""
-from typing import Optional, Iterable
+from warnings import warn
+from typing import Optional, Any
 import urllib.request
 import hashlib
 import os
 import shutil
 import sys
+from .signalAttachment import Attachment
+from .signalCommon import __type_error__
 
-CAN_PREVIEW: bool = False
+CAN_PREVIEW: bool
 DEBUG: bool = False
 try:
     from linkpreview import link_preview
-
     CAN_PREVIEW = True
 except ModuleNotFoundError:
-    if DEBUG:
-        print("Cannot preview links, linkpreview is not installed.")
-        print("This can be installed using pip3 install linkpreview.")
-
-from .signalAttachment import Attachment
-from .signalCommon import __type_error__
+    CAN_PREVIEW = False
+    warn("Cannot preview links, linkpreview is not installed.  This can be installed using pip3 install linkpreview.",
+         RuntimeWarning)
 
 
 class Preview(object):
@@ -166,12 +165,12 @@ class Preview(object):
             preview_dict['image'] = self.image.__to_dict__()
         return preview_dict
 
-    def __from_dict__(self, from_dict: dict[str, object]) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         self.url = from_dict['url']
         self.title = from_dict['title']
         self.description = from_dict['description']
         self.image = None
         if from_dict['image'] is not None:
-            image_dict: dict[str, object] = from_dict['image']
+            image_dict: dict[str, Any] = from_dict['image']
             self.image = Attachment(config_path=self._config_path, from_dict=image_dict)
         return

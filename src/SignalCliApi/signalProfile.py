@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """File: signalProfile.py"""
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Any
 import os
 import json
 import sys
@@ -294,7 +294,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # print(responseObj)
         # Check for error:
         if 'error' in response_obj.keys():
@@ -337,7 +337,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
             if DEBUG:
@@ -379,7 +379,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
             if DEBUG:
@@ -421,7 +421,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
             if DEBUG:
@@ -463,7 +463,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
             if DEBUG:
@@ -505,7 +505,7 @@ class Profile(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Check for error:
         if 'error' in response_obj.keys():
             if DEBUG:

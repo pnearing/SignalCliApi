@@ -58,7 +58,7 @@ class Contacts(object):
         if do_sync:
             self.__sync__()
             self.__save__()
-        # Search for self contact, and create if not found:
+        # Search for self-contact, and create if not found:
         self_contact = self.get_by_number(self._account_id)
         if self_contact is None:
             self.add("Note-To-Self", self._account_id)
@@ -122,10 +122,10 @@ class Contacts(object):
     # Load / Save:
     ##############################
     def __save__(self) -> None:
-        # Create the contacts object, and json string:
+        # Create the 'contacts' object, and json string:
         contacts_obj = self.__to_dict__()
         contacts_json = json.dumps(contacts_obj, indent=4)
-        # Build the file Path:'
+        # Build the file Path:
         file_path = os.path.join(self._account_path, self._filename)
         # Try to open the file:
         try:
@@ -153,7 +153,7 @@ class Contacts(object):
         except json.JSONDecodeError as e:
             error_message = "FATAL: Couldn't load json from file '%s': %s" % (file_path, e.msg)
             raise RuntimeError(error_message)
-        # Load the contacts object:
+        # Load the 'contacts' object:
         self.__from_dict__(contacts_dict)
         return
 
@@ -183,7 +183,7 @@ class Contacts(object):
                     response_obj['error']['code'],
                     response_obj['error']['message'])
                 print(errorMessage, file=sys.stderr)
-                return
+                return []
         # Load contacts:
         new_contacts = []
         for raw_contact in response_obj['result']:
@@ -228,7 +228,7 @@ class Contacts(object):
         # Argument check
         if number is None and uuid is None and contact_id is None:
             RuntimeError("Either number, uuid, or contact_id must be defined.")
-        # Check contact_id type:
+        # Check the contact_id type:
         if contact_id is not None:
             number_match = phone_number_regex.match(contact_id)
             uuid_match = uuid_regex.match(contact_id)
@@ -278,9 +278,9 @@ class Contacts(object):
         """
         Get a contact given a number.
         :param number: str: The phone number of the contact.
-        :return: Optional[Contact]. Returns the contact, or None if not found.
+        :return: Optional[Contact]: Returns the contact, or None if not found.
         :raises: TypeError: If phone number is not a string.
-        :raises: ValueError: If phone number not in proper format.
+        :raises: ValueError: If phone number is not in proper format.
         """
         # Type check parameters:
         if not isinstance(number, str):
@@ -300,9 +300,9 @@ class Contacts(object):
         """
         Get a contact given a UUID.
         :param uuid: str: The uuid of the contact.
-        :return Optional[Contact]: Returns the contact, or None if not found.
+        :return Optional[Contact]: Return the contact, or None if not found.
         :raises: TypeError: If uuid is not a string.
-        :raises: ValueError: If uuid not in proper format.
+        :raises: ValueError: If uuid is not in proper format.
         """
         # Type check arguments:
         if not isinstance(uuid, str):
@@ -322,8 +322,8 @@ class Contacts(object):
         """
         Get a contact given either a phone number or an uuid.
         :param contact_id: str: The id of the contact, either a phone number or an uuid.
-        :return Optional[Contact]: Returns the contact, or None if not found.
-        :raises: TypeError: If contact_id not a string.
+        :return Optional[Contact]: Return the contact, or None if not found.
+        :raises: TypeError: If the contact_id is not a string.
         :raises: ValueError: If contact_id not in phone number or uuid formats.
         """
         # Argument check:
@@ -346,7 +346,7 @@ class Contacts(object):
         """
         Return the contact for the current account.
         :return Contact: The 'self' contact.
-        :raises: RuntimeError, if self contact not found.
+        :raises: RuntimeError, if self-contact is not found.
         """
         for contact in self._contacts:
             if contact.is_self:
@@ -386,7 +386,7 @@ class Contacts(object):
                                                 if the first element is False, this will either be the existing contact,
                                                 or a string with an error message from signal.
         :raises: TypeError: If parameter invalid type.
-        :raises: ValueError: If contact id not in phone number or uuid formats.
+        :raises: ValueError: If the contact id not in phone number or uuid formats.
         """
         # Argument checks:
         if not isinstance(name, str):

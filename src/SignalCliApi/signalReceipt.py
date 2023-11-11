@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterable
+from typing import Optional, Iterable, Any
 import socket
 
 from .signalCommon import __type_error__
@@ -90,7 +90,7 @@ class Receipt(Message):
     #########################
     def __from_raw_message__(self, raw_message: dict) -> None:
         super().__from_raw_message__(raw_message)
-        receipt_message: dict[str, object] = raw_message['receiptMessage']
+        receipt_message: dict[str, Any] = raw_message['receiptMessage']
         # Load when:
         self.when = Timestamp(timestamp=receipt_message['when'])
         # Load receipt type:

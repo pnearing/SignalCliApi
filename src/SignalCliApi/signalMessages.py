@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterable, Tuple
+from typing import Optional, Iterable, Any
 import sys
 import os
 import socket
@@ -203,7 +203,7 @@ class Messages(object):
         return
 
     def __save__(self) -> None:
-        # Create messages Object, and json save string:
+        # Create a messages Object, and json save string:
         messages_dict = self.__to_dict__()
         json_messages_str = json.dumps(messages_dict, indent=4)
         # Try to open the file for writing:
@@ -239,7 +239,7 @@ class Messages(object):
             if message.sender == reaction.target_author:
                 if message.timestamp == reaction.target_timestamp:
                     reactedMessage = message
-        # If the message isn't in history do nothing:
+        # If the message isn't in history, do nothing:
         if reactedMessage is None:
             return False
         # Have the message add / change / remove the reaction:
@@ -320,7 +320,7 @@ class Messages(object):
         """
         Get messages given a recipient.
         :param recipient: Group | Contact: The recipient to search for.
-        :raises: TypeError: If recipient is not a Contact or o Group object.
+        :raises: TypeError: If recipient is not a Contact or a Group object.
         """
         if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
             __type_error__("recipient", "Contact | Group", recipient)
@@ -373,16 +373,16 @@ class Messages(object):
         :param conversation: Contact | Group: The conversation the message is in.
         :returns: SentMessage | ReceivedMessage: The message found, or None if not found.
         :raises: TypeError: If author is not a Contact object, if timestamp is not a Timestamp object, or if
-                                conversation os not a Contact or Group object.
+                                conversation is not a Contact or Group object.
         """
-        # Validate  author:
-        target_author: Optional[Contact] = None
+        # Validate author:
+        target_author: Contact
         if isinstance(author, Contact):
             target_author = author
         else:
             __type_error__("author", "Contact", author)
         # Validate recipient:
-        target_conversation: Optional[Contact | Group] = None
+        target_conversation: Contact | Group
         if isinstance(conversation, Contact):
             target_conversation = conversation
         elif isinstance(conversation, Group):
@@ -390,15 +390,15 @@ class Messages(object):
         else:
             __type_error__("recipient", "Contact | Group", conversation)
         # Validate timestamp:
-        targetTimestamp: Optional[Timestamp] = None
+        target_timestamp: Timestamp
         if isinstance(timestamp, Timestamp):
-            targetTimestamp = timestamp
+            target_timestamp = timestamp
         else:
             __type_error__("timestamp", "Timestamp", timestamp)
         # Find Message:
-        searchMessages = self.get_conversation(target_conversation)
-        for message in searchMessages:
-            if message.sender == target_author and message.timestamp == targetTimestamp:
+        search_messages = self.get_conversation(target_conversation)
+        for message in search_messages:
+            if message.sender == target_author and message.timestamp == target_timestamp:
                 return message
         return None
 
@@ -432,15 +432,10 @@ class Messages(object):
         Append a message.
         :param message: Message: The message to append.
         :returns: None
-        :raises TypeError: If message is not a Message.
+        :raises TypeError: If 'message' is not a Message.
         """
         if not isinstance(message, Message):
             __type_error__("message", "Message", message)
-        # if message is None:
-        #     if DEBUG:
-        #         print("ATTEMPTING TO APPEND NONE TYPE to messages", file=sys.stderr)
-        #     raise RuntimeError()
-        #     return
         if isinstance(message, SentMessage) or isinstance(message, ReceivedMessage):
             self.messages.append(message)
         elif isinstance(message, GroupUpdate) or isinstance(message, SyncMessage):
@@ -471,21 +466,20 @@ class Messages(object):
         :param quote: Optional[Quote]: A Quote object for the message.
         :param sticker: Optional[Sticker]: A sticker to send.
         :param preview: Optional[Preview]: A preview for the url in the message, url must appear in the body of the
-                                                message.
-        :returns: tuple[tuple[bool, Contact | Group, str | SentMessage]]: True / False for message sent successfully,
-                                                                            Contact | Group the message was sent to,
-                                                                            str | SentMessage, a string containing an
-                                                                            error message or the SentMessage object.
+            message.
+        :returns: tuple[tuple[bool, Contact | Group, str | SentMessage]]: True / False for if the message was sent
+            successfully, Contact | Group the message was sent to, str | SentMessage, a string containing an
+            error message or the SentMessage object.
         :raises: TypeError: If a recipient is not a Contact or Group object, if body is not a string, if attachments is
-                                not an Attachment object or a string, or a list of Attachment objects, or strings, if
-                                mentions is not a list of Mention objects, or not a Mentions object, if quote is not a
-                                Quote object, if sticker is not a Sticker object, or if preview is not a Preview object.
+            not an Attachment object or a string, or a list of Attachment objects, or strings, if mentions is not a
+            list of Mention objects, or not a Mentions object, if quote is not a Quote object, if sticker is not a
+            Sticker object, or if preview is not a Preview object.
         :raises: ValueError: If body is an empty string, if attachments is an empty list, or if mentions is an empty
-                                list.
+            list.
         """
         # Validate recipients:
         recipient_type: str = ''
-        target_recipients: list[Contact | Group] = []
+        target_recipients: list[Contact | Group]
         if isinstance(recipients, Contact):
             recipient_type = 'contact'
             target_recipients = [recipients]
@@ -505,7 +499,7 @@ class Messages(object):
                     else:
                         recipient_type = 'group'
                 elif not isinstance(recipient, checkType):
-                    __type_error__("recipients[%i]", str(type(checkType)), recipient)
+                    __type_error__("recipients[%i]", str(checkType), recipient)
                 target_recipients.append(recipient)
         else:
             __type_error__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
@@ -579,7 +573,7 @@ class Messages(object):
             if quote is not None:
                 error_message = "If sticker is defined, quote must be None"
                 raise ValueError(error_message)
-        # Create send message command object:
+        # Create the send message command object:
         send_command_obj = {
             "jsonrpc": "2.0",
             "id": 2,
@@ -639,7 +633,7 @@ class Messages(object):
         __socket_send__(self._command_socket, json_command_str)
         response_str = __socket_receive__(self._command_socket)
         # Parse response:
-        response_obj: dict[str, object] = json.loads(response_str)
+        response_obj: dict[str, Any] = json.loads(response_str)
         # Mark system as finished sending
         self._sending = False
         #***********************DEBUG:**************************************
@@ -662,7 +656,7 @@ class Messages(object):
             return_value = tuple(return_value)
             return return_value
         # Some messages sent, some may have failed.
-        results_list: list[dict[str, object]] = response_obj['result']['results']
+        results_list: list[dict[str, Any]] = response_obj['result']['results']
         # Gather timestamp:
         timestamp = Timestamp(timestamp=response_obj['result']['timestamp'])
         # Parse results:
@@ -680,7 +674,7 @@ class Messages(object):
                 self.append(sent_message)
                 sent_messages.append(sent_message)
             for result in results_list:
-                # Gather group and contact:
+                # Gather the group and contact:
                 group_id = result['groupId']
                 added, group = self._groups.__get_or_add__("<UNKNOWN-GROUP>", group_id)
                 contact_id = result['recipientAddress']['number']
@@ -709,7 +703,7 @@ class Messages(object):
 
                 # Message Sent successfully:
                 if result['type'] == 'SUCCESS':
-                    # Create sent message
+                    # Create a sent message
                     sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                                config_path=self._config_path, contacts=self._contacts,
                                                groups=self._groups, devices=self._devices,

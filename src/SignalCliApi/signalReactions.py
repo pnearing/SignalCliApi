@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-from typing import Optional, Iterable, Iterator
+from typing import Optional, Iterable, Iterator, Any
 import socket
 
 from .signalCommon import __type_error__
@@ -19,18 +19,21 @@ class Reactions(object):
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
+                 config_path: str,
                  contacts: Contacts,
                  groups: Groups,
                  devices: Devices,
                  this_device: Device,
-                 from_dict: dict[str, object] = None,
+                 from_dict: dict[str, Any] = None,
                  reactions: Optional[Iterable[Reaction]] = None,
                  ) -> None:
         # Argument checks:
         if not isinstance(command_socket, socket.socket):
             __type_error__("command_socket", "socket.socket", command_socket)
         if not isinstance(account_id, str):
-            __type_error__("contact_id", "str", account_id)
+            __type_error__("account_id", "str", account_id)
+        if not isinstance(config_path, str):
+            __type_error__('config_path', 'str', config_path)
         if not isinstance(contacts, Contacts):
             __type_error__("contacts", "Contacts", contacts)
         if not isinstance(groups, Groups):
@@ -44,6 +47,7 @@ class Reactions(object):
         # Set internal vars:
         self._command_socket: socket.socket = command_socket
         self._account_id: str = account_id
+        self._config_path: str = config_path
         self._contacts: Contacts = contacts
         self._groups: Groups = groups
         self._devices: Devices = devices
@@ -78,11 +82,13 @@ class Reactions(object):
             reactions_dict['reactions'].append(reaction.__to_dict__())
         return reactions_dict
 
-    def __from_dict__(self, from_dict: dict[str, object]) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         self._reactions = []
         for reaction_dict in from_dict['reactions']:
-            reaction = Reaction(command_socket=self._command_socket, contacts=self._contacts, groups=self._groups,
-                                devices=self._devices, this_device=self._this_device, from_dict=reaction_dict)
+            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
+                                config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                devices=self._devices, this_device=self._this_device, from_dict=reaction_dict
+                                )
             self._reactions.append(reaction)
         return
 
@@ -129,9 +135,9 @@ class Reactions(object):
 
     def reaction_in(self, target_reaction: Reaction) -> bool:
         """
-        Return True if a given reaction is in the reactions list.
+        Return True if a given reaction is in the reaction list.
         :param target_reaction: Reaction: Reaction to search for.
-        :returns: bool: True if reaction in reaction list.
+        :returns: bool: True if reaction in the reaction list.
         :raises: TypeError: If target_reaction is not a reaction object.
         """
         if not isinstance(target_reaction, Reaction):

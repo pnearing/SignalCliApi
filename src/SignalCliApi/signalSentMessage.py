@@ -160,11 +160,13 @@ class SentMessage(Message):
         if isinstance(reactions, Reactions):
             self.reactions = reactions
         elif len(reaction_list) == 0:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
-                                       groups=groups, devices=devices, this_device=this_device)
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
+                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
+                                       this_device=this_device)
         else:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id, contacts=contacts,
-                                       groups=groups, devices=devices, reactions=reaction_list)
+            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
+                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
+                                       this_device=this_device, reactions=reaction_list)
         # Set sticker:
         self.sticker: Optional[Sticker] = sticker
         # Set quote:
@@ -341,7 +343,8 @@ class SentMessage(Message):
         self.reactions = None
         if from_dict['reactions'] is not None:
             self.reactions = Reactions(command_socket=self._command_socket, account_id=self._account_id,
-                                       contacts=self._contacts, groups=self._groups, devices=self._devices,
+                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                       devices=self._devices, this_device=self._this_device,
                                        from_dict=from_dict['reactions'])
         # Load sticker
         self.sticker = None

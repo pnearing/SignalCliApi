@@ -67,7 +67,7 @@ class Device(object):
         # Parse from dict:
         elif from_dict is not None:
             self.__from_dict__(from_dict)
-        # Otherwise assume all values have been specified.
+        # Otherwise, assume all values have been specified.
         else:
             if self.id is not None and account_device is not None and self.id == account_device:
                 self.is_account_device = True
