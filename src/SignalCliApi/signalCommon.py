@@ -15,7 +15,7 @@ from .signalExceptions import CommunicationsError
 ###################
 # Version:
 ###################
-VERSION: Final[str] = '0.2.1'
+VERSION: Final[str] = '0.2.2'
 ########################################
 # Regex:
 ########################################
