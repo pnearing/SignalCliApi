@@ -46,10 +46,19 @@
                                 <a class="variable" href="#Accounts.supported_accounts_version">supported_accounts_version</a>
                         </li>
                         <li>
+                                <a class="function" href="#Accounts.get_registered">get_registered</a>
+                        </li>
+                        <li>
                                 <a class="function" href="#Accounts.get_unregistered">get_unregistered</a>
                         </li>
                         <li>
                                 <a class="function" href="#Accounts.get_by_number">get_by_number</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Accounts.get_by_uuid">get_by_uuid</a>
+                        </li>
+                        <li>
+                                <a class="function" href="#Accounts.get_by_username">get_by_username</a>
                         </li>
                 </ul>
 
@@ -78,12 +87,12 @@
 
                         <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos">  1</span></a><span class="ch">#!/usr/bin/env python3</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos">  2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterator</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos">  3</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">TextIO</span>
 </span><span id="L-4"><a href="#L-4"><span class="linenos">  4</span></a><span class="kn">import</span> <span class="nn">os</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos">  5</span></a><span class="kn">import</span> <span class="nn">json</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos">  6</span></a><span class="kn">import</span> <span class="nn">socket</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos">  7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">.signalCommon</span> <span class="kn">import</span> <span class="n">phone_number_regex</span><span class="p">,</span> <span class="n">uuid_regex</span><span class="p">,</span> <span class="n">__type_error__</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos">  8</span></a><span class="kn">from</span> <span class="nn">.signalCommon</span> <span class="kn">import</span> <span class="n">phone_number_regex</span><span class="p">,</span> <span class="n">uuid_regex</span><span class="p">,</span> <span class="n">__type_error__</span><span class="p">,</span> <span class="n">UUID_FORMAT_STR</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos">  9</span></a><span class="kn">from</span> <span class="nn">.signalAccount</span> <span class="kn">import</span> <span class="n">Account</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos"> 10</span></a><span class="kn">from</span> <span class="nn">.signalSticker</span> <span class="kn">import</span> <span class="n">StickerPacks</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos"> 11</span></a>
@@ -122,45 +131,45 @@
 </span><span id="L-44"><a href="#L-44"><span class="linenos"> 44</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">__do_load__</span><span class="p">()</span>
 </span><span id="L-45"><a href="#L-45"><span class="linenos"> 45</span></a>        <span class="k">return</span>
 </span><span id="L-46"><a href="#L-46"><span class="linenos"> 46</span></a>
-</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>    <span class="k">def</span> <span class="nf">__load_accounts_file__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="c1"># Try to open the accounts file:</span>
+</span><span id="L-47"><a href="#L-47"><span class="linenos"> 47</span></a>    <span class="k">def</span> <span class="nf">__load_accounts_file__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos"> 48</span></a>        <span class="c1"># Load the accounts.json file:</span>
 </span><span id="L-49"><a href="#L-49"><span class="linenos"> 49</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>            <span class="n">file_handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
-</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to open &#39;</span><span class="si">%s</span><span class="s2">&#39; for reading: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>        <span class="c1"># Try to load the json from the file:</span>
-</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>            <span class="n">response_obj</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
-</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to load json from file &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="n">err</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
-</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>        <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="c1"># Version check accounts file:</span>
-</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>        <span class="k">if</span> <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">:</span>
-</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Version </span><span class="si">%i</span><span class="s2"> is not supported. Currently only version </span><span class="si">%i</span><span class="s2"> is supported.&quot;</span> <span class="o">%</span> <span class="p">(</span>
-</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>                <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">)</span>
-</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>        <span class="k">return</span> <span class="n">response_obj</span>
-</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>
-</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>    <span class="k">def</span> <span class="nf">__do_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="c1"># Load accounts file:</span>
-</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="n">accounts_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
-</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="c1"># Parse the file and create the accounts:</span>
-</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="n">ACCOUNTS</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>        <span class="k">for</span> <span class="n">raw_account</span> <span class="ow">in</span> <span class="n">accounts_dict</span><span class="p">[</span><span class="s1">&#39;accounts&#39;</span><span class="p">]:</span>
-</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
-</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>                              <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
-</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>                              <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>            <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
-</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>        <span class="k">return</span>
-</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>
-</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>    <span class="k">def</span> <span class="nf">__sync__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>        <span class="n">new_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-50"><a href="#L-50"><span class="linenos"> 50</span></a>            <span class="n">file_handle</span><span class="p">:</span> <span class="n">TextIO</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>  <span class="c1"># Try to open the accounts.json file.</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos"> 51</span></a>            <span class="n">response_obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>  <span class="c1"># Load the json.</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos"> 52</span></a>            <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># Close the file.</span>
+</span><span id="L-53"><a href="#L-53"><span class="linenos"> 53</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">PermissionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="L-54"><a href="#L-54"><span class="linenos"> 54</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to open &#39;</span><span class="si">%s</span><span class="s2">&#39; for reading: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos"> 55</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos"> 56</span></a>        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos"> 57</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to load json from file &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+</span><span id="L-58"><a href="#L-58"><span class="linenos"> 58</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos"> 59</span></a>
+</span><span id="L-60"><a href="#L-60"><span class="linenos"> 60</span></a>        <span class="c1"># Version check accounts file:</span>
+</span><span id="L-61"><a href="#L-61"><span class="linenos"> 61</span></a>        <span class="k">if</span> <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">:</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos"> 62</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Version </span><span class="si">%i</span><span class="s2"> is not supported. Currently only version </span><span class="si">%i</span><span class="s2"> is supported.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos"> 63</span></a>                <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">)</span>
+</span><span id="L-64"><a href="#L-64"><span class="linenos"> 64</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos"> 65</span></a>        <span class="k">return</span> <span class="n">response_obj</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos"> 66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos"> 67</span></a>    <span class="k">def</span> <span class="nf">__do_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-68"><a href="#L-68"><span class="linenos"> 68</span></a>        <span class="c1"># Load accounts file:</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos"> 69</span></a>        <span class="n">accounts_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos"> 70</span></a>        <span class="c1"># Parse the file and create the accounts:</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos"> 71</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos"> 72</span></a>        <span class="n">ACCOUNTS</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos"> 73</span></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos"> 74</span></a>        <span class="k">for</span> <span class="n">raw_account</span> <span class="ow">in</span> <span class="n">accounts_dict</span><span class="p">[</span><span class="s1">&#39;accounts&#39;</span><span class="p">]:</span>
+</span><span id="L-75"><a href="#L-75"><span class="linenos"> 75</span></a>            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos"> 76</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
+</span><span id="L-77"><a href="#L-77"><span class="linenos"> 77</span></a>                              <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
+</span><span id="L-78"><a href="#L-78"><span class="linenos"> 78</span></a>                              <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">environment</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;environment&#39;</span><span class="p">],</span>
+</span><span id="L-79"><a href="#L-79"><span class="linenos"> 79</span></a>                              <span class="n">number</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">],</span> <span class="n">uuid</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="L-80"><a href="#L-80"><span class="linenos"> 80</span></a>                              <span class="p">)</span>
+</span><span id="L-81"><a href="#L-81"><span class="linenos"> 81</span></a>            <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
+</span><span id="L-82"><a href="#L-82"><span class="linenos"> 82</span></a>        <span class="k">return</span>
+</span><span id="L-83"><a href="#L-83"><span class="linenos"> 83</span></a>
+</span><span id="L-84"><a href="#L-84"><span class="linenos"> 84</span></a>    <span class="k">def</span> <span class="nf">__sync__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-85"><a href="#L-85"><span class="linenos"> 85</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
 </span><span id="L-86"><a href="#L-86"><span class="linenos"> 86</span></a>        <span class="n">new_accounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="L-87"><a href="#L-87"><span class="linenos"> 87</span></a>        <span class="c1"># Load accounts file:</span>
 </span><span id="L-88"><a href="#L-88"><span class="linenos"> 88</span></a>        <span class="n">accounts_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
@@ -171,85 +180,141 @@
 </span><span id="L-93"><a href="#L-93"><span class="linenos"> 93</span></a>                <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]:</span>
 </span><span id="L-94"><a href="#L-94"><span class="linenos"> 94</span></a>                    <span class="n">account_found</span> <span class="o">=</span> <span class="kc">True</span>
 </span><span id="L-95"><a href="#L-95"><span class="linenos"> 95</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">account_found</span><span class="p">:</span>
-</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>                <span class="n">new_account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
-</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>                                      <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
-</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>                                      <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>                <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
-</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>                <span class="n">new_accounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
-</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>        <span class="k">return</span> <span class="n">new_accounts</span>
-</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>
-</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>    <span class="c1">##############################</span>
-</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>    <span class="c1"># Overrides:</span>
-</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>    <span class="c1">##############################</span>
-</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
-</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a><span class="sd">        Return an iterator over the accounts.</span>
-</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a><span class="sd">        :return: Iterator: The iterator.</span>
-</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
-</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a>
-</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a><span class="sd">        Return the length or number of accounts.</span>
-</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a><span class="sd">        :return: int: The len of ACCOUNTS.</span>
-</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
-</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a>
-</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Account</span><span class="p">:</span>
-</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a><span class="sd">        Index accounts by int or str.</span>
-</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a><span class="sd">        :param item: int | str: If int: index as a list; If str: index by phone number.</span>
-</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="sd">        :return: Account: The selected account.</span>
-</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="sd">        :raises IndexError: If selected by int, and index out of range.</span>
-</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a><span class="sd">        :raises KeyError: If selected by str, and phone number doesn&#39;t exist.</span>
-</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">        :raises TypeError: If item is not an int or str.</span>
-</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">        :raises ValueError: If iteme is a str and is not in proper phone number format.</span>
-</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a>            <span class="k">return</span> <span class="n">ACCOUNTS</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>  <span class="c1"># Raises IndexError if index out of range.</span>
-</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_by_number</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># Raises ValueError if the number is not in proper format.</span>
-</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>            <span class="k">if</span> <span class="n">account</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Key &#39;</span><span class="si">%s</span><span class="s2">&#39; not found.&quot;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
-</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>            <span class="k">return</span> <span class="n">account</span>
-</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>        <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="s1">&#39;int | str&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>
-</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>    <span class="c1">##############################</span>
-</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>    <span class="c1"># Getters:</span>
-</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>    <span class="c1">##############################</span>
-</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
-</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
-</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
-</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a>
-</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>        <span class="c1"># noinspection SpellCheckingInspection</span>
-</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a><span class="sd">                Get an account by phone number.</span>
-</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a><span class="sd">                :param number: str: The phone number in format +nnnnnnnnn...</span>
-</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="sd">                :returns: Optional[Account]: The account found or None if not found.</span>
-</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a><span class="sd">                :raises: TypeError: If number not a string.</span>
-</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="sd">                :raises: ValueError: If number not in proper format.</span>
-</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a><span class="sd">                &quot;&quot;&quot;</span>
-</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
-</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
-</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
-</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
-</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
-</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a>                <span class="k">return</span> <span class="n">account</span>
-</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-96"><a href="#L-96"><span class="linenos"> 96</span></a>                <span class="n">new_account</span><span class="p">:</span> <span class="n">Account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
+</span><span id="L-97"><a href="#L-97"><span class="linenos"> 97</span></a>                                               <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
+</span><span id="L-98"><a href="#L-98"><span class="linenos"> 98</span></a>                                               <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span>
+</span><span id="L-99"><a href="#L-99"><span class="linenos"> 99</span></a>                                               <span class="n">environment</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;environment&#39;</span><span class="p">],</span> <span class="n">number</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">],</span>
+</span><span id="L-100"><a href="#L-100"><span class="linenos">100</span></a>                                               <span class="n">uuid</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="L-101"><a href="#L-101"><span class="linenos">101</span></a>                                               <span class="p">)</span>
+</span><span id="L-102"><a href="#L-102"><span class="linenos">102</span></a>                <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
+</span><span id="L-103"><a href="#L-103"><span class="linenos">103</span></a>                <span class="n">new_accounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
+</span><span id="L-104"><a href="#L-104"><span class="linenos">104</span></a>        <span class="k">return</span> <span class="n">new_accounts</span>
+</span><span id="L-105"><a href="#L-105"><span class="linenos">105</span></a>
+</span><span id="L-106"><a href="#L-106"><span class="linenos">106</span></a>    <span class="c1">##############################</span>
+</span><span id="L-107"><a href="#L-107"><span class="linenos">107</span></a>    <span class="c1"># Overrides:</span>
+</span><span id="L-108"><a href="#L-108"><span class="linenos">108</span></a>    <span class="c1">##############################</span>
+</span><span id="L-109"><a href="#L-109"><span class="linenos">109</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
+</span><span id="L-110"><a href="#L-110"><span class="linenos">110</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-111"><a href="#L-111"><span class="linenos">111</span></a><span class="sd">        Return an iterator over the accounts.</span>
+</span><span id="L-112"><a href="#L-112"><span class="linenos">112</span></a><span class="sd">        :return: Iterator: The iterator.</span>
+</span><span id="L-113"><a href="#L-113"><span class="linenos">113</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-114"><a href="#L-114"><span class="linenos">114</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-115"><a href="#L-115"><span class="linenos">115</span></a>        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
+</span><span id="L-116"><a href="#L-116"><span class="linenos">116</span></a>
+</span><span id="L-117"><a href="#L-117"><span class="linenos">117</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="L-118"><a href="#L-118"><span class="linenos">118</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-119"><a href="#L-119"><span class="linenos">119</span></a><span class="sd">        Return the length or number of accounts.</span>
+</span><span id="L-120"><a href="#L-120"><span class="linenos">120</span></a><span class="sd">        :return: int: The len of ACCOUNTS.</span>
+</span><span id="L-121"><a href="#L-121"><span class="linenos">121</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-122"><a href="#L-122"><span class="linenos">122</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-123"><a href="#L-123"><span class="linenos">123</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
+</span><span id="L-124"><a href="#L-124"><span class="linenos">124</span></a>
+</span><span id="L-125"><a href="#L-125"><span class="linenos">125</span></a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Account</span><span class="p">:</span>
+</span><span id="L-126"><a href="#L-126"><span class="linenos">126</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-127"><a href="#L-127"><span class="linenos">127</span></a><span class="sd">        Index accounts by int or str.</span>
+</span><span id="L-128"><a href="#L-128"><span class="linenos">128</span></a><span class="sd">        :param item: int | str: If int: index as a list; If str: index by phone number.</span>
+</span><span id="L-129"><a href="#L-129"><span class="linenos">129</span></a><span class="sd">        :return: Account: The selected account.</span>
+</span><span id="L-130"><a href="#L-130"><span class="linenos">130</span></a><span class="sd">        :raises IndexError: If selected by int, and index out of range.</span>
+</span><span id="L-131"><a href="#L-131"><span class="linenos">131</span></a><span class="sd">        :raises KeyError: If selected by str, and phone number doesn&#39;t exist.</span>
+</span><span id="L-132"><a href="#L-132"><span class="linenos">132</span></a><span class="sd">        :raises TypeError: If item is not an int or str.</span>
+</span><span id="L-133"><a href="#L-133"><span class="linenos">133</span></a><span class="sd">        :raises ValueError: If iteme is a str and is not in proper phone number format.</span>
+</span><span id="L-134"><a href="#L-134"><span class="linenos">134</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-135"><a href="#L-135"><span class="linenos">135</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-136"><a href="#L-136"><span class="linenos">136</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="L-137"><a href="#L-137"><span class="linenos">137</span></a>            <span class="k">return</span> <span class="n">ACCOUNTS</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>  <span class="c1"># Raises IndexError if index out of range.</span>
+</span><span id="L-138"><a href="#L-138"><span class="linenos">138</span></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="L-139"><a href="#L-139"><span class="linenos">139</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_by_number</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># Raises ValueError if the number is not in proper format.</span>
+</span><span id="L-140"><a href="#L-140"><span class="linenos">140</span></a>            <span class="k">if</span> <span class="n">account</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-141"><a href="#L-141"><span class="linenos">141</span></a>                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Key &#39;</span><span class="si">%s</span><span class="s2">&#39; not found.&quot;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
+</span><span id="L-142"><a href="#L-142"><span class="linenos">142</span></a>            <span class="k">return</span> <span class="n">account</span>
+</span><span id="L-143"><a href="#L-143"><span class="linenos">143</span></a>        <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="s1">&#39;int | str&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+</span><span id="L-144"><a href="#L-144"><span class="linenos">144</span></a>
+</span><span id="L-145"><a href="#L-145"><span class="linenos">145</span></a>    <span class="c1">##############################</span>
+</span><span id="L-146"><a href="#L-146"><span class="linenos">146</span></a>    <span class="c1"># Getters:</span>
+</span><span id="L-147"><a href="#L-147"><span class="linenos">147</span></a>    <span class="c1">##############################</span>
+</span><span id="L-148"><a href="#L-148"><span class="linenos">148</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-149"><a href="#L-149"><span class="linenos">149</span></a>    <span class="k">def</span> <span class="nf">get_registered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-150"><a href="#L-150"><span class="linenos">150</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-151"><a href="#L-151"><span class="linenos">151</span></a><span class="sd">        Get accounts that are both known and registered.</span>
+</span><span id="L-152"><a href="#L-152"><span class="linenos">152</span></a><span class="sd">        :return: list[Account]: The registerd accounts, or an empty list if none found.</span>
+</span><span id="L-153"><a href="#L-153"><span class="linenos">153</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-154"><a href="#L-154"><span class="linenos">154</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-155"><a href="#L-155"><span class="linenos">155</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">]</span>
+</span><span id="L-156"><a href="#L-156"><span class="linenos">156</span></a>
+</span><span id="L-157"><a href="#L-157"><span class="linenos">157</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-158"><a href="#L-158"><span class="linenos">158</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-159"><a href="#L-159"><span class="linenos">159</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-160"><a href="#L-160"><span class="linenos">160</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
+</span><span id="L-161"><a href="#L-161"><span class="linenos">161</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
+</span><span id="L-162"><a href="#L-162"><span class="linenos">162</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-163"><a href="#L-163"><span class="linenos">163</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-164"><a href="#L-164"><span class="linenos">164</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
+</span><span id="L-165"><a href="#L-165"><span class="linenos">165</span></a>
+</span><span id="L-166"><a href="#L-166"><span class="linenos">166</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-167"><a href="#L-167"><span class="linenos">167</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-168"><a href="#L-168"><span class="linenos">168</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-169"><a href="#L-169"><span class="linenos">169</span></a><span class="sd">        Get an account by phone number.</span>
+</span><span id="L-170"><a href="#L-170"><span class="linenos">170</span></a><span class="sd">        :param number: str: The phone number in format +nnnnnnnnn...</span>
+</span><span id="L-171"><a href="#L-171"><span class="linenos">171</span></a><span class="sd">        :returns: Optional[Account]: The account found or None if not found.</span>
+</span><span id="L-172"><a href="#L-172"><span class="linenos">172</span></a><span class="sd">        :raises: TypeError: If number is not a string.</span>
+</span><span id="L-173"><a href="#L-173"><span class="linenos">173</span></a><span class="sd">        :raises: ValueError: If number not in proper format.</span>
+</span><span id="L-174"><a href="#L-174"><span class="linenos">174</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-175"><a href="#L-175"><span class="linenos">175</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-176"><a href="#L-176"><span class="linenos">176</span></a>        <span class="c1"># Type check:</span>
+</span><span id="L-177"><a href="#L-177"><span class="linenos">177</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="L-178"><a href="#L-178"><span class="linenos">178</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+</span><span id="L-179"><a href="#L-179"><span class="linenos">179</span></a>        <span class="c1"># Value check:</span>
+</span><span id="L-180"><a href="#L-180"><span class="linenos">180</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+</span><span id="L-181"><a href="#L-181"><span class="linenos">181</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-182"><a href="#L-182"><span class="linenos">182</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
+</span><span id="L-183"><a href="#L-183"><span class="linenos">183</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="L-184"><a href="#L-184"><span class="linenos">184</span></a>       <span class="c1"># Search for account:</span>
+</span><span id="L-185"><a href="#L-185"><span class="linenos">185</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="L-186"><a href="#L-186"><span class="linenos">186</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+</span><span id="L-187"><a href="#L-187"><span class="linenos">187</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="L-188"><a href="#L-188"><span class="linenos">188</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-189"><a href="#L-189"><span class="linenos">189</span></a>
+</span><span id="L-190"><a href="#L-190"><span class="linenos">190</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-191"><a href="#L-191"><span class="linenos">191</span></a>    <span class="k">def</span> <span class="nf">get_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-192"><a href="#L-192"><span class="linenos">192</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-193"><a href="#L-193"><span class="linenos">193</span></a><span class="sd">        Get an account by UUID.</span>
+</span><span id="L-194"><a href="#L-194"><span class="linenos">194</span></a><span class="sd">        :param uuid: str: the UUID to search for.</span>
+</span><span id="L-195"><a href="#L-195"><span class="linenos">195</span></a><span class="sd">        :return: Optional[Account]</span>
+</span><span id="L-196"><a href="#L-196"><span class="linenos">196</span></a><span class="sd">        :raises TypeError: if the uuid is not a string.</span>
+</span><span id="L-197"><a href="#L-197"><span class="linenos">197</span></a><span class="sd">        :raises ValueError: if the uuid is not in the correct format.</span>
+</span><span id="L-198"><a href="#L-198"><span class="linenos">198</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-199"><a href="#L-199"><span class="linenos">199</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-200"><a href="#L-200"><span class="linenos">200</span></a>        <span class="c1"># Type check:</span>
+</span><span id="L-201"><a href="#L-201"><span class="linenos">201</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="L-202"><a href="#L-202"><span class="linenos">202</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">uuid</span><span class="p">)</span>
+</span><span id="L-203"><a href="#L-203"><span class="linenos">203</span></a>        <span class="c1"># Value check:</span>
+</span><span id="L-204"><a href="#L-204"><span class="linenos">204</span></a>        <span class="n">uuid_match</span> <span class="o">=</span> <span class="n">uuid_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="L-205"><a href="#L-205"><span class="linenos">205</span></a>        <span class="k">if</span> <span class="n">uuid_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-206"><a href="#L-206"><span class="linenos">206</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;UUID must be in format: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">UUID_FORMAT_STR</span>
+</span><span id="L-207"><a href="#L-207"><span class="linenos">207</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="L-208"><a href="#L-208"><span class="linenos">208</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="L-209"><a href="#L-209"><span class="linenos">209</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="L-210"><a href="#L-210"><span class="linenos">210</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span>
+</span><span id="L-211"><a href="#L-211"><span class="linenos">211</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="L-212"><a href="#L-212"><span class="linenos">212</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="L-213"><a href="#L-213"><span class="linenos">213</span></a>
+</span><span id="L-214"><a href="#L-214"><span class="linenos">214</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="L-215"><a href="#L-215"><span class="linenos">215</span></a>    <span class="k">def</span> <span class="nf">get_by_username</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="L-216"><a href="#L-216"><span class="linenos">216</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="L-217"><a href="#L-217"><span class="linenos">217</span></a><span class="sd">        Get an account by username.</span>
+</span><span id="L-218"><a href="#L-218"><span class="linenos">218</span></a><span class="sd">        :param username: str: The username to search for.</span>
+</span><span id="L-219"><a href="#L-219"><span class="linenos">219</span></a><span class="sd">        :return: Optional[Account]: The Account object or None if not found.</span>
+</span><span id="L-220"><a href="#L-220"><span class="linenos">220</span></a><span class="sd">        :raises TypeError: If username is not a string.</span>
+</span><span id="L-221"><a href="#L-221"><span class="linenos">221</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="L-222"><a href="#L-222"><span class="linenos">222</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="L-223"><a href="#L-223"><span class="linenos">223</span></a>        <span class="c1"># Type check:</span>
+</span><span id="L-224"><a href="#L-224"><span class="linenos">224</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="L-225"><a href="#L-225"><span class="linenos">225</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+</span><span id="L-226"><a href="#L-226"><span class="linenos">226</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="L-227"><a href="#L-227"><span class="linenos">227</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="L-228"><a href="#L-228"><span class="linenos">228</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">username</span><span class="p">:</span>
+</span><span id="L-229"><a href="#L-229"><span class="linenos">229</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="L-230"><a href="#L-230"><span class="linenos">230</span></a>        <span class="k">return</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -319,45 +384,45 @@
 </span><span id="Accounts-45"><a href="#Accounts-45"><span class="linenos"> 45</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">__do_load__</span><span class="p">()</span>
 </span><span id="Accounts-46"><a href="#Accounts-46"><span class="linenos"> 46</span></a>        <span class="k">return</span>
 </span><span id="Accounts-47"><a href="#Accounts-47"><span class="linenos"> 47</span></a>
-</span><span id="Accounts-48"><a href="#Accounts-48"><span class="linenos"> 48</span></a>    <span class="k">def</span> <span class="nf">__load_accounts_file__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span id="Accounts-49"><a href="#Accounts-49"><span class="linenos"> 49</span></a>        <span class="c1"># Try to open the accounts file:</span>
+</span><span id="Accounts-48"><a href="#Accounts-48"><span class="linenos"> 48</span></a>    <span class="k">def</span> <span class="nf">__load_accounts_file__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]:</span>
+</span><span id="Accounts-49"><a href="#Accounts-49"><span class="linenos"> 49</span></a>        <span class="c1"># Load the accounts.json file:</span>
 </span><span id="Accounts-50"><a href="#Accounts-50"><span class="linenos"> 50</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="Accounts-51"><a href="#Accounts-51"><span class="linenos"> 51</span></a>            <span class="n">file_handle</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
-</span><span id="Accounts-52"><a href="#Accounts-52"><span class="linenos"> 52</span></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-</span><span id="Accounts-53"><a href="#Accounts-53"><span class="linenos"> 53</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to open &#39;</span><span class="si">%s</span><span class="s2">&#39; for reading: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-</span><span id="Accounts-54"><a href="#Accounts-54"><span class="linenos"> 54</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="Accounts-55"><a href="#Accounts-55"><span class="linenos"> 55</span></a>        <span class="c1"># Try to load the json from the file:</span>
-</span><span id="Accounts-56"><a href="#Accounts-56"><span class="linenos"> 56</span></a>        <span class="k">try</span><span class="p">:</span>
-</span><span id="Accounts-57"><a href="#Accounts-57"><span class="linenos"> 57</span></a>            <span class="n">response_obj</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
-</span><span id="Accounts-58"><a href="#Accounts-58"><span class="linenos"> 58</span></a>        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-</span><span id="Accounts-59"><a href="#Accounts-59"><span class="linenos"> 59</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to load json from file &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="n">err</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
-</span><span id="Accounts-60"><a href="#Accounts-60"><span class="linenos"> 60</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="Accounts-61"><a href="#Accounts-61"><span class="linenos"> 61</span></a>        <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</span><span id="Accounts-62"><a href="#Accounts-62"><span class="linenos"> 62</span></a>        <span class="c1"># Version check accounts file:</span>
-</span><span id="Accounts-63"><a href="#Accounts-63"><span class="linenos"> 63</span></a>        <span class="k">if</span> <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">:</span>
-</span><span id="Accounts-64"><a href="#Accounts-64"><span class="linenos"> 64</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Version </span><span class="si">%i</span><span class="s2"> is not supported. Currently only version </span><span class="si">%i</span><span class="s2"> is supported.&quot;</span> <span class="o">%</span> <span class="p">(</span>
-</span><span id="Accounts-65"><a href="#Accounts-65"><span class="linenos"> 65</span></a>                <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">)</span>
-</span><span id="Accounts-66"><a href="#Accounts-66"><span class="linenos"> 66</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="Accounts-67"><a href="#Accounts-67"><span class="linenos"> 67</span></a>        <span class="k">return</span> <span class="n">response_obj</span>
-</span><span id="Accounts-68"><a href="#Accounts-68"><span class="linenos"> 68</span></a>
-</span><span id="Accounts-69"><a href="#Accounts-69"><span class="linenos"> 69</span></a>    <span class="k">def</span> <span class="nf">__do_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Accounts-70"><a href="#Accounts-70"><span class="linenos"> 70</span></a>        <span class="c1"># Load accounts file:</span>
-</span><span id="Accounts-71"><a href="#Accounts-71"><span class="linenos"> 71</span></a>        <span class="n">accounts_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
-</span><span id="Accounts-72"><a href="#Accounts-72"><span class="linenos"> 72</span></a>        <span class="c1"># Parse the file and create the accounts:</span>
-</span><span id="Accounts-73"><a href="#Accounts-73"><span class="linenos"> 73</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-74"><a href="#Accounts-74"><span class="linenos"> 74</span></a>        <span class="n">ACCOUNTS</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span id="Accounts-75"><a href="#Accounts-75"><span class="linenos"> 75</span></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
-</span><span id="Accounts-76"><a href="#Accounts-76"><span class="linenos"> 76</span></a>        <span class="k">for</span> <span class="n">raw_account</span> <span class="ow">in</span> <span class="n">accounts_dict</span><span class="p">[</span><span class="s1">&#39;accounts&#39;</span><span class="p">]:</span>
-</span><span id="Accounts-77"><a href="#Accounts-77"><span class="linenos"> 77</span></a>            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
-</span><span id="Accounts-78"><a href="#Accounts-78"><span class="linenos"> 78</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
-</span><span id="Accounts-79"><a href="#Accounts-79"><span class="linenos"> 79</span></a>                              <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
-</span><span id="Accounts-80"><a href="#Accounts-80"><span class="linenos"> 80</span></a>                              <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="Accounts-81"><a href="#Accounts-81"><span class="linenos"> 81</span></a>            <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
-</span><span id="Accounts-82"><a href="#Accounts-82"><span class="linenos"> 82</span></a>        <span class="k">return</span>
-</span><span id="Accounts-83"><a href="#Accounts-83"><span class="linenos"> 83</span></a>
-</span><span id="Accounts-84"><a href="#Accounts-84"><span class="linenos"> 84</span></a>    <span class="k">def</span> <span class="nf">__sync__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="Accounts-85"><a href="#Accounts-85"><span class="linenos"> 85</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-86"><a href="#Accounts-86"><span class="linenos"> 86</span></a>        <span class="n">new_account</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="Accounts-51"><a href="#Accounts-51"><span class="linenos"> 51</span></a>            <span class="n">file_handle</span><span class="p">:</span> <span class="n">TextIO</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>  <span class="c1"># Try to open the accounts.json file.</span>
+</span><span id="Accounts-52"><a href="#Accounts-52"><span class="linenos"> 52</span></a>            <span class="n">response_obj</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">file_handle</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>  <span class="c1"># Load the json.</span>
+</span><span id="Accounts-53"><a href="#Accounts-53"><span class="linenos"> 53</span></a>            <span class="n">file_handle</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># Close the file.</span>
+</span><span id="Accounts-54"><a href="#Accounts-54"><span class="linenos"> 54</span></a>        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">FileNotFoundError</span><span class="p">,</span> <span class="ne">PermissionError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="Accounts-55"><a href="#Accounts-55"><span class="linenos"> 55</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to open &#39;</span><span class="si">%s</span><span class="s2">&#39; for reading: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+</span><span id="Accounts-56"><a href="#Accounts-56"><span class="linenos"> 56</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts-57"><a href="#Accounts-57"><span class="linenos"> 57</span></a>        <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="Accounts-58"><a href="#Accounts-58"><span class="linenos"> 58</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Failed to load json from file &#39;</span><span class="si">%s</span><span class="s2">&#39;: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_accounts_file_path</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">msg</span><span class="p">)</span>
+</span><span id="Accounts-59"><a href="#Accounts-59"><span class="linenos"> 59</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts-60"><a href="#Accounts-60"><span class="linenos"> 60</span></a>
+</span><span id="Accounts-61"><a href="#Accounts-61"><span class="linenos"> 61</span></a>        <span class="c1"># Version check accounts file:</span>
+</span><span id="Accounts-62"><a href="#Accounts-62"><span class="linenos"> 62</span></a>        <span class="k">if</span> <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">:</span>
+</span><span id="Accounts-63"><a href="#Accounts-63"><span class="linenos"> 63</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;FATAL: Version </span><span class="si">%i</span><span class="s2"> is not supported. Currently only version </span><span class="si">%i</span><span class="s2"> is supported.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+</span><span id="Accounts-64"><a href="#Accounts-64"><span class="linenos"> 64</span></a>                <span class="n">response_obj</span><span class="p">[</span><span class="s1">&#39;version&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">supported_accounts_version</span><span class="p">)</span>
+</span><span id="Accounts-65"><a href="#Accounts-65"><span class="linenos"> 65</span></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts-66"><a href="#Accounts-66"><span class="linenos"> 66</span></a>        <span class="k">return</span> <span class="n">response_obj</span>
+</span><span id="Accounts-67"><a href="#Accounts-67"><span class="linenos"> 67</span></a>
+</span><span id="Accounts-68"><a href="#Accounts-68"><span class="linenos"> 68</span></a>    <span class="k">def</span> <span class="nf">__do_load__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts-69"><a href="#Accounts-69"><span class="linenos"> 69</span></a>        <span class="c1"># Load accounts file:</span>
+</span><span id="Accounts-70"><a href="#Accounts-70"><span class="linenos"> 70</span></a>        <span class="n">accounts_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
+</span><span id="Accounts-71"><a href="#Accounts-71"><span class="linenos"> 71</span></a>        <span class="c1"># Parse the file and create the accounts:</span>
+</span><span id="Accounts-72"><a href="#Accounts-72"><span class="linenos"> 72</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-73"><a href="#Accounts-73"><span class="linenos"> 73</span></a>        <span class="n">ACCOUNTS</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span id="Accounts-74"><a href="#Accounts-74"><span class="linenos"> 74</span></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+</span><span id="Accounts-75"><a href="#Accounts-75"><span class="linenos"> 75</span></a>        <span class="k">for</span> <span class="n">raw_account</span> <span class="ow">in</span> <span class="n">accounts_dict</span><span class="p">[</span><span class="s1">&#39;accounts&#39;</span><span class="p">]:</span>
+</span><span id="Accounts-76"><a href="#Accounts-76"><span class="linenos"> 76</span></a>            <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</span><span id="Accounts-77"><a href="#Accounts-77"><span class="linenos"> 77</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
+</span><span id="Accounts-78"><a href="#Accounts-78"><span class="linenos"> 78</span></a>                              <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
+</span><span id="Accounts-79"><a href="#Accounts-79"><span class="linenos"> 79</span></a>                              <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">environment</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;environment&#39;</span><span class="p">],</span>
+</span><span id="Accounts-80"><a href="#Accounts-80"><span class="linenos"> 80</span></a>                              <span class="n">number</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">],</span> <span class="n">uuid</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="Accounts-81"><a href="#Accounts-81"><span class="linenos"> 81</span></a>                              <span class="p">)</span>
+</span><span id="Accounts-82"><a href="#Accounts-82"><span class="linenos"> 82</span></a>            <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">account</span><span class="p">)</span>
+</span><span id="Accounts-83"><a href="#Accounts-83"><span class="linenos"> 83</span></a>        <span class="k">return</span>
+</span><span id="Accounts-84"><a href="#Accounts-84"><span class="linenos"> 84</span></a>
+</span><span id="Accounts-85"><a href="#Accounts-85"><span class="linenos"> 85</span></a>    <span class="k">def</span> <span class="nf">__sync__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-86"><a href="#Accounts-86"><span class="linenos"> 86</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
 </span><span id="Accounts-87"><a href="#Accounts-87"><span class="linenos"> 87</span></a>        <span class="n">new_accounts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 </span><span id="Accounts-88"><a href="#Accounts-88"><span class="linenos"> 88</span></a>        <span class="c1"># Load accounts file:</span>
 </span><span id="Accounts-89"><a href="#Accounts-89"><span class="linenos"> 89</span></a>        <span class="n">accounts_dict</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_accounts_file__</span><span class="p">()</span>
@@ -368,85 +433,141 @@
 </span><span id="Accounts-94"><a href="#Accounts-94"><span class="linenos"> 94</span></a>                <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">]:</span>
 </span><span id="Accounts-95"><a href="#Accounts-95"><span class="linenos"> 95</span></a>                    <span class="n">account_found</span> <span class="o">=</span> <span class="kc">True</span>
 </span><span id="Accounts-96"><a href="#Accounts-96"><span class="linenos"> 96</span></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">account_found</span><span class="p">:</span>
-</span><span id="Accounts-97"><a href="#Accounts-97"><span class="linenos"> 97</span></a>                <span class="n">new_account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
-</span><span id="Accounts-98"><a href="#Accounts-98"><span class="linenos"> 98</span></a>                                      <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
-</span><span id="Accounts-99"><a href="#Accounts-99"><span class="linenos"> 99</span></a>                                      <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="Accounts-100"><a href="#Accounts-100"><span class="linenos">100</span></a>                <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
-</span><span id="Accounts-101"><a href="#Accounts-101"><span class="linenos">101</span></a>                <span class="n">new_accounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
-</span><span id="Accounts-102"><a href="#Accounts-102"><span class="linenos">102</span></a>        <span class="k">return</span> <span class="n">new_accounts</span>
-</span><span id="Accounts-103"><a href="#Accounts-103"><span class="linenos">103</span></a>
-</span><span id="Accounts-104"><a href="#Accounts-104"><span class="linenos">104</span></a>    <span class="c1">##############################</span>
-</span><span id="Accounts-105"><a href="#Accounts-105"><span class="linenos">105</span></a>    <span class="c1"># Overrides:</span>
-</span><span id="Accounts-106"><a href="#Accounts-106"><span class="linenos">106</span></a>    <span class="c1">##############################</span>
-</span><span id="Accounts-107"><a href="#Accounts-107"><span class="linenos">107</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
-</span><span id="Accounts-108"><a href="#Accounts-108"><span class="linenos">108</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts-109"><a href="#Accounts-109"><span class="linenos">109</span></a><span class="sd">        Return an iterator over the accounts.</span>
-</span><span id="Accounts-110"><a href="#Accounts-110"><span class="linenos">110</span></a><span class="sd">        :return: Iterator: The iterator.</span>
-</span><span id="Accounts-111"><a href="#Accounts-111"><span class="linenos">111</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Accounts-112"><a href="#Accounts-112"><span class="linenos">112</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-113"><a href="#Accounts-113"><span class="linenos">113</span></a>        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
-</span><span id="Accounts-114"><a href="#Accounts-114"><span class="linenos">114</span></a>
-</span><span id="Accounts-115"><a href="#Accounts-115"><span class="linenos">115</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span id="Accounts-116"><a href="#Accounts-116"><span class="linenos">116</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts-117"><a href="#Accounts-117"><span class="linenos">117</span></a><span class="sd">        Return the length or number of accounts.</span>
-</span><span id="Accounts-118"><a href="#Accounts-118"><span class="linenos">118</span></a><span class="sd">        :return: int: The len of ACCOUNTS.</span>
-</span><span id="Accounts-119"><a href="#Accounts-119"><span class="linenos">119</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Accounts-120"><a href="#Accounts-120"><span class="linenos">120</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-121"><a href="#Accounts-121"><span class="linenos">121</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
-</span><span id="Accounts-122"><a href="#Accounts-122"><span class="linenos">122</span></a>
-</span><span id="Accounts-123"><a href="#Accounts-123"><span class="linenos">123</span></a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Account</span><span class="p">:</span>
-</span><span id="Accounts-124"><a href="#Accounts-124"><span class="linenos">124</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts-125"><a href="#Accounts-125"><span class="linenos">125</span></a><span class="sd">        Index accounts by int or str.</span>
-</span><span id="Accounts-126"><a href="#Accounts-126"><span class="linenos">126</span></a><span class="sd">        :param item: int | str: If int: index as a list; If str: index by phone number.</span>
-</span><span id="Accounts-127"><a href="#Accounts-127"><span class="linenos">127</span></a><span class="sd">        :return: Account: The selected account.</span>
-</span><span id="Accounts-128"><a href="#Accounts-128"><span class="linenos">128</span></a><span class="sd">        :raises IndexError: If selected by int, and index out of range.</span>
-</span><span id="Accounts-129"><a href="#Accounts-129"><span class="linenos">129</span></a><span class="sd">        :raises KeyError: If selected by str, and phone number doesn&#39;t exist.</span>
-</span><span id="Accounts-130"><a href="#Accounts-130"><span class="linenos">130</span></a><span class="sd">        :raises TypeError: If item is not an int or str.</span>
-</span><span id="Accounts-131"><a href="#Accounts-131"><span class="linenos">131</span></a><span class="sd">        :raises ValueError: If iteme is a str and is not in proper phone number format.</span>
-</span><span id="Accounts-132"><a href="#Accounts-132"><span class="linenos">132</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Accounts-133"><a href="#Accounts-133"><span class="linenos">133</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-134"><a href="#Accounts-134"><span class="linenos">134</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-</span><span id="Accounts-135"><a href="#Accounts-135"><span class="linenos">135</span></a>            <span class="k">return</span> <span class="n">ACCOUNTS</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>  <span class="c1"># Raises IndexError if index out of range.</span>
-</span><span id="Accounts-136"><a href="#Accounts-136"><span class="linenos">136</span></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="Accounts-137"><a href="#Accounts-137"><span class="linenos">137</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_by_number</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># Raises ValueError if the number is not in proper format.</span>
-</span><span id="Accounts-138"><a href="#Accounts-138"><span class="linenos">138</span></a>            <span class="k">if</span> <span class="n">account</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Accounts-139"><a href="#Accounts-139"><span class="linenos">139</span></a>                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Key &#39;</span><span class="si">%s</span><span class="s2">&#39; not found.&quot;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
-</span><span id="Accounts-140"><a href="#Accounts-140"><span class="linenos">140</span></a>            <span class="k">return</span> <span class="n">account</span>
-</span><span id="Accounts-141"><a href="#Accounts-141"><span class="linenos">141</span></a>        <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="s1">&#39;int | str&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
-</span><span id="Accounts-142"><a href="#Accounts-142"><span class="linenos">142</span></a>
-</span><span id="Accounts-143"><a href="#Accounts-143"><span class="linenos">143</span></a>    <span class="c1">##############################</span>
-</span><span id="Accounts-144"><a href="#Accounts-144"><span class="linenos">144</span></a>    <span class="c1"># Getters:</span>
-</span><span id="Accounts-145"><a href="#Accounts-145"><span class="linenos">145</span></a>    <span class="c1">##############################</span>
-</span><span id="Accounts-146"><a href="#Accounts-146"><span class="linenos">146</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="Accounts-147"><a href="#Accounts-147"><span class="linenos">147</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="Accounts-148"><a href="#Accounts-148"><span class="linenos">148</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts-149"><a href="#Accounts-149"><span class="linenos">149</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
-</span><span id="Accounts-150"><a href="#Accounts-150"><span class="linenos">150</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
-</span><span id="Accounts-151"><a href="#Accounts-151"><span class="linenos">151</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Accounts-152"><a href="#Accounts-152"><span class="linenos">152</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-153"><a href="#Accounts-153"><span class="linenos">153</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
-</span><span id="Accounts-154"><a href="#Accounts-154"><span class="linenos">154</span></a>
-</span><span id="Accounts-155"><a href="#Accounts-155"><span class="linenos">155</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="Accounts-156"><a href="#Accounts-156"><span class="linenos">156</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="Accounts-157"><a href="#Accounts-157"><span class="linenos">157</span></a>        <span class="c1"># noinspection SpellCheckingInspection</span>
-</span><span id="Accounts-158"><a href="#Accounts-158"><span class="linenos">158</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts-159"><a href="#Accounts-159"><span class="linenos">159</span></a><span class="sd">                Get an account by phone number.</span>
-</span><span id="Accounts-160"><a href="#Accounts-160"><span class="linenos">160</span></a><span class="sd">                :param number: str: The phone number in format +nnnnnnnnn...</span>
-</span><span id="Accounts-161"><a href="#Accounts-161"><span class="linenos">161</span></a><span class="sd">                :returns: Optional[Account]: The account found or None if not found.</span>
-</span><span id="Accounts-162"><a href="#Accounts-162"><span class="linenos">162</span></a><span class="sd">                :raises: TypeError: If number not a string.</span>
-</span><span id="Accounts-163"><a href="#Accounts-163"><span class="linenos">163</span></a><span class="sd">                :raises: ValueError: If number not in proper format.</span>
-</span><span id="Accounts-164"><a href="#Accounts-164"><span class="linenos">164</span></a><span class="sd">                &quot;&quot;&quot;</span>
-</span><span id="Accounts-165"><a href="#Accounts-165"><span class="linenos">165</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts-166"><a href="#Accounts-166"><span class="linenos">166</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="Accounts-167"><a href="#Accounts-167"><span class="linenos">167</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
-</span><span id="Accounts-168"><a href="#Accounts-168"><span class="linenos">168</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
-</span><span id="Accounts-169"><a href="#Accounts-169"><span class="linenos">169</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Accounts-170"><a href="#Accounts-170"><span class="linenos">170</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
-</span><span id="Accounts-171"><a href="#Accounts-171"><span class="linenos">171</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="Accounts-172"><a href="#Accounts-172"><span class="linenos">172</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
-</span><span id="Accounts-173"><a href="#Accounts-173"><span class="linenos">173</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
-</span><span id="Accounts-174"><a href="#Accounts-174"><span class="linenos">174</span></a>                <span class="k">return</span> <span class="n">account</span>
-</span><span id="Accounts-175"><a href="#Accounts-175"><span class="linenos">175</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="Accounts-97"><a href="#Accounts-97"><span class="linenos"> 97</span></a>                <span class="n">new_account</span><span class="p">:</span> <span class="n">Account</span> <span class="o">=</span> <span class="n">Account</span><span class="p">(</span><span class="n">sync_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sync_socket</span><span class="p">,</span> <span class="n">command_socket</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_command_socket</span><span class="p">,</span>
+</span><span id="Accounts-98"><a href="#Accounts-98"><span class="linenos"> 98</span></a>                                               <span class="n">config_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_config_path</span><span class="p">,</span> <span class="n">sticker_packs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_sticker_packs</span><span class="p">,</span>
+</span><span id="Accounts-99"><a href="#Accounts-99"><span class="linenos"> 99</span></a>                                               <span class="n">signal_account_path</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;path&#39;</span><span class="p">],</span>
+</span><span id="Accounts-100"><a href="#Accounts-100"><span class="linenos">100</span></a>                                               <span class="n">environment</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;environment&#39;</span><span class="p">],</span> <span class="n">number</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;number&#39;</span><span class="p">],</span>
+</span><span id="Accounts-101"><a href="#Accounts-101"><span class="linenos">101</span></a>                                               <span class="n">uuid</span><span class="o">=</span><span class="n">raw_account</span><span class="p">[</span><span class="s1">&#39;uuid&#39;</span><span class="p">],</span> <span class="n">do_load</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="Accounts-102"><a href="#Accounts-102"><span class="linenos">102</span></a>                                               <span class="p">)</span>
+</span><span id="Accounts-103"><a href="#Accounts-103"><span class="linenos">103</span></a>                <span class="n">ACCOUNTS</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
+</span><span id="Accounts-104"><a href="#Accounts-104"><span class="linenos">104</span></a>                <span class="n">new_accounts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_account</span><span class="p">)</span>
+</span><span id="Accounts-105"><a href="#Accounts-105"><span class="linenos">105</span></a>        <span class="k">return</span> <span class="n">new_accounts</span>
+</span><span id="Accounts-106"><a href="#Accounts-106"><span class="linenos">106</span></a>
+</span><span id="Accounts-107"><a href="#Accounts-107"><span class="linenos">107</span></a>    <span class="c1">##############################</span>
+</span><span id="Accounts-108"><a href="#Accounts-108"><span class="linenos">108</span></a>    <span class="c1"># Overrides:</span>
+</span><span id="Accounts-109"><a href="#Accounts-109"><span class="linenos">109</span></a>    <span class="c1">##############################</span>
+</span><span id="Accounts-110"><a href="#Accounts-110"><span class="linenos">110</span></a>    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">:</span>
+</span><span id="Accounts-111"><a href="#Accounts-111"><span class="linenos">111</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-112"><a href="#Accounts-112"><span class="linenos">112</span></a><span class="sd">        Return an iterator over the accounts.</span>
+</span><span id="Accounts-113"><a href="#Accounts-113"><span class="linenos">113</span></a><span class="sd">        :return: Iterator: The iterator.</span>
+</span><span id="Accounts-114"><a href="#Accounts-114"><span class="linenos">114</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-115"><a href="#Accounts-115"><span class="linenos">115</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-116"><a href="#Accounts-116"><span class="linenos">116</span></a>        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
+</span><span id="Accounts-117"><a href="#Accounts-117"><span class="linenos">117</span></a>
+</span><span id="Accounts-118"><a href="#Accounts-118"><span class="linenos">118</span></a>    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span id="Accounts-119"><a href="#Accounts-119"><span class="linenos">119</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-120"><a href="#Accounts-120"><span class="linenos">120</span></a><span class="sd">        Return the length or number of accounts.</span>
+</span><span id="Accounts-121"><a href="#Accounts-121"><span class="linenos">121</span></a><span class="sd">        :return: int: The len of ACCOUNTS.</span>
+</span><span id="Accounts-122"><a href="#Accounts-122"><span class="linenos">122</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-123"><a href="#Accounts-123"><span class="linenos">123</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-124"><a href="#Accounts-124"><span class="linenos">124</span></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">ACCOUNTS</span><span class="p">)</span>
+</span><span id="Accounts-125"><a href="#Accounts-125"><span class="linenos">125</span></a>
+</span><span id="Accounts-126"><a href="#Accounts-126"><span class="linenos">126</span></a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Account</span><span class="p">:</span>
+</span><span id="Accounts-127"><a href="#Accounts-127"><span class="linenos">127</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-128"><a href="#Accounts-128"><span class="linenos">128</span></a><span class="sd">        Index accounts by int or str.</span>
+</span><span id="Accounts-129"><a href="#Accounts-129"><span class="linenos">129</span></a><span class="sd">        :param item: int | str: If int: index as a list; If str: index by phone number.</span>
+</span><span id="Accounts-130"><a href="#Accounts-130"><span class="linenos">130</span></a><span class="sd">        :return: Account: The selected account.</span>
+</span><span id="Accounts-131"><a href="#Accounts-131"><span class="linenos">131</span></a><span class="sd">        :raises IndexError: If selected by int, and index out of range.</span>
+</span><span id="Accounts-132"><a href="#Accounts-132"><span class="linenos">132</span></a><span class="sd">        :raises KeyError: If selected by str, and phone number doesn&#39;t exist.</span>
+</span><span id="Accounts-133"><a href="#Accounts-133"><span class="linenos">133</span></a><span class="sd">        :raises TypeError: If item is not an int or str.</span>
+</span><span id="Accounts-134"><a href="#Accounts-134"><span class="linenos">134</span></a><span class="sd">        :raises ValueError: If iteme is a str and is not in proper phone number format.</span>
+</span><span id="Accounts-135"><a href="#Accounts-135"><span class="linenos">135</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-136"><a href="#Accounts-136"><span class="linenos">136</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-137"><a href="#Accounts-137"><span class="linenos">137</span></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+</span><span id="Accounts-138"><a href="#Accounts-138"><span class="linenos">138</span></a>            <span class="k">return</span> <span class="n">ACCOUNTS</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>  <span class="c1"># Raises IndexError if index out of range.</span>
+</span><span id="Accounts-139"><a href="#Accounts-139"><span class="linenos">139</span></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts-140"><a href="#Accounts-140"><span class="linenos">140</span></a>            <span class="n">account</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_by_number</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>  <span class="c1"># Raises ValueError if the number is not in proper format.</span>
+</span><span id="Accounts-141"><a href="#Accounts-141"><span class="linenos">141</span></a>            <span class="k">if</span> <span class="n">account</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts-142"><a href="#Accounts-142"><span class="linenos">142</span></a>                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="s2">&quot;Key &#39;</span><span class="si">%s</span><span class="s2">&#39; not found.&quot;</span> <span class="o">%</span> <span class="n">item</span><span class="p">)</span>
+</span><span id="Accounts-143"><a href="#Accounts-143"><span class="linenos">143</span></a>            <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts-144"><a href="#Accounts-144"><span class="linenos">144</span></a>        <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;item&#39;</span><span class="p">,</span> <span class="s1">&#39;int | str&#39;</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+</span><span id="Accounts-145"><a href="#Accounts-145"><span class="linenos">145</span></a>
+</span><span id="Accounts-146"><a href="#Accounts-146"><span class="linenos">146</span></a>    <span class="c1">##############################</span>
+</span><span id="Accounts-147"><a href="#Accounts-147"><span class="linenos">147</span></a>    <span class="c1"># Getters:</span>
+</span><span id="Accounts-148"><a href="#Accounts-148"><span class="linenos">148</span></a>    <span class="c1">##############################</span>
+</span><span id="Accounts-149"><a href="#Accounts-149"><span class="linenos">149</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts-150"><a href="#Accounts-150"><span class="linenos">150</span></a>    <span class="k">def</span> <span class="nf">get_registered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-151"><a href="#Accounts-151"><span class="linenos">151</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-152"><a href="#Accounts-152"><span class="linenos">152</span></a><span class="sd">        Get accounts that are both known and registered.</span>
+</span><span id="Accounts-153"><a href="#Accounts-153"><span class="linenos">153</span></a><span class="sd">        :return: list[Account]: The registerd accounts, or an empty list if none found.</span>
+</span><span id="Accounts-154"><a href="#Accounts-154"><span class="linenos">154</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-155"><a href="#Accounts-155"><span class="linenos">155</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-156"><a href="#Accounts-156"><span class="linenos">156</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">]</span>
+</span><span id="Accounts-157"><a href="#Accounts-157"><span class="linenos">157</span></a>
+</span><span id="Accounts-158"><a href="#Accounts-158"><span class="linenos">158</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts-159"><a href="#Accounts-159"><span class="linenos">159</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-160"><a href="#Accounts-160"><span class="linenos">160</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-161"><a href="#Accounts-161"><span class="linenos">161</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
+</span><span id="Accounts-162"><a href="#Accounts-162"><span class="linenos">162</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
+</span><span id="Accounts-163"><a href="#Accounts-163"><span class="linenos">163</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-164"><a href="#Accounts-164"><span class="linenos">164</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-165"><a href="#Accounts-165"><span class="linenos">165</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
+</span><span id="Accounts-166"><a href="#Accounts-166"><span class="linenos">166</span></a>
+</span><span id="Accounts-167"><a href="#Accounts-167"><span class="linenos">167</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts-168"><a href="#Accounts-168"><span class="linenos">168</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-169"><a href="#Accounts-169"><span class="linenos">169</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-170"><a href="#Accounts-170"><span class="linenos">170</span></a><span class="sd">        Get an account by phone number.</span>
+</span><span id="Accounts-171"><a href="#Accounts-171"><span class="linenos">171</span></a><span class="sd">        :param number: str: The phone number in format +nnnnnnnnn...</span>
+</span><span id="Accounts-172"><a href="#Accounts-172"><span class="linenos">172</span></a><span class="sd">        :returns: Optional[Account]: The account found or None if not found.</span>
+</span><span id="Accounts-173"><a href="#Accounts-173"><span class="linenos">173</span></a><span class="sd">        :raises: TypeError: If number is not a string.</span>
+</span><span id="Accounts-174"><a href="#Accounts-174"><span class="linenos">174</span></a><span class="sd">        :raises: ValueError: If number not in proper format.</span>
+</span><span id="Accounts-175"><a href="#Accounts-175"><span class="linenos">175</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-176"><a href="#Accounts-176"><span class="linenos">176</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-177"><a href="#Accounts-177"><span class="linenos">177</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts-178"><a href="#Accounts-178"><span class="linenos">178</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts-179"><a href="#Accounts-179"><span class="linenos">179</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+</span><span id="Accounts-180"><a href="#Accounts-180"><span class="linenos">180</span></a>        <span class="c1"># Value check:</span>
+</span><span id="Accounts-181"><a href="#Accounts-181"><span class="linenos">181</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+</span><span id="Accounts-182"><a href="#Accounts-182"><span class="linenos">182</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts-183"><a href="#Accounts-183"><span class="linenos">183</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
+</span><span id="Accounts-184"><a href="#Accounts-184"><span class="linenos">184</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts-185"><a href="#Accounts-185"><span class="linenos">185</span></a>       <span class="c1"># Search for account:</span>
+</span><span id="Accounts-186"><a href="#Accounts-186"><span class="linenos">186</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts-187"><a href="#Accounts-187"><span class="linenos">187</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+</span><span id="Accounts-188"><a href="#Accounts-188"><span class="linenos">188</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts-189"><a href="#Accounts-189"><span class="linenos">189</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="Accounts-190"><a href="#Accounts-190"><span class="linenos">190</span></a>
+</span><span id="Accounts-191"><a href="#Accounts-191"><span class="linenos">191</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts-192"><a href="#Accounts-192"><span class="linenos">192</span></a>    <span class="k">def</span> <span class="nf">get_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-193"><a href="#Accounts-193"><span class="linenos">193</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-194"><a href="#Accounts-194"><span class="linenos">194</span></a><span class="sd">        Get an account by UUID.</span>
+</span><span id="Accounts-195"><a href="#Accounts-195"><span class="linenos">195</span></a><span class="sd">        :param uuid: str: the UUID to search for.</span>
+</span><span id="Accounts-196"><a href="#Accounts-196"><span class="linenos">196</span></a><span class="sd">        :return: Optional[Account]</span>
+</span><span id="Accounts-197"><a href="#Accounts-197"><span class="linenos">197</span></a><span class="sd">        :raises TypeError: if the uuid is not a string.</span>
+</span><span id="Accounts-198"><a href="#Accounts-198"><span class="linenos">198</span></a><span class="sd">        :raises ValueError: if the uuid is not in the correct format.</span>
+</span><span id="Accounts-199"><a href="#Accounts-199"><span class="linenos">199</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-200"><a href="#Accounts-200"><span class="linenos">200</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-201"><a href="#Accounts-201"><span class="linenos">201</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts-202"><a href="#Accounts-202"><span class="linenos">202</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts-203"><a href="#Accounts-203"><span class="linenos">203</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">uuid</span><span class="p">)</span>
+</span><span id="Accounts-204"><a href="#Accounts-204"><span class="linenos">204</span></a>        <span class="c1"># Value check:</span>
+</span><span id="Accounts-205"><a href="#Accounts-205"><span class="linenos">205</span></a>        <span class="n">uuid_match</span> <span class="o">=</span> <span class="n">uuid_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="Accounts-206"><a href="#Accounts-206"><span class="linenos">206</span></a>        <span class="k">if</span> <span class="n">uuid_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts-207"><a href="#Accounts-207"><span class="linenos">207</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;UUID must be in format: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">UUID_FORMAT_STR</span>
+</span><span id="Accounts-208"><a href="#Accounts-208"><span class="linenos">208</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts-209"><a href="#Accounts-209"><span class="linenos">209</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="Accounts-210"><a href="#Accounts-210"><span class="linenos">210</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts-211"><a href="#Accounts-211"><span class="linenos">211</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span>
+</span><span id="Accounts-212"><a href="#Accounts-212"><span class="linenos">212</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts-213"><a href="#Accounts-213"><span class="linenos">213</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="Accounts-214"><a href="#Accounts-214"><span class="linenos">214</span></a>
+</span><span id="Accounts-215"><a href="#Accounts-215"><span class="linenos">215</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts-216"><a href="#Accounts-216"><span class="linenos">216</span></a>    <span class="k">def</span> <span class="nf">get_by_username</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts-217"><a href="#Accounts-217"><span class="linenos">217</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts-218"><a href="#Accounts-218"><span class="linenos">218</span></a><span class="sd">        Get an account by username.</span>
+</span><span id="Accounts-219"><a href="#Accounts-219"><span class="linenos">219</span></a><span class="sd">        :param username: str: The username to search for.</span>
+</span><span id="Accounts-220"><a href="#Accounts-220"><span class="linenos">220</span></a><span class="sd">        :return: Optional[Account]: The Account object or None if not found.</span>
+</span><span id="Accounts-221"><a href="#Accounts-221"><span class="linenos">221</span></a><span class="sd">        :raises TypeError: If username is not a string.</span>
+</span><span id="Accounts-222"><a href="#Accounts-222"><span class="linenos">222</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts-223"><a href="#Accounts-223"><span class="linenos">223</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts-224"><a href="#Accounts-224"><span class="linenos">224</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts-225"><a href="#Accounts-225"><span class="linenos">225</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts-226"><a href="#Accounts-226"><span class="linenos">226</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+</span><span id="Accounts-227"><a href="#Accounts-227"><span class="linenos">227</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="Accounts-228"><a href="#Accounts-228"><span class="linenos">228</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts-229"><a href="#Accounts-229"><span class="linenos">229</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">username</span><span class="p">:</span>
+</span><span id="Accounts-230"><a href="#Accounts-230"><span class="linenos">230</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts-231"><a href="#Accounts-231"><span class="linenos">231</span></a>        <span class="k">return</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -507,6 +628,40 @@
     
 
                             </div>
+                            <div id="Accounts.get_registered" class="classattr">
+                                        <input id="Accounts.get_registered-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator">@staticmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">get_registered</span><span class="signature pdoc-code condensed">(<span class="return-annotation">) -> <span class="nb">list</span><span class="p">[</span><span class="n"><a href="signalAccount.html#Account">SignalCliApi.signalAccount.Account</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="Accounts.get_registered-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Accounts.get_registered"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_registered-149"><a href="#Accounts.get_registered-149"><span class="linenos">149</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts.get_registered-150"><a href="#Accounts.get_registered-150"><span class="linenos">150</span></a>    <span class="k">def</span> <span class="nf">get_registered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts.get_registered-151"><a href="#Accounts.get_registered-151"><span class="linenos">151</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts.get_registered-152"><a href="#Accounts.get_registered-152"><span class="linenos">152</span></a><span class="sd">        Get accounts that are both known and registered.</span>
+</span><span id="Accounts.get_registered-153"><a href="#Accounts.get_registered-153"><span class="linenos">153</span></a><span class="sd">        :return: list[Account]: The registerd accounts, or an empty list if none found.</span>
+</span><span id="Accounts.get_registered-154"><a href="#Accounts.get_registered-154"><span class="linenos">154</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts.get_registered-155"><a href="#Accounts.get_registered-155"><span class="linenos">155</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts.get_registered-156"><a href="#Accounts.get_registered-156"><span class="linenos">156</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">]</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Get accounts that are both known and registered.</p>
+
+<h6 id="returns">Returns</h6>
+
+<blockquote>
+  <p>list[Account]: The registerd accounts, or an empty list if none found.</p>
+</blockquote>
+</div>
+
+
+                            </div>
                             <div id="Accounts.get_unregistered" class="classattr">
                                         <input id="Accounts.get_unregistered-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
@@ -519,14 +674,14 @@
 
     </div>
     <a class="headerlink" href="#Accounts.get_unregistered"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_unregistered-146"><a href="#Accounts.get_unregistered-146"><span class="linenos">146</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="Accounts.get_unregistered-147"><a href="#Accounts.get_unregistered-147"><span class="linenos">147</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="Accounts.get_unregistered-148"><a href="#Accounts.get_unregistered-148"><span class="linenos">148</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts.get_unregistered-149"><a href="#Accounts.get_unregistered-149"><span class="linenos">149</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
-</span><span id="Accounts.get_unregistered-150"><a href="#Accounts.get_unregistered-150"><span class="linenos">150</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
-</span><span id="Accounts.get_unregistered-151"><a href="#Accounts.get_unregistered-151"><span class="linenos">151</span></a><span class="sd">        &quot;&quot;&quot;</span>
-</span><span id="Accounts.get_unregistered-152"><a href="#Accounts.get_unregistered-152"><span class="linenos">152</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts.get_unregistered-153"><a href="#Accounts.get_unregistered-153"><span class="linenos">153</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_unregistered-158"><a href="#Accounts.get_unregistered-158"><span class="linenos">158</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts.get_unregistered-159"><a href="#Accounts.get_unregistered-159"><span class="linenos">159</span></a>    <span class="k">def</span> <span class="nf">get_unregistered</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts.get_unregistered-160"><a href="#Accounts.get_unregistered-160"><span class="linenos">160</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts.get_unregistered-161"><a href="#Accounts.get_unregistered-161"><span class="linenos">161</span></a><span class="sd">        Get accounts that are unregistered, but known.</span>
+</span><span id="Accounts.get_unregistered-162"><a href="#Accounts.get_unregistered-162"><span class="linenos">162</span></a><span class="sd">        :returns: list[Account]: The unregistered accounts, or an empty list if none found.</span>
+</span><span id="Accounts.get_unregistered-163"><a href="#Accounts.get_unregistered-163"><span class="linenos">163</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts.get_unregistered-164"><a href="#Accounts.get_unregistered-164"><span class="linenos">164</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts.get_unregistered-165"><a href="#Accounts.get_unregistered-165"><span class="linenos">165</span></a>        <span class="k">return</span> <span class="p">[</span><span class="n">acct</span> <span class="k">for</span> <span class="n">acct</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span> <span class="k">if</span> <span class="n">acct</span><span class="o">.</span><span class="n">registered</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">]</span>
 </span></pre></div>
 
 
@@ -548,27 +703,29 @@
 
     </div>
     <a class="headerlink" href="#Accounts.get_by_number"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_by_number-155"><a href="#Accounts.get_by_number-155"><span class="linenos">155</span></a>    <span class="nd">@staticmethod</span>
-</span><span id="Accounts.get_by_number-156"><a href="#Accounts.get_by_number-156"><span class="linenos">156</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
-</span><span id="Accounts.get_by_number-157"><a href="#Accounts.get_by_number-157"><span class="linenos">157</span></a>        <span class="c1"># noinspection SpellCheckingInspection</span>
-</span><span id="Accounts.get_by_number-158"><a href="#Accounts.get_by_number-158"><span class="linenos">158</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-</span><span id="Accounts.get_by_number-159"><a href="#Accounts.get_by_number-159"><span class="linenos">159</span></a><span class="sd">                Get an account by phone number.</span>
-</span><span id="Accounts.get_by_number-160"><a href="#Accounts.get_by_number-160"><span class="linenos">160</span></a><span class="sd">                :param number: str: The phone number in format +nnnnnnnnn...</span>
-</span><span id="Accounts.get_by_number-161"><a href="#Accounts.get_by_number-161"><span class="linenos">161</span></a><span class="sd">                :returns: Optional[Account]: The account found or None if not found.</span>
-</span><span id="Accounts.get_by_number-162"><a href="#Accounts.get_by_number-162"><span class="linenos">162</span></a><span class="sd">                :raises: TypeError: If number not a string.</span>
-</span><span id="Accounts.get_by_number-163"><a href="#Accounts.get_by_number-163"><span class="linenos">163</span></a><span class="sd">                :raises: ValueError: If number not in proper format.</span>
-</span><span id="Accounts.get_by_number-164"><a href="#Accounts.get_by_number-164"><span class="linenos">164</span></a><span class="sd">                &quot;&quot;&quot;</span>
-</span><span id="Accounts.get_by_number-165"><a href="#Accounts.get_by_number-165"><span class="linenos">165</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
-</span><span id="Accounts.get_by_number-166"><a href="#Accounts.get_by_number-166"><span class="linenos">166</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="Accounts.get_by_number-167"><a href="#Accounts.get_by_number-167"><span class="linenos">167</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
-</span><span id="Accounts.get_by_number-168"><a href="#Accounts.get_by_number-168"><span class="linenos">168</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
-</span><span id="Accounts.get_by_number-169"><a href="#Accounts.get_by_number-169"><span class="linenos">169</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="Accounts.get_by_number-170"><a href="#Accounts.get_by_number-170"><span class="linenos">170</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
-</span><span id="Accounts.get_by_number-171"><a href="#Accounts.get_by_number-171"><span class="linenos">171</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
-</span><span id="Accounts.get_by_number-172"><a href="#Accounts.get_by_number-172"><span class="linenos">172</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
-</span><span id="Accounts.get_by_number-173"><a href="#Accounts.get_by_number-173"><span class="linenos">173</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
-</span><span id="Accounts.get_by_number-174"><a href="#Accounts.get_by_number-174"><span class="linenos">174</span></a>                <span class="k">return</span> <span class="n">account</span>
-</span><span id="Accounts.get_by_number-175"><a href="#Accounts.get_by_number-175"><span class="linenos">175</span></a>        <span class="k">return</span> <span class="kc">None</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_by_number-167"><a href="#Accounts.get_by_number-167"><span class="linenos">167</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts.get_by_number-168"><a href="#Accounts.get_by_number-168"><span class="linenos">168</span></a>    <span class="k">def</span> <span class="nf">get_by_number</span><span class="p">(</span><span class="n">number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts.get_by_number-169"><a href="#Accounts.get_by_number-169"><span class="linenos">169</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_number-170"><a href="#Accounts.get_by_number-170"><span class="linenos">170</span></a><span class="sd">        Get an account by phone number.</span>
+</span><span id="Accounts.get_by_number-171"><a href="#Accounts.get_by_number-171"><span class="linenos">171</span></a><span class="sd">        :param number: str: The phone number in format +nnnnnnnnn...</span>
+</span><span id="Accounts.get_by_number-172"><a href="#Accounts.get_by_number-172"><span class="linenos">172</span></a><span class="sd">        :returns: Optional[Account]: The account found or None if not found.</span>
+</span><span id="Accounts.get_by_number-173"><a href="#Accounts.get_by_number-173"><span class="linenos">173</span></a><span class="sd">        :raises: TypeError: If number is not a string.</span>
+</span><span id="Accounts.get_by_number-174"><a href="#Accounts.get_by_number-174"><span class="linenos">174</span></a><span class="sd">        :raises: ValueError: If number not in proper format.</span>
+</span><span id="Accounts.get_by_number-175"><a href="#Accounts.get_by_number-175"><span class="linenos">175</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_number-176"><a href="#Accounts.get_by_number-176"><span class="linenos">176</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts.get_by_number-177"><a href="#Accounts.get_by_number-177"><span class="linenos">177</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts.get_by_number-178"><a href="#Accounts.get_by_number-178"><span class="linenos">178</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">number</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts.get_by_number-179"><a href="#Accounts.get_by_number-179"><span class="linenos">179</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s2">&quot;number&quot;</span><span class="p">,</span> <span class="s2">&quot;str&quot;</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+</span><span id="Accounts.get_by_number-180"><a href="#Accounts.get_by_number-180"><span class="linenos">180</span></a>        <span class="c1"># Value check:</span>
+</span><span id="Accounts.get_by_number-181"><a href="#Accounts.get_by_number-181"><span class="linenos">181</span></a>        <span class="n">number_match</span> <span class="o">=</span> <span class="n">phone_number_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+</span><span id="Accounts.get_by_number-182"><a href="#Accounts.get_by_number-182"><span class="linenos">182</span></a>        <span class="k">if</span> <span class="n">number_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts.get_by_number-183"><a href="#Accounts.get_by_number-183"><span class="linenos">183</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;number must be in format: +nnnnnnnn...&quot;</span>
+</span><span id="Accounts.get_by_number-184"><a href="#Accounts.get_by_number-184"><span class="linenos">184</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts.get_by_number-185"><a href="#Accounts.get_by_number-185"><span class="linenos">185</span></a>       <span class="c1"># Search for account:</span>
+</span><span id="Accounts.get_by_number-186"><a href="#Accounts.get_by_number-186"><span class="linenos">186</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts.get_by_number-187"><a href="#Accounts.get_by_number-187"><span class="linenos">187</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="n">number</span><span class="p">:</span>
+</span><span id="Accounts.get_by_number-188"><a href="#Accounts.get_by_number-188"><span class="linenos">188</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts.get_by_number-189"><a href="#Accounts.get_by_number-189"><span class="linenos">189</span></a>        <span class="k">return</span> <span class="kc">None</span>
 </span></pre></div>
 
 
@@ -584,8 +741,125 @@
 <h6 id="raises">Raises</h6>
 
 <ul>
-<li>TypeError: If number not a string.</li>
+<li>TypeError: If number is not a string.</li>
 <li>ValueError: If number not in proper format.</li>
+</ul>
+</div>
+
+
+                            </div>
+                            <div id="Accounts.get_by_uuid" class="classattr">
+                                        <input id="Accounts.get_by_uuid-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator">@staticmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">get_by_uuid</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="signalAccount.html#Account">SignalCliApi.signalAccount.Account</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="Accounts.get_by_uuid-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Accounts.get_by_uuid"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_by_uuid-191"><a href="#Accounts.get_by_uuid-191"><span class="linenos">191</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts.get_by_uuid-192"><a href="#Accounts.get_by_uuid-192"><span class="linenos">192</span></a>    <span class="k">def</span> <span class="nf">get_by_uuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts.get_by_uuid-193"><a href="#Accounts.get_by_uuid-193"><span class="linenos">193</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_uuid-194"><a href="#Accounts.get_by_uuid-194"><span class="linenos">194</span></a><span class="sd">        Get an account by UUID.</span>
+</span><span id="Accounts.get_by_uuid-195"><a href="#Accounts.get_by_uuid-195"><span class="linenos">195</span></a><span class="sd">        :param uuid: str: the UUID to search for.</span>
+</span><span id="Accounts.get_by_uuid-196"><a href="#Accounts.get_by_uuid-196"><span class="linenos">196</span></a><span class="sd">        :return: Optional[Account]</span>
+</span><span id="Accounts.get_by_uuid-197"><a href="#Accounts.get_by_uuid-197"><span class="linenos">197</span></a><span class="sd">        :raises TypeError: if the uuid is not a string.</span>
+</span><span id="Accounts.get_by_uuid-198"><a href="#Accounts.get_by_uuid-198"><span class="linenos">198</span></a><span class="sd">        :raises ValueError: if the uuid is not in the correct format.</span>
+</span><span id="Accounts.get_by_uuid-199"><a href="#Accounts.get_by_uuid-199"><span class="linenos">199</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_uuid-200"><a href="#Accounts.get_by_uuid-200"><span class="linenos">200</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts.get_by_uuid-201"><a href="#Accounts.get_by_uuid-201"><span class="linenos">201</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts.get_by_uuid-202"><a href="#Accounts.get_by_uuid-202"><span class="linenos">202</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">uuid</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts.get_by_uuid-203"><a href="#Accounts.get_by_uuid-203"><span class="linenos">203</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">uuid</span><span class="p">)</span>
+</span><span id="Accounts.get_by_uuid-204"><a href="#Accounts.get_by_uuid-204"><span class="linenos">204</span></a>        <span class="c1"># Value check:</span>
+</span><span id="Accounts.get_by_uuid-205"><a href="#Accounts.get_by_uuid-205"><span class="linenos">205</span></a>        <span class="n">uuid_match</span> <span class="o">=</span> <span class="n">uuid_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">uuid</span><span class="p">)</span>
+</span><span id="Accounts.get_by_uuid-206"><a href="#Accounts.get_by_uuid-206"><span class="linenos">206</span></a>        <span class="k">if</span> <span class="n">uuid_match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="Accounts.get_by_uuid-207"><a href="#Accounts.get_by_uuid-207"><span class="linenos">207</span></a>            <span class="n">error_message</span> <span class="o">=</span> <span class="s2">&quot;UUID must be in format: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">UUID_FORMAT_STR</span>
+</span><span id="Accounts.get_by_uuid-208"><a href="#Accounts.get_by_uuid-208"><span class="linenos">208</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_message</span><span class="p">)</span>
+</span><span id="Accounts.get_by_uuid-209"><a href="#Accounts.get_by_uuid-209"><span class="linenos">209</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="Accounts.get_by_uuid-210"><a href="#Accounts.get_by_uuid-210"><span class="linenos">210</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts.get_by_uuid-211"><a href="#Accounts.get_by_uuid-211"><span class="linenos">211</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">uuid</span> <span class="o">==</span> <span class="n">uuid</span><span class="p">:</span>
+</span><span id="Accounts.get_by_uuid-212"><a href="#Accounts.get_by_uuid-212"><span class="linenos">212</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts.get_by_uuid-213"><a href="#Accounts.get_by_uuid-213"><span class="linenos">213</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Get an account by UUID.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>uuid: str</strong>:  the UUID to search for.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<blockquote>
+  <p>Optional[Account]</p>
+</blockquote>
+
+<h6 id="raises">Raises</h6>
+
+<ul>
+<li><strong>TypeError</strong>:  if the uuid is not a string.</li>
+<li><strong>ValueError</strong>:  if the uuid is not in the correct format.</li>
+</ul>
+</div>
+
+
+                            </div>
+                            <div id="Accounts.get_by_username" class="classattr">
+                                        <input id="Accounts.get_by_username-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+                    <div class="decorator">@staticmethod</div>
+
+        <span class="def">def</span>
+        <span class="name">get_by_username</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">username</span><span class="p">:</span> <span class="nb">str</span></span><span class="return-annotation">) -> <span class="n">Optional</span><span class="p">[</span><span class="n"><a href="signalAccount.html#Account">SignalCliApi.signalAccount.Account</a></span><span class="p">]</span>:</span></span>
+
+                <label class="view-source-button" for="Accounts.get_by_username-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#Accounts.get_by_username"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Accounts.get_by_username-215"><a href="#Accounts.get_by_username-215"><span class="linenos">215</span></a>    <span class="nd">@staticmethod</span>
+</span><span id="Accounts.get_by_username-216"><a href="#Accounts.get_by_username-216"><span class="linenos">216</span></a>    <span class="k">def</span> <span class="nf">get_by_username</span><span class="p">(</span><span class="n">username</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Account</span><span class="p">]:</span>
+</span><span id="Accounts.get_by_username-217"><a href="#Accounts.get_by_username-217"><span class="linenos">217</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_username-218"><a href="#Accounts.get_by_username-218"><span class="linenos">218</span></a><span class="sd">        Get an account by username.</span>
+</span><span id="Accounts.get_by_username-219"><a href="#Accounts.get_by_username-219"><span class="linenos">219</span></a><span class="sd">        :param username: str: The username to search for.</span>
+</span><span id="Accounts.get_by_username-220"><a href="#Accounts.get_by_username-220"><span class="linenos">220</span></a><span class="sd">        :return: Optional[Account]: The Account object or None if not found.</span>
+</span><span id="Accounts.get_by_username-221"><a href="#Accounts.get_by_username-221"><span class="linenos">221</span></a><span class="sd">        :raises TypeError: If username is not a string.</span>
+</span><span id="Accounts.get_by_username-222"><a href="#Accounts.get_by_username-222"><span class="linenos">222</span></a><span class="sd">        &quot;&quot;&quot;</span>
+</span><span id="Accounts.get_by_username-223"><a href="#Accounts.get_by_username-223"><span class="linenos">223</span></a>        <span class="k">global</span> <span class="n">ACCOUNTS</span>
+</span><span id="Accounts.get_by_username-224"><a href="#Accounts.get_by_username-224"><span class="linenos">224</span></a>        <span class="c1"># Type check:</span>
+</span><span id="Accounts.get_by_username-225"><a href="#Accounts.get_by_username-225"><span class="linenos">225</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">username</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="Accounts.get_by_username-226"><a href="#Accounts.get_by_username-226"><span class="linenos">226</span></a>            <span class="n">__type_error__</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">,</span> <span class="s1">&#39;str&#39;</span><span class="p">,</span> <span class="n">username</span><span class="p">)</span>
+</span><span id="Accounts.get_by_username-227"><a href="#Accounts.get_by_username-227"><span class="linenos">227</span></a>        <span class="c1"># Search for the account:</span>
+</span><span id="Accounts.get_by_username-228"><a href="#Accounts.get_by_username-228"><span class="linenos">228</span></a>        <span class="k">for</span> <span class="n">account</span> <span class="ow">in</span> <span class="n">ACCOUNTS</span><span class="p">:</span>
+</span><span id="Accounts.get_by_username-229"><a href="#Accounts.get_by_username-229"><span class="linenos">229</span></a>            <span class="k">if</span> <span class="n">account</span><span class="o">.</span><span class="n">username</span> <span class="o">==</span> <span class="n">username</span><span class="p">:</span>
+</span><span id="Accounts.get_by_username-230"><a href="#Accounts.get_by_username-230"><span class="linenos">230</span></a>                <span class="k">return</span> <span class="n">account</span>
+</span><span id="Accounts.get_by_username-231"><a href="#Accounts.get_by_username-231"><span class="linenos">231</span></a>        <span class="k">return</span> <span class="kc">None</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>Get an account by username.</p>
+
+<h6 id="parameters">Parameters</h6>
+
+<ul>
+<li><strong>username: str</strong>:  The username to search for.</li>
+</ul>
+
+<h6 id="returns">Returns</h6>
+
+<blockquote>
+  <p>Optional[Account]: The Account object or None if not found.</p>
+</blockquote>
+
+<h6 id="raises">Raises</h6>
+
+<ul>
+<li><strong>TypeError</strong>:  If username is not a string.</li>
 </ul>
 </div>
 
