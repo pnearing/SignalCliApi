@@ -151,3 +151,29 @@ class UnsupportedVersion(Error):
         :return: tuple[*int]: The supported versions.
         """
         return self._supported_versions
+
+
+class LinkInProgress(Error):
+    """
+    Exception to throw when start_link is called twice in a row.
+    """
+    def __init__(self, *args: tuple) -> None:
+        """
+        Initialize LinkInProgress error.
+        :param args: tuple[*Any]: Any additional arguments to store in the Exception.
+        """
+        Error.__init__(self, "Link already in progress.", None, *args)
+        return
+
+
+class LinkNotStarted(Error):
+    """
+    Exception to throw when the link hasn't been started yet and finish_link is called.
+    """
+    def __init__(self, *args: tuple) -> None:
+        """
+        Initialize a LinkNotStarted error.
+        :param args: tuple[*Any]: Any additional arguments to store in the exception.
+        """
+        Error.__init__(self, "Link not started.", None, *args)
+        return
