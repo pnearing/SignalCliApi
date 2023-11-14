@@ -96,7 +96,7 @@ def find_signal() -> str | NoReturn:
     """
     logger_name = __name__ + '.' + find_signal.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
-    signal_path: Optional[str] = None
+    signal_path: str
     try:
         logger.debug("Searching for signal-cli...")
         signal_path = check_output(['which', 'signal-cli'], text=True)
@@ -124,8 +124,8 @@ def find_signal() -> str | NoReturn:
     except CalledProcessError:
         logger.debug("signal-cli-jre not found.")
     # Exit if we couldn't find signal
-    error_message = ("FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ].  "
-                     "Please ensure it's installed and in your $PATH environment variable.")
+    error_message: str = ("FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ].  "
+                          "Please ensure it's installed and in your $PATH environment variable.")
     logger.critical(error_message)
     raise FileNotFoundError(error_message)
 
