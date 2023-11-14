@@ -171,15 +171,26 @@ def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
     Create a socket.socket object based on the server address type.
     :param server_address: tuple[str, str] | str: The server address, either (HOSTNAME, PORT) or "PATH_TO_SOCKET".
     :return: socket.socket: The created socket.
+    :raises CommunicationsError: On failure to create socket.
     """
     logger_name: str = __name__ + '.' + __socket_create__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     if isinstance(server_address, tuple):
         logger.debug("Creating INET socket.")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        except socket.error as e:
+            error_message: str = "Failed to create INET socket: %s" % str(e.args)
+            logger.critical("Raising CommunicationsError(%s)." % error_message)
+            raise CommunicationsError(error_message, e)
     elif isinstance(server_address, str):
         logger.debug("Creating UNIX socket.")
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        try:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        except socket.error as e:
+            error_message: str = "Failed to create UNIX socket: %s" % str(e.args)
+            logger.critical("Raising CommunicationsError(%s)." % error_message)
+            raise CommunicationsError(error_message, e)
     else:
         logger.critical("TypeError:")
         logger.critical(__type_err_msg__('server_address', 'tuple[str, int] | str', server_address))
