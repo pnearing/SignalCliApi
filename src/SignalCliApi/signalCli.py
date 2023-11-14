@@ -16,8 +16,7 @@ from .signalCommon import __type_error__, find_signal, find_qrencode, parse_sign
     CallbackIdx
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
-
-DEBUG: bool = False
+from .signalExceptions import InvalidServerResponse, LinkNotStarted, LinkInProgress
 
 
 class SignalCli(object):
@@ -61,7 +60,7 @@ class SignalCli(object):
                 self.logger.critical(__type_err_msg__('signal_config_path', 'str', signal_config_path))
                 __type_error__("signal_config_path", "str", signal_config_path)
             elif not os.path.exists(signal_config_path) and not start_signal:
-                error_message = "FATAL: signal_config_path '%s' doesn't exist." % signal_config_path
+                error_message = "signal_config_path '%s' doesn't exist." % signal_config_path
                 self.logger.critical("FileNotFoundError: %s" % error_message)
                 raise FileNotFoundError(error_message)
 
@@ -73,7 +72,7 @@ class SignalCli(object):
                 self.logger.critical(__type_err_msg__('signal_exec_path', 'str', signal_config_path))
                 __type_error__("signal_exec_path", "str", signal_exec_path)
             elif not os.path.exists(signal_exec_path) and start_signal:
-                error_message = "FATAL: signal_exec_path '%s' does not exist." % signal_exec_path
+                error_message = "signal_exec_path '%s' does not exist." % signal_exec_path
                 self.logger.critical("FileNotFoundError: %s" % error_message)
                 raise FileNotFoundError(error_message)
 
@@ -147,13 +146,10 @@ class SignalCli(object):
             self.logger.critical(__type_err_msg__('debug', 'bool', debug))
             __type_error__('debug', 'bool', debug)
 
-        # Set DEBUG:
-        global DEBUG
-        DEBUG = debug
-
         # Set internal vars:
         # Set the config path:
-        self.configPath: str
+        self.config_path: str
+        """The full path to the signal config directory."""
         if signal_config_path is not None:
             self.config_path = signal_config_path
         else:
@@ -163,6 +159,7 @@ class SignalCli(object):
 
         # Set signal exec path:
         self._signalExecPath: Optional[str]
+        """The full path to the signal-cli executable."""
         if signal_exec_path is not None:
             self.logger.debug("Setting signal_exec_path to passed parameter.")
             self._signal_exec_path = signal_exec_path
@@ -175,7 +172,8 @@ class SignalCli(object):
         self.logger.debug('signal-cli exec path: %s' % self._signal_exec_path)
 
         # Set server address:
-        self._serverAddress: tuple[str, int] | str
+        self._server_address: tuple[str, int] | str
+        """"The server address of the signal-cli socket."""
         if server_address is not None:
             self.logger.debug("Setting server_address from parameter.")
             self._server_address = server_address
@@ -195,22 +193,29 @@ class SignalCli(object):
 
         # Store callback:
         self._callback: Optional[tuple[Callable, Optional[list[Any]]]] = callback
+        """The start up call back."""
         # set var to hold the main signal process
         self._signal_process: Optional[Popen] = None
+        """The main signal-cli process."""
         # Set sync socket:
         self._sync_socket: Optional[socket.socket] = None
+        """The socket to preform sync operations with."""
         # Set command socket:
         self._command_socket: Optional[socket.socket] = None
+        """The socket to preform command operations with."""
         # Set var to hold the link process:
         self._link_process: Optional[Popen] = None
+        """The signal-cli process running while linking a new account."""
         # Set qrencode exec path:
         self._qrencode_exec_path: Optional[str] = find_qrencode()
+        """The full path to the qrencode executable."""
         # Set external properties and objects:
         # Set accounts:
         self.accounts: Optional[Accounts] = None
+        """The Accounts object."""
         # Set sticker packs:
         self.sticker_packs: Optional[StickerPacks] = None
-
+        """The known StickerPacks object."""
         # Start signal-cli if requested:
         if start_signal:
             self.logger.info("Starting signal-cli.")
@@ -231,7 +236,7 @@ class SignalCli(object):
             # Run signal-cli in daemon mode:
             self._signal_process: Popen
             try:
-                if DEBUG:
+                if debug:
                     self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE)
                 else:
                     self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE, stderr=PIPE)
@@ -252,10 +257,9 @@ class SignalCli(object):
                 self.logger.debug("server_address is a socket, and we're starting signal, wait for socket to appear.")
                 while not os.path.exists(self._server_address):
                     self._run_callback('waiting for socket')
-                    if DEBUG:
-                        print("Waiting for socket to appear at: %s" % self._server_address)
-                        sleep(0.5)
-                sleep(1)
+                    self.logger.debug("Waiting for socket...")
+                    sleep(0.5)
+                sleep(1)  # Give it a second to stabilize
                 self.logger.debug("socket found.")
                 self._run_callback('socket found')
             else:
@@ -269,21 +273,24 @@ class SignalCli(object):
         # Create sockets and connect to them:
         self.logger.info("Connecting to sockets.")
         self._run_callback('connecting to sockets')
-        self._sync_socket = __socket_create__(self._server_address)
-        __socket_connect__(self._sync_socket, self._server_address)
-        self._command_socket = __socket_create__(self._server_address)
-        __socket_connect__(self._command_socket, self._server_address)
+        self._sync_socket = __socket_create__(self._server_address)  # Raises CommunicationsError
+        __socket_connect__(self._sync_socket, self._server_address)  # Raises CommunicationsError
+        self._command_socket = __socket_create__(self._server_address)  # Raises CommunicationsError
+        __socket_connect__(self._command_socket, self._server_address)  # Raises CommunicationsError
         self.logger.info("Connected to socket.")
         self._run_callback('connected to sockets')
         # Load stickers:
         self.logger.info("Loading sticker packs.")
         self.sticker_packs = StickerPacks(config_path=self.config_path)
+        """Known StickerPacks object."""
         # Load accounts:
         self.logger.info("Loading accounts.")
         self.accounts = Accounts(sync_socket=self._sync_socket, command_socket=self._command_socket,
                                  config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)
+        """The Accounts object."""
         # Create dict to hold processes:
         self._receive_threads: dict[str, Optional[ReceiveThread]] = {}
+        """The dict to store the receive threads."""
         self.logger.info("Initialization complete.")
         return
 
@@ -291,19 +298,20 @@ class SignalCli(object):
     # Internal methods:
     #################################
     def _run_callback(self, status: str) -> None:
-        self.logger.debug("Running callback with status: '%s'." % status)
+        self.logger.debug("Running callback '%s' with status: '%s'."
+                          % (self._callback[CallbackIdx.CALLABLE].__name__, status))
         try:
-            if self._callback is not None and self._callback[CB_PARAMS] is not None:
-                self._callback[CB_CALLABLE](status, *self._callback[CB_PARAMS])
-            elif self._callback is not None and self._callback[CB_PARAMS] is None:
-                self._callback[CB_CALLABLE](status)
+            if self._callback is not None and self._callback[CallbackIdx.PARAMS] is not None:
+                self._callback[CallbackIdx.CALLABLE](status, *self._callback[CallbackIdx.PARAMS])
+            elif self._callback is not None and self._callback[CallbackIdx.PARAMS] is None:
+                self._callback[CallbackIdx.CALLABLE](status)
         except TypeError as e:
             self.logger.warning("TypeError while running callback: '%s': '%s'."
-                                % (self._callback[0].__name__, str(e.args)))
+                                % (self._callback[CallbackIdx.CALLABLE].__name__, str(e.args)))
             warn("Callback is not callable.", RuntimeWarning)
         except Exception as e:
             self.logger.warning("'%s' Exception while running callback: '%s': '%s'"
-                                % (str(type(e)), self._callback[1].__name__, str(e.args)))
+                                % (str(type(e)), self._callback[CallbackIdx.CALLABLE].__name__, str(e.args)))
             warn("Callback raised an exception: %s" % str(type(e)), RuntimeWarning)
         return
 
@@ -314,11 +322,11 @@ class SignalCli(object):
         try:
             if self._signal_process is not None:
                 if isinstance(self._server_address, str):
+                    self.logger.debug("Removing old socket: %s" % self._server_address)
                     os.remove(self._server_address)
-        except FileNotFoundError:
-            pass
-        except PermissionError:
-            pass
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            self.logger.warning("Failed to remove old socket: %s: %s(%s)."
+                                % (self._server_address, str(type(e)), str(e.args)))
         return
 
     #################################
@@ -328,23 +336,30 @@ class SignalCli(object):
         """
         Stop the signal-cli process.
         :returns: None
+        :raises CommunicationsError: On error closing a socket.
         """
         # Close the sockets:
         self.logger.info("Closing sockets.")
-        __socket_close__(self._sync_socket)
-        __socket_close__(self._command_socket)
+        __socket_close__(self._sync_socket)  # Raises CommunicationsError
+        __socket_close__(self._command_socket)  # Raises CommunicationsError
         self.logger.info("Sockets closed.")
         # Terminate processes:
         if self._signal_process is not None:
             self.logger.info("Stopping signal-cli.")
             self._signal_process.terminate()  # Kill the process (Sends SigTerm)
-            _, err = self._signal_process.communicate()  # Flush the pipes.
+            self.logger.debug("Flushing pipes.")
+            stdout, stderr = self._signal_process.communicate()  # Flush the pipes.
+            self.logger.debug("STDOUT: %s" % str(stdout))
+            self.logger.debug("STDERR: %s" % str(stderr))
             self._signal_process = None  # Clear the process.
             self.logger.info("signal-cli stopped.")
         if self._link_process is not None:
             self.logger.info("Stopping signal-cli link process.")
             self._link_process.terminate()
-            _, err = self._link_process.communicate()
+            self.logger.debug("Flushing pipes.")
+            stdout, stderr = self._link_process.communicate()
+            self.logger.debug("STDOUT: %s" % stdout)
+            self.logger.debug("STDERR: %s" % stderr)
             self._link_process = None
             self.logger.info("Link process stopped.")
         # Remove socket file:
@@ -353,7 +368,7 @@ class SignalCli(object):
                 self.logger.info("Removing old socket file.")
                 if os.path.exists(self._server_address):
                     os.remove(self._server_address)
-        except Exception as e:
+        except (OSError, FileNotFoundError, PermissionError) as e:
             self.logger.warning("Failed to remove old socket file: '%s': '%s'" % (self._server_address, str(e.args)))
         return
 
@@ -426,13 +441,17 @@ class SignalCli(object):
         }
         json_command_str = json.dumps(register_account_command_obj) + '\n'
         # Communicate with signal:
-        self.logger.info("Sending registration request.")
+        self.logger.debug("Sending registration request: %s." % json_command_str.strip())
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
+        self.logger.debug("Received response: %s" % response_str)
         # Parse response:
-        response_obj: dict = json.loads(response_str)
-        self.logger.info("Received registration response.")
-        self.logger.debug("registration response_obj = '%s'" % str(response_obj))
+        try:
+            response_obj: dict = json.loads(response_str)
+        except json.JSONDecodeError as e:
+            error_message: str = "Failed to load JSON: %s" % e.msg
+            self.logger.critical("Raising InvalidServerResponse(%s)." % error_message)
+            raise InvalidServerResponse(error_message, e)
         # Check for error:
         if 'error' in response_obj.keys():
             error_message = "ERROR: signal error, code: %i, message: %s" % (
@@ -452,7 +471,7 @@ class SignalCli(object):
             }
             json_command_str = json.dumps(delete_local_data_command_obj) + '\n'
             # Communicate with signal:
-            self.logger.debug("Sending delete command.")
+            self.logger.debug("Sending delete command: %s" % json_command_str.strip())
             __socket_send__(self._sync_socket, json_command_str)
             response_str = __socket_receive__(self._sync_socket)  # output unused, we don't care if it failed.
             self.logger.debug("Delete request response: %s" % str(response_str))
@@ -462,41 +481,37 @@ class SignalCli(object):
         # No error found, get the new account:
         self.logger.info("Registration successful, getting new account..")
         new_accounts = self.accounts.__sync__()
-        if len(new_accounts) == 0:
-            new_account = None
-        else:
+        if len(new_accounts) != 0:
             new_account = new_accounts[0]
-        if new_account is None:
+        else:
             self.logger.debug("Accounts.__sync__() didn't return any accounts, looking up by number.")
             new_account = self.accounts.get_by_number(number)
-        self.logger.info("Returning True.")
+        self.logger.info("Account registered. Don't forget to verify.")
         return True, new_account
 
     def start_link_account(self, device_name: Optional[str] = None) -> tuple[str, str, str]:
         """
         Start the link process for linking an existing account.
         :param device_name: Optional[str]: The name for this device.
-        :returns: tuple[str, str, str]: The first element is the link url generated by signal, the second element is a
-                                            text QR code string, or an empty string if qrencode is not installed.  The
-                                            third element is a path to a generated png qrencode, or an empty string if
-                                            qrencode is not installed. qrencode can be installed on debian based
-                                            systems using sudo apt-get install qrencode.
+        :returns: tuple[str, str, str]: The first element is the link url generated by signal.
+            The second element is a text QR code string, or an empty string if qrencode is not installed.
+            The third element is a path to a generated png qrencode, or an empty string if qrencode is not installed.
         :raises: TypeError: If name is not a string or None.
-        :raises: RuntimeError: If a link is already in progress when start_link_account is called a second time and
-                                finish_link has not been called.
+        :raises: LinkInProgress: If a link is already in progress when start_link_account is called a second time and
+            finish_link has not been called.
+        :raises InvalidServerResponse: If the signal link doesn't seem valid.
         """
-        self.logger.info("Staring link account.")
+        self.logger.info("Staring link process...")
         # Type check name:
         self.logger.debug("Type checks.")
         if device_name is not None and not isinstance(device_name, str):
-            self.logger.critical("TypeError: device_name is type '%s', expected 'str'."
-                                 % str(type(device_name)))
-            __type_error__("name", "Optional[str]", device_name)
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('device_name', 'Optional[str]', device_name))
+            __type_error__("device_name", "Optional[str]", device_name)
         # Check for a running process:
         if self._link_process is not None:
-            error_message: str = "link already in progress."
-            self.logger.critical("RuntimeError: %s" % error_message)
-            raise RuntimeError(error_message)
+            self.logger.critical("Raising LinkInProgressError().")
+            raise LinkInProgress()
         # create signal link command line:
         link_command_line = [self._signal_exec_path, '--config', self.config_path, 'link']
         if device_name is not None:
@@ -505,24 +520,38 @@ class SignalCli(object):
         try:
             self._link_process = Popen(link_command_line, text=True, stdout=PIPE, stderr=PIPE)
         except CalledProcessError as e:
-            parse_signal_return_code(e.returncode, link_command_line, e.output)
-            # :NO RETURN :
+            error_message: str = "Link process failed with non-zero exit code: %i, CommandLine: %s Output: %s" \
+                                 % (e.returncode, str(link_command_line), e.output)
+            self.logger.critical(error_message)
+            parse_signal_return_code(e.returncode, link_command_line, e.output)  # NoReturn
+
         # Gather the link from stdout
-        signal_link = self._link_process.stdout.readline()
-        signal_link = signal_link.rstrip()
+        signal_link = self._link_process.stdout.readline().rstrip()
+        if not signal_link.startswith('sgnl://linkdevice?'):
+            error_message: str = "Link to encode '%s' seems invalid, doesn't start with: 'sgnl://linkdevice?'" \
+                                 % signal_link
+            self.logger.critical("Raising InvalidServerResponse(%s)." % error_message)
+            raise InvalidServerResponse(error_message, None)
         # Generate text qrcode:
         try:
+            self.logger.debug("Attempting to generate UTF8 QR-Code...")
             text_qr_code = check_output([self._qrencode_exec_path, '-o', '-', '--type=UTF8', signal_link])
             text_qr_code = text_qr_code.decode('UTF8')
+            self.logger.debug("UTF8 QR-Code successfully created.")
         except CalledProcessError:
+            self.logger.warning("Failed to generate UTF8 QR-Code.")
             text_qr_code = ''
         # Generate png qrcode:
         png_qr_code_file_name = "link-%s-qrcode.png" % str(device_name)
         png_qr_code_path: str = os.path.join(self.config_path, png_qr_code_file_name)
         try:
+            self.logger.debug("Attempting to generate png QR-Code...")
             check_call([self._qrencode_exec_path, '-o', png_qr_code_path, signal_link])
+            self.logger.debug("png QR-Code successfully generated.")
         except CalledProcessError:
+            self.logger.warning("Failed to generate png QR-Code.")
             png_qr_code_path = ''
+        self.logger.info("Link process successfully started.")
         return signal_link, text_qr_code, png_qr_code_path
 
     def finish_link(self) -> tuple[bool, Account | str]:
@@ -531,49 +560,84 @@ class SignalCli(object):
         :returns: tuple[bool, Account | str]: The first element is a bool representing success or failure; The second
                                                 element on success will be the new Account object, or on failure will be
                                                 a string containing an error message.
-        :raises: RuntimeError: In the event that signal-cli success response changes.
+        :raises LinkNotStarted: If the link process hasn't been started yet.
+        :raises InvalidServerResponse: If the signal success code is not recognized.
         """
+        self.logger.info("Finish link process started.")
         # Check for a link process:
         if self._link_process is None:
-            error_message = "link not started"
-            return False, error_message
+            self.logger.debug("Raising LinkNotStarted().")
+            raise LinkNotStarted()
         # Wait for the process:
+        self.logger.debug("Waiting for link process to return.")
         return_code = self._link_process.wait()
+        self.logger.debug("signal-cli link process returned: %i" % return_code)
+
         # Parse return_code:
         if return_code == 0:
+            self.logger.debug("link process exit code reports success, syncing accounts with disk.")
             new_accounts = self.accounts.__sync__()
             if len(new_accounts) != 0:
+                self.logger.debug("Accounts.__sync__() returned a new account.")
+                self.logger.info("Link successful.")
                 new_account = new_accounts[0]
             else:
+                self.logger.debug("Accounts.__sync__() did not return a new account, falling back to regex.")
                 new_account = None
-            response_line = self._link_process.stdout.readline()
-            if DEBUG:
-                print(response_line)
+            # Fall back to regex matching output:
             if new_account is None:
+                self.logger.debug("Checking response for new account number...")
+                response_line = self._link_process.stdout.readline().rstrip()
+                self.logger.debug("Signal-cli response: %s" % response_line)
                 regex = r'^Associated with: (?P<number>.*)$'
                 match = re.match(regex, response_line)
                 if match is not None:
+                    self.logger.debug("Regex match made on response, getting account by number: %s" % match['number'])
                     new_account = self.accounts.get_by_number(match['number'])
+                    if new_account is None:
+                        self.logger.debug("Accounts.get_by_number() returned None during link process.")
+                        error_message: str = "Link successful, but unable to locate new account by number: %s." \
+                                             % match['number']
+                        self.logger.critical("Raising InvalidServerResponse(%s)" % error_message)
+                        raise InvalidServerResponse(error_message, None)
+                    self.logger.info("Link successful.")
                     return True, new_account
                 else:
                     # Shouldn't get here, return code is 0 (success).
-                    raise RuntimeError("success response from signal must have changed.")
+                    error_message: str = "Link successful, but unable to locate new account, backup regex failed. " \
+                                         "Perhaps signal changed their success message."
+                    self.logger.debug("Raising InvalidServerResponse(%s)." % error_message)
+                    raise InvalidServerResponse(error_message, None)
         elif return_code == 1:
-            response_string = self._link_process.stderr.read()
+            response_string = self._link_process.stderr.read().rstrip()
             regex = r'The user (?P<number>\+\d+) already exists'
             match = re.match(regex, response_string)
             if match is not None:
-                error_message = "Account '%s' already exists." % match["number"]
+                error_message = "account '%s' already exists" % match["number"]
                 return False, error_message
+            else:
+                warning_message: str = "Regex '%s' failed to match known error. response_string: '%s'" \
+                                       % (regex, response_string)
+                self.logger.warning(warning_message)
+                return False, response_string
         elif return_code == 3:
-            response_string = self._link_process.stderr.read()
+            response_string = self._link_process.stderr.read().rstrip()
             regex = r'Link request error: Connection closed!'
             match = re.match(regex, response_string)
             if match is not None:
-                error_message = "Link request timeout."
+                error_message = "link request timeout"
                 return False, error_message
-        response_string = self._link_process.stderr.read()
-        return False, response_string
+            else:
+                warning_message: str = "Regex '%s' failed to match known error. response_string: '%s'" \
+                                       % (regex, response_string)
+                self.logger.warning(warning_message)
+                return False, response_string
+        else:  # Unhandled status code:
+            response_string = self._link_process.stderr.read()
+            warning_message: str = "Unhandled link exit code: %i. response_string: '%s'" \
+                                   % (return_code, response_string)
+            self.logger.warning(warning_message)
+            return False, response_string
 
     def start_receive(self,
                       account: Account,
@@ -603,11 +667,56 @@ class SignalCli(object):
         :returns: None
         :raises: TypeError: If the account is not an Account object, or if a callback is defined, but not callable.
         """
+        self.logger.info("Start receive started.")
         # Argument checks NOTE: ReceiveThread type checks callbacks:
         if not isinstance(account, Account):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('account', 'Account', account))
             __type_error__("account", "Account", account)
+        if all_messages_callback is not None and not callable(all_messages_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('all_messages_callback', 'Optional[Callable]', all_messages_callback))
+            __type_error__('all_messages_callback', 'Optional[Callable', all_messages_callback)
+        if received_message_callback is not None and not callable(received_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('received_message_callback', 'Optional[Callable]',
+                                                  received_message_callback))
+            __type_error__('received_message_callback', 'Optional[Callable]', received_message_callback)
+        if receipt_message_callback is not None and not callable(receipt_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('receipt_message_callback', 'Optional[Callable',
+                                                  receipt_message_callback))
+            __type_error__('receipt_message_callback', 'Optional[Callable]', receipt_message_callback)
+        if sync_message_callback is not None and not callable(sync_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('sync_message_callback', 'Optional[Callable]', sync_message_callback))
+            __type_error__('sync_message_callback', 'Optional[Callable]', sync_message_callback)
+        if typing_message_callback is not None and not callable(typing_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('typing_message_callback', 'Optional[Callable]',
+                                                  typing_message_callback))
+            __type_error__('typing_message_callback', 'Optional[Callable]', typing_message_callback)
+        if story_message_callback is not None and not callable(story_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__("story_message_callback", "Optional[Callable]",
+                                                  story_message_callback))
+            __type_error__('story_message_callback', 'Optional[Callable]', story_message_callback)
+        if payment_message_callback is not None and not callable(payment_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('payment_message_callback', 'Optional[Callable]',
+                                                  payment_message_callback))
+            __type_error__('payment_message_callback', 'Optional[Callable]', payment_message_callback)
+        if reaction_message_callback is not None and not callable(reaction_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('reaction_message_callback', 'Optional[Callable]',
+                                                  reaction_message_callback))
+            __type_error__('reaction_message_callback', 'Optional[Callable]', reaction_message_callback)
+        if call_message_callback is not None and not callable(call_message_callback):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('call_message_callback', 'Optional[Callable]', call_message_callback))
+
         # Start receive:
-        thread_id = account.number
+        thread_id: str = account.number
         thread = ReceiveThread(server_address=self._server_address,
                                command_socket=self._command_socket,
                                config_path=self.config_path,
@@ -634,14 +743,22 @@ class SignalCli(object):
         :returns: bool: True reception successfully stopped, False reception wasn't started.
         :raises: TypeError: If the parameter account is not an Account object.
         """
+        self.logger.info("Stopping reception thread.")
         # Argument checks:
         if not isinstance(account, Account):
+            self.logger.critical("Raising TypeError:")
+            self.logger.critical(__type_err_msg__('account', "Account", account))
             __type_error__("account", "Account", account)
-        thread_id = account.number
+        thread_id: str = account.number
         try:
+            self.logger.debug("Fetching thread: '%s'." % thread_id)
             thread = self._receive_threads[thread_id]
         except KeyError:
+            self.logger.debug("Thread not started.")
             return False
-        self._receive_threads[thread_id] = None
+        self.logger.debug("Stopping thread...")
         thread.stop()
+        self.logger.debug("Thread stopped.")
+        self._receive_threads[thread_id] = None
+        self.logger.info("Reception stopped.")
         return True
