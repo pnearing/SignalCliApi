@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from typing import Optional, Iterator
+from typing import Optional, Iterator, TextIO
 import os
 import json
 import socket
@@ -44,20 +44,19 @@ class Accounts(object):
             self.__do_load__()
         return
 
-    def __load_accounts_file__(self) -> dict:
-        # Try to open the accounts file:
+    def __load_accounts_file__(self) -> dict[str, int | list[dict[str, str]]]:
+        # Load the accounts.json file:
         try:
-            file_handle = open(self._accounts_file_path, 'r')
-        except Exception as err:
-            error_message = "FATAL: Failed to open '%s' for reading: %s" % (self._accounts_file_path, str(err.args))
+            file_handle = open(self._accounts_file_path, 'r')  # Try to open the accounts file:
+            response_obj: dict[str, int | list[dict[str, str]]] = json.loads(file_handle.read())  # Try to load the json from the file:
+            file_handle.close()
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            error_message = "FATAL: Failed to open '%s' for reading: %s" % (self._accounts_file_path, str(e.args))
             raise RuntimeError(error_message)
-        # Try to load the json from the file:
-        try:
-            response_obj: dict = json.loads(file_handle.read())
-        except json.JSONDecodeError as err:
-            error_message = "FATAL: Failed to load json from file '%s': %s" % (self._accounts_file_path, err.msg)
+        except json.JSONDecodeError as e:
+            error_message = "FATAL: Failed to load json from file '%s': %s" % (self._accounts_file_path, e.msg)
             raise RuntimeError(error_message)
-        file_handle.close()
+
         # Version check accounts file:
         if response_obj['version'] != self.supported_accounts_version:
             error_message = "FATAL: Version %i is not supported. Currently only version %i is supported." % (
@@ -147,6 +146,15 @@ class Accounts(object):
     # Getters:
     ##############################
     @staticmethod
+    def get_registered() -> list[Account]:
+        """
+        Get accounts that are both known and registered.
+        :return: list[Account]: The registerd accounts, or an empty list if none found.
+        """
+        global ACCOUNTS
+        return [acct for acct in ACCOUNTS if acct.registered is True]
+
+    @staticmethod
     def get_unregistered() -> list[Account]:
         """
         Get accounts that are unregistered, but known.
@@ -165,12 +173,15 @@ class Accounts(object):
         :raises: ValueError: If number not in proper format.
         """
         global ACCOUNTS
+        # Type check:
         if not isinstance(number, str):
             __type_error__("number", "str", number)
+        # Value check:
         number_match = phone_number_regex.match(number)
         if number_match is None:
             error_message = "number must be in format: +nnnnnnnn..."
             raise ValueError(error_message)
+       # Search for account:
         for account in ACCOUNTS:
             if account.number == number:
                 return account
@@ -186,13 +197,34 @@ class Accounts(object):
         :raises ValueError: if the uuid is not in the correct format.
         """
         global ACCOUNTS
+        # Type check:
         if not isinstance(uuid, str):
             __type_error__('uuid', 'str', uuid)
+        # Value check:
         uuid_match = uuid_regex.match(uuid)
         if uuid_match is None:
             error_message = "UUID must be in format: %s" % UUID_FORMAT_STR
             raise ValueError(error_message)
+        # Search for account:
         for account in ACCOUNTS:
             if account.uuid == uuid:
+                return account
+        return None
+
+    @staticmethod
+    def get_by_username(username: str) -> Optional[Account]:
+        """
+        Get an account by username.
+        :param username: str: The username to search for.
+        :return: Optional[Account]: The Account object or None if not found.
+        :raises TypeError: If username is not a string.
+        """
+        global ACCOUNTS
+        # Type check:
+        if not isinstance(username, str):
+            __type_error__('username', 'str', username)
+        # Search for account:
+        for account in ACCOUNTS
+            if account.username == username:
                 return account
         return None
