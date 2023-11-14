@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
-
+"""
+File: signalCommon.py
+Common Constants, Vars, and helper functions.
+"""
 from subprocess import check_output, CalledProcessError
 from typing import Pattern, NoReturn, Optional, Any, Final
 import socket
 import select
 import re
+import logging
+from enum import IntEnum
 
-DEBUG: bool = False
 ###################
 # Version:
 ###################
@@ -25,23 +29,36 @@ uuid_regex: Final[Pattern] = re.compile(
 UUID_FORMAT_STR: Final[str] = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 
+
 ###########################
 # Index's:
 ###########################
-CB_CALLABLE: Final[int] = 0
-CB_PARAMS: Final[int] = 1
+class CallbackIdx(IntEnum):
+    """
+    Enum for callback index's.
+    """
+    CALLABLE = 0
+    PARAMS = 1
 
 
 ####################################
 # xdg-open helper:
 ####################################
 def find_xdgopen() -> Optional[str]:
-    """Use which to find xdg-open"""
+    """
+    Use which to find xdg-open
+    :return: Optional[str]: The path to xdg-open or None if not found.
+    """
+    logger_name: str = __name__ + '.' + find_xdgopen.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
+    logger.debug("Searching for xdg-open...")
     xdgopen_path: Optional[str]
     try:
         xdgopen_path = check_output(['which', 'xdg-open'], text=True)
         xdgopen_path = xdgopen_path.rstrip()
+        logger.debug("xdg-open found at '%s'." % xdgopen_path)
     except CalledProcessError:
+        logger.warning("xdg-open not found.")
         xdgopen_path = None
     return xdgopen_path
 
@@ -50,13 +67,21 @@ def find_xdgopen() -> Optional[str]:
 # qrencode helper:
 ####################################
 def find_qrencode() -> Optional[str]:
-    """Use which to fild qrencode."""
+    """
+    Use which to find qrencode.
+    :return: Optional[str]: The path to qrencode, or None if not found.
+    """
+    logger_name: str = __name__ + '.' + find_qrencode.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
+    logger.debug("Searching for qrencode...")
     qrencode_path: Optional[str]
     try:
         qrencode_path = check_output(['which', 'qrencode'], text=True)
         qrencode_path = qrencode_path.rstrip()
+        logger.debug("qrencode found at: %s" % qrencode_path)
     except CalledProcessError:
         qrencode_path = None
+        logger.warning("qrencode not found.")
     return qrencode_path
 
 
@@ -64,33 +89,44 @@ def find_qrencode() -> Optional[str]:
 # Signal cli helpers:
 ####################################
 def find_signal() -> str | NoReturn:
-    """Find signal-cli in it's many forms. Returns str, exception FileNotFound if signal not found."""
+    """
+    Find signal-cli in it's many forms.
+    :return: str | NoReturn: The path to [signal-cli | signal-cli-native | signal-cli-jre]
+    """
+    logger_name = __name__ + '.' + find_signal.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     signal_path: Optional[str] = None
     try:
+        logger.debug("Searching for signal-cli...")
         signal_path = check_output(['which', 'signal-cli'], text=True)
         signal_path = signal_path.strip()
+        logger.debug("signal-cli found at: %s" % signal_path)
+        return signal_path
     except CalledProcessError:
-        pass
+        logger.debug("signal-cli not found.")
     # Check for 'signal-cli-native':
-    if signal_path is None:
-        try:
-            signal_path = check_output(['which', 'signal-cli-native'], text=True)
-            signal_path = signal_path.strip()
-        except CalledProcessError:
-            pass
+    try:
+        logger.debug("Searching for signal-cli-native...")
+        signal_path = check_output(['which', 'signal-cli-native'], text=True)
+        signal_path = signal_path.strip()
+        logger.debug("signal-cli-native found at: %s" % signal_path)
+        return signal_path
+    except CalledProcessError:
+        logger.debug("signal-cli-native not found.")
     # Check for 'signal-cli-jre':
-    if signal_path is None:
-        try:
-            signal_path = check_output(['which', 'signal-cli-jre'], text=True)
-            signal_path = signal_path.strip()
-        except CalledProcessError:
-            pass
+    try:
+        logger.debug("Searching for signal-cli-jre...")
+        signal_path = check_output(['which', 'signal-cli-jre'], text=True)
+        signal_path = signal_path.strip()
+        logger.debug("signal-cli-jre found at: %s" % signal_path)
+        return signal_path
+    except CalledProcessError:
+        logger.debug("signal-cli-jre not found.")
     # Exit if we couldn't find signal
-    if signal_path is None:
-        error_message = "FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ]."
-        error_message += " Please ensure it's installed and in you $PATH environment variable."
-        raise FileNotFoundError(error_message)
-    return signal_path
+    error_message = ("FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ].  "
+                     "Please ensure it's installed and in your $PATH environment variable.")
+    logger.critical(error_message)
+    raise FileNotFoundError(error_message)
 
 
 def parse_signal_return_code(return_code: int, command_line: str | list[str], output: str) -> NoReturn:
@@ -100,23 +136,29 @@ def parse_signal_return_code(return_code: int, command_line: str | list[str], ou
     :param command_line: str | list[str]: The command line used to call signal.
     :param output: str: The output generated by signal.
     """
+    logger_name = __name__ + '.' + parse_signal_return_code.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
+    logger.error("signal-cli returned non-zero return code: %i" % return_code)
     if return_code == 1:
         error_message = "Exit code 1: Invalid command line: %s" % str(command_line)
+        logger.critical(error_message)
         raise RuntimeError(error_message)
     elif return_code == 2:
         error_message = "Exit Code 2: Unexpected error. %s" % output
+        logger.critical(error_message)
         raise RuntimeError(error_message)
     elif return_code == 3:
         error_message = "FATAL: Server / Network error. Try again later: %s" % output
+        logger.critical(error_message)
         raise RuntimeError(error_message)
     elif return_code == 4:
         error_message = "FATAL: Operation failed due to untrusted key: %s" % output
+        logger.critical(error_message)
         raise RuntimeError(error_message)
     else:
-        error_message = "FATAL: Unknown / unhandled error. Running '%s' returned exit code: %i : %s" % (
-                                                                                                    str(command_line),
-                                                                                                    return_code,
-                                                                                                    output)
+        error_message = "FATAL: Unknown / unhandled error. Running '%s' returned exit code: %i : %s" \
+                        % (str(command_line), return_code, output)
+        logger.critical(error_message)
         raise RuntimeError(error_message)
 
 
@@ -124,42 +166,78 @@ def parse_signal_return_code(return_code: int, command_line: str | list[str], ou
 # Socket helpers:
 ####################################
 def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
-    """Create a socket.socket object based on the server address type."""
+    """
+    Create a socket.socket object based on the server address type.
+    :param server_address: tuple[str, str] | str: The server address, either (HOSTNAME, PORT) or "PATH_TO_SOCKET".
+    :return: socket.socket: The created socket.
+    """
+    logger_name: str = __name__ + '.' + __socket_create__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     if isinstance(server_address, tuple):
+        logger.debug("Creating INET socket.")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     elif isinstance(server_address, str):
+        logger.debug("Creating UNIX socket.")
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     else:
-        error_message = "server_address must be of type tuple(str,int) or str"
-        raise TypeError(error_message)
+        logger.critical("TypeError:")
+        logger.critical(__type_err_msg__('server_address', 'tuple[str, int] | str', server_address))
+        __type_error__('server_address', 'tuple[str, int] | str', server_address)
     return sock
 
 
 def __socket_connect__(sock: socket.socket, server_address: tuple[str, int] | str) -> None:
-    """Connect a socket to a server address."""
+    """
+    Connect a socket to a server address.
+    :param sock: socket.socket: The socket to connect with.
+    :param server_address: tuple[str, int] | str: The server address: (HOSTNAME, PORT) or "PATH_TO_SOCKET"
+    :return: None
+    """
+    logger_name: str = __name__ + '.' + __socket_connect__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     try:
+        logger.debug("Connecting to: %s" % str(server_address))
         sock.connect(server_address)
     except socket.error as e:
-        error_message = "FATAL: Couldn't connect to socket: %s" % (str(e.args))
+        error_message = "Couldn't connect to socket: %s" % (str(e.args))
+        logger.critical("RuntimeError: %s" % error_message)
         raise RuntimeError(error_message)
+    logger.debug("Connected to: %s" % str(server_address))
     return
 
 
 def __socket_send__(sock: socket.socket, message: str) -> int:
-    """Send a message to the socket."""
+    """
+    Send a message to the socket.
+    :param sock: socket.socket: The socket to send the message over.
+    :param message: str: The message to send.
+    :return: int: The number of bytes sent.
+    """
+    logger_name: str = __name__ + '.' + __socket_send__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     try:
+        logger.debug("Sending message: %s" % message)
         bytes_sent = sock.send(message.encode())
-    except socket.error as err:
-        error_message = "FATAL: Couldn't send to socket: %s" % (str(err.args))
+    except socket.error as e:
+        error_message = "Couldn't send to socket: %s" % (str(e.args))
+        logger.critical(error_message)
         raise RuntimeError(error_message)
     return bytes_sent
 
 
-def __socket_receive__(sock: socket.socket) -> Optional[str]:
-    """Read a string from a socket. Blocks until msg read."""
+def __socket_receive__(sock: socket.socket) -> str:
+    """
+    Read a string from a socket; Blocks until msg read.
+    :param sock: socket.socket: The socket to read from.
+    :return: str: The read message.
+    :raises RuntimeError: On failure to read from the socket.
+    """
+    logger_name: str = __name__ + '.' + __socket_receive__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     try:
+        logger.debug("Start receive...")
         while True:
-            readable, writeable, erred = select.select([sock], [], [], 0.5)
+            readable, _, _ = select.select([sock], [], [], 0.5)
             if len(readable) > 0:
                 message = b''
                 while True:
@@ -170,25 +248,54 @@ def __socket_receive__(sock: socket.socket) -> Optional[str]:
                             break
                     except UnicodeDecodeError:
                         pass
+                logger.debug("Returning message: %s" % message.decode())
                 return message.decode()
     except socket.error as err:
-        error_message = "FATAL: Failed to read from socket: %s" % (str(err.args))
+        error_message = "Failed to read from socket: %s" % (str(err.args))
+        logger.critical(error_message)
         raise RuntimeError(error_message)
 
 
 def __socket_close__(sock: socket.socket) -> None:
-    """Close a socket."""
+    """
+    Close a socket.
+    :param sock: socket.socket: The socket to close.
+    :return: None
+    :raises RuntimeError: On error closing socket.
+    """
+    logger_name: str = __name__ + '.' + __socket_close__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
     try:
+        logger.debug("Closing socket.")
         sock.close()
     except socket.error as e:
-        error_message = "FATAL: Couldn't close socket connection: %s" % (str(e.args))
+        error_message = "Couldn't close socket connection: %s" % (str(e.args))
+        logger.critical(error_message)
         raise RuntimeError(error_message)
+    logger.debug("Socket closed successfully.")
     return None
 
 
 ################################
 # Type checking helper:
 ###############################
+def __type_err_msg__(var_name: str, valid_type_names: str, var: Any) -> str:
+    """
+    Generate a type error message.
+    :param var_name: str: The variable name that failed the type check.
+    :param valid_type_names: str: Expected type names.
+    :param var: Any: The received type.
+    :return: str: The received objet.
+    """
+    return "'%s' is of type '%s', expected: '%s'." % (var_name, str(type(var)), valid_type_names)
+
+
 def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
-    errorMessage = "%s must be of type %s, not: %s" % (var_name, valid_type_name, str(type(var)))
-    raise TypeError(errorMessage)
+    """
+    Raise a TypeError with a nice message.
+    :param var_name: str: The name of the variable that failed the type check.
+    :param valid_type_name: str: The names of the expected types.
+    :param var: Any: The received object.
+    :return: NoReturn
+    """
+    raise TypeError(__type_err_msg__(var_name, valid_type_name, var))
