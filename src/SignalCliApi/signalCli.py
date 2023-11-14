@@ -12,8 +12,8 @@ from typing import Optional, Callable, Any
 from .signalAccount import Account
 from .signalAccounts import Accounts
 from .signalCommon import __type_error__, find_signal, find_qrencode, parse_signal_return_code, __socket_create__, \
-    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, CB_CALLABLE, \
-    CB_PARAMS, __type_err_msg__
+    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, __type_err_msg__, \
+    CallbackIdx
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 
@@ -130,14 +130,15 @@ class SignalCli(object):
                 error_message: str = "callback must be 2 elements long."
                 self.logger.critical("ValueError: %s" % error_message)
                 raise ValueError(error_message)
-            elif not callable(callback[CB_CALLABLE]):
+            elif not callable(callback[CallbackIdx.CALLABLE]):
                 self.logger.critical("TypeError:")
-                self.logger.critical(__type_err_msg__('callback[0]', 'Callable', callback[CB_CALLABLE]))
-                __type_error__('callback[0]', 'Callable', callback[CB_CALLABLE])
-            elif callback[CB_PARAMS] is not None and not isinstance(callback[CB_PARAMS], list):
+                self.logger.critical(__type_err_msg__('callback[0]', 'Callable', callback[CallbackIdx.CALLABLE]))
+                __type_error__('callback[0]', 'Callable', callback[CallbackIdx.CALLABLE])
+            elif callback[CallbackIdx.PARAMS] is not None and not isinstance(callback[CallbackIdx.PARAMS], list):
                 self.logger.critical("TypeError:")
-                self.logger.critical(__type_err_msg__('callback[1]', "Optional[list[Any]]", callback[CB_PARAMS]))
-                __type_error__('callback[1]', 'Optional[list[Any]]', callback[CB_PARAMS])
+                self.logger.critical(__type_err_msg__('callback[1]', "Optional[list[Any]]",
+                                                      callback[CallbackIdx.PARAMS]))
+                __type_error__('callback[1]', 'Optional[list[Any]]', callback[CallbackIdx.PARAMS])
 
         # Chck debug:
         self.logger.debug("Verify debug.")
