@@ -47,9 +47,9 @@ class Accounts(object):
     def __load_accounts_file__(self) -> dict[str, int | list[dict[str, str]]]:
         # Load the accounts.json file:
         try:
-            file_handle = open(self._accounts_file_path, 'r')  # Try to open the accounts file:
-            response_obj: dict[str, int | list[dict[str, str]]] = json.loads(file_handle.read())  # Try to load the json from the file:
-            file_handle.close()
+            file_handle: TextIO = open(self._accounts_file_path, 'r')  # Try to open the accounts.json file.
+            response_obj: dict[str, int | list[dict[str, str]]] = json.loads(file_handle.read())  # Load the json.
+            file_handle.close()  # Close the file.
         except (OSError, FileNotFoundError, PermissionError) as e:
             error_message = "FATAL: Failed to open '%s' for reading: %s" % (self._accounts_file_path, str(e.args))
             raise RuntimeError(error_message)
@@ -205,7 +205,7 @@ class Accounts(object):
         if uuid_match is None:
             error_message = "UUID must be in format: %s" % UUID_FORMAT_STR
             raise ValueError(error_message)
-        # Search for account:
+        # Search for the account:
         for account in ACCOUNTS:
             if account.uuid == uuid:
                 return account
@@ -223,8 +223,8 @@ class Accounts(object):
         # Type check:
         if not isinstance(username, str):
             __type_error__('username', 'str', username)
-        # Search for account:
-        for account in ACCOUNTS
+        # Search for the account:
+        for account in ACCOUNTS:
             if account.username == username:
                 return account
         return None
