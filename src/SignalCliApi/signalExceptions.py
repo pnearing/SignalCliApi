@@ -12,7 +12,7 @@ class Error(Exception):
     """
     Base signal error 
     """
-    def __init__(self, message: str, error: Optional[Exceptionstr(e.args)], *args: tuple) -> None:
+    def __init__(self, message: str, error: Optional[Exception], *args: tuple) -> None:
         """
         Base exception to throw when an error occurs.
         :param message: str: The error message.
@@ -112,3 +112,37 @@ class InvalidDataFile(Error):
         :return: Optional[str]: The JSON decoding error message, or None.
         """
         return self._json_msg
+
+
+class UnsupportedVersion(Error):
+    """
+    Exception to throw when encountering an unsupported version.
+    """
+    def __init__(self, message: str, version: int, supported_versions: tuple, *args: tuple) -> None:
+        """
+        Initialize an UnsupportedVersion error.
+        :param message: str: The error message.
+        :param version: int: The version causing the issue.
+        :param supported_versions: tuple[*int]: The supported versions of the library.
+        :param args: tuple[*Any]: Any additional arguments to store in the Exception.
+        """
+        Error.__init__(self, message, None, *args)
+        self._version: int = version
+        self._supported_versions: tuple = supported_versions
+        return
+
+    @property
+    def version(self) -> int:
+        """
+        The version that is unsupported.
+        :return: int: The version number.
+        """
+        return self._version
+
+    @property
+    def supported_versions(self) -> tuple:
+        """
+        The versions supported by the library.
+        :return: tuple[*int]: The supported versions.
+        """
+        return self._supported_versions
