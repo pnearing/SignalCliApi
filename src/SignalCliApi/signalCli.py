@@ -49,7 +49,7 @@ class SignalCli(object):
         :raises RuntimeError: If an error occurs while loading signal data, more information in the error message.
         """
         # Setup logging.
-        self.logger: logging.Logger = logging.getLogger(self.__name__)
+        self.logger: logging.Logger = logging.getLogger(__name__)
         self.logger.info("Initialize.")
         # Argument checks:
         # Check signal config path:
@@ -234,7 +234,6 @@ class SignalCli(object):
             self.logger.debug("Signal command line: %s" % str(signal_command_line))
 
             # Run signal-cli in daemon mode:
-            self._signal_process: Popen
             try:
                 if debug:
                     self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE)
