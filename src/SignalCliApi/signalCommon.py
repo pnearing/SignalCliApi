@@ -10,6 +10,7 @@ import select
 import re
 import logging
 from enum import IntEnum
+from .signalExceptions import CommunicationsError
 
 ###################
 # Version:
@@ -200,8 +201,8 @@ def __socket_connect__(sock: socket.socket, server_address: tuple[str, int] | st
         sock.connect(server_address)
     except socket.error as e:
         error_message = "Couldn't connect to socket: %s" % (str(e.args))
-        logger.critical("RuntimeError: %s" % error_message)
-        raise RuntimeError(error_message)
+        logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
+        raise CommunicationsError(error_message, e)
     logger.debug("Connected to: %s" % str(server_address))
     return
 
@@ -220,8 +221,8 @@ def __socket_send__(sock: socket.socket, message: str) -> int:
         bytes_sent = sock.send(message.encode())
     except socket.error as e:
         error_message = "Couldn't send to socket: %s" % (str(e.args))
-        logger.critical(error_message)
-        raise RuntimeError(error_message)
+        logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
+        raise CommunicationsError(error_message, e)
     return bytes_sent
 
 
@@ -250,10 +251,10 @@ def __socket_receive__(sock: socket.socket) -> str:
                         pass
                 logger.debug("Returning message: %s" % message.decode())
                 return message.decode()
-    except socket.error as err:
-        error_message = "Failed to read from socket: %s" % (str(err.args))
-        logger.critical(error_message)
-        raise RuntimeError(error_message)
+    except socket.error as e:
+        error_message = "Failed to read from socket: %s" % (str(e.args))
+        logger.critical("socket.error: %s" % error_message)
+        raise CommunicationsError(error_message, e)
 
 
 def __socket_close__(sock: socket.socket) -> None:
@@ -271,7 +272,7 @@ def __socket_close__(sock: socket.socket) -> None:
     except socket.error as e:
         error_message = "Couldn't close socket connection: %s" % (str(e.args))
         logger.critical(error_message)
-        raise RuntimeError(error_message)
+        raise CommunicationsError(error_message, e)
     logger.debug("Socket closed successfully.")
     return None
 
