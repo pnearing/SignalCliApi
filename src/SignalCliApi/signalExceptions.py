@@ -45,7 +45,7 @@ class InvalidServerResponse(Error):
     """
     signal-cli provided us with invalid JSON.
     """
-    def __init__(self, message: str, error: json.JSONDecodeError, *args: tuple) -> None:
+    def __init__(self, message: str, error: Optional[json.JSONDecodeError], *args: tuple) -> None:
         """
         Initialise InvalidServerResponse error.
         :param message: str: The error message.
@@ -54,12 +54,17 @@ class InvalidServerResponse(Error):
         :param args: tuple[Any, ...]: Additional arguments to store in the Exception.
         """
         Error.__init__(self, message, error, *args)
-        self._json_msg: str = error.msg
+        self._json_msg: Optional[str] = None
+        if error is not None:
+            self._json_msg = error.msg
         return
 
     @property
-    def json_msg(self) -> str:
-        """The JSON message describing the JSON encoding error."""
+    def json_msg(self) -> Optional[str]:
+        """
+        The JSON message describing the JSON encoding error.
+        :return: Optional[str] The error message if available.
+        """
         return self._json_msg
 
 
