@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Any
 import socket
 import json
 import sys
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
+    __check_response_for_error__
 from .signalProfile import Profile
 from .signalTimestamp import Timestamp
 from .signalDevices import Devices
@@ -42,6 +43,7 @@ class Contact(object):
         self._config_path: str = config_path
         self._account_path: str = account_path
         self._account_id: str = account_id
+
         # Set external properties:
         self.name: Optional[str] = name
         self.number: Optional[str] = number
@@ -55,20 +57,25 @@ class Contact(object):
         self.last_seen: Optional[Timestamp] = last_seen
         self.color: Optional[str] = color
         self.is_self: bool = False
+
         # Parse from dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)
+        # Parse from raw contact:
         elif raw_contact is not None:
             self.__from_raw_contact__(raw_contact)
+
         # Mark as self:
         if self.number == self._account_id:
             self.is_self = True
             self.name = "Note-To-Self"
+
         # Catch unknown contact:
         if self.name == "<UNKNOWN-CONTACT>":
             if self.profile is not None:
                 self.set_name(self.profile.name)
                 self.name = self.profile.name  # Force the name for this session if setting it failed.
+
         # If 'devices' isn't created yet, create empty devices:
         if self.devices is None:
             self.devices = Devices(sync_socket=self._sync_socket, account_id=self.uuid)
@@ -103,6 +110,11 @@ class Contact(object):
     # Overrides:
     ##########################
     def __eq__(self, __o: Self) -> bool:
+        """
+        Determine equality.
+        :param __o: The other object.
+        :return: bool: the equality result.
+        """
         if isinstance(__o, Contact):
             number_match: bool = False
             uuid_match: bool = False
@@ -116,7 +128,11 @@ class Contact(object):
                 return uuid_match
             else:
                 return number_match and uuid_match
-        return False
+        raise TypeError("can only check against another Contact object.")
+
+    def __str__(self) -> str:
+        return_val: str = "%s(%s)" % (self.name, self.number)
+        return return_val
 
     #########################
     # To / From Dict:
@@ -242,16 +258,13 @@ class Contact(object):
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict = json.loads(response_str)
-        # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                errorMessage = "Signal error while setting name: code %i, message: %s" % (response_obj['error']['code'],
-                                                                                          response_obj['error'][
-                                                                                              'message'])
-                print(errorMessage, file=sys.stderr)
-            return False
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1])
+
+        if error_occurred:
+            if error_code == -1:  # Can't update on linked accounts.
+                return False
+
         # All is good set name.
         self.name = name
         return True
