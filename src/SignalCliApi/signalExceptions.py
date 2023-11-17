@@ -12,7 +12,7 @@ class Error(Exception):
     """
     Base signal error 
     """
-    def __init__(self, message: str, error: Optional[Exception], *args: tuple) -> None:
+    def __init__(self, message: str, error: Optional[Exception], *args) -> None:
         """
         Base exception to throw when an error occurs.
         :param message: str: The error message.
@@ -41,11 +41,49 @@ class Error(Exception):
         return self._error
 
 
+class SignalError(Error):
+    """
+    Exception to throw when signal returns an error code.
+    """
+    def __init__(self, message: str, code: int, *args) -> None:
+        """
+        Initialize a SignalError
+        :param message: The signal error message.
+        :param code: The signal error code.
+        :param args: tuple[*Any]: Any additional arguments to the Exception.
+        """
+        Error.__init__(self, message, None, *args)
+        self._code: int = code
+        return
+
+    @property
+    def code(self) -> int:
+        """
+        The signal error code.
+        :return: int: The error code.
+        """
+        return self._code
+
+
+class ParameterError(Error):
+    """
+    Exception to throw when parameters conflict.
+    """
+    def __init__(self, message: str, *args) -> None:
+        """
+        Initialize a ParameterError.
+        :param message: str: The error message.
+        :param args: tuple[*Any]: Any additional arguments to the Exception.
+        """
+        Error.__init__(self, message, None, *args)
+        return
+
+
 class InvalidServerResponse(Error):
     """
     signal-cli provided us with invalid JSON.
     """
-    def __init__(self, message: str, error: Optional[json.JSONDecodeError], *args: tuple) -> None:
+    def __init__(self, message: str, error: Optional[json.JSONDecodeError], *args) -> None:
         """
         Initialise InvalidServerResponse error.
         :param message: str: The error message.
@@ -72,7 +110,7 @@ class CommunicationsError(Error):
     """
     An error occurred during socket communications.
     """
-    def __init__(self, message: str, error: socket.error, *args: tuple) -> None:
+    def __init__(self, message: str, error: socket.error, *args) -> None:
         """
         Initialize CommunicationsError.
         :param message: str: The error message.
@@ -87,7 +125,7 @@ class InvalidDataFile(Error):
     """
     Exception to throw when an error occurs while loading a signal-cli data file.
     """
-    def __init__(self, message: str, error: json.JSONDecodeError | KeyError, file_path: str, *args: tuple) -> None:
+    def __init__(self, message: str, error: json.JSONDecodeError | KeyError, file_path: str, *args) -> None:
         """
         Initialize an InvalidDataFile Error.
         :param message: str: The error message.
@@ -123,7 +161,7 @@ class UnsupportedVersion(Error):
     """
     Exception to throw when encountering an unsupported version.
     """
-    def __init__(self, message: str, version: int, supported_versions: tuple, *args: tuple) -> None:
+    def __init__(self, message: str, version: int, supported_versions: tuple, *args) -> None:
         """
         Initialize an UnsupportedVersion error.
         :param message: str: The error message.
@@ -157,7 +195,7 @@ class LinkInProgress(Error):
     """
     Exception to throw when start_link is called twice in a row.
     """
-    def __init__(self, *args: tuple) -> None:
+    def __init__(self, *args) -> None:
         """
         Initialize LinkInProgress error.
         :param args: tuple[*Any]: Any additional arguments to store in the Exception.
@@ -170,7 +208,7 @@ class LinkNotStarted(Error):
     """
     Exception to throw when the link hasn't been started yet and finish_link is called.
     """
-    def __init__(self, *args: tuple) -> None:
+    def __init__(self, *args) -> None:
         """
         Initialize a LinkNotStarted error.
         :param args: tuple[*Any]: Any additional arguments to store in the exception.
