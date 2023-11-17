@@ -5,7 +5,7 @@ import mimetypes
 import os
 from subprocess import check_call, CalledProcessError
 
-from .signalCommon import __type_error__, find_xdgopen
+from .signalCommon import __type_error__, __find_xdgopen__
 from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
@@ -55,7 +55,7 @@ class Attachment(object):
 
         # Set internal vars:
         self._config_path: str = config_path
-        self._xdgopen_path: Optional[str] = find_xdgopen()
+        self._xdgopen_path: Optional[str] = __find_xdgopen__()
         # Set external vars:
         self.content_type: Optional[str] = content_type
         self.filename: Optional[str] = file_name
