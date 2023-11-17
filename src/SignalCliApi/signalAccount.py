@@ -9,7 +9,8 @@ import json
 import socket
 import logging
 
-from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __type_err_msg__
+from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __type_err_msg__, \
+    __parse_signal_response__, __check_response_for_error__
 from .signalDevice import Device
 from .signalDevices import Devices
 from .signalContacts import Contacts
@@ -18,7 +19,7 @@ from .signalMessages import Messages
 from .signalProfile import Profile
 from .signalSticker import StickerPacks
 from .signalTimestamp import Timestamp
-from .signalExceptions import InvalidServerResponse, InvalidDataFile, UnsupportedVersion
+from .signalExceptions import InvalidDataFile, UnsupportedVersion
 
 
 class Account(object):
@@ -62,64 +63,65 @@ class Account(object):
         :raises InvalidDataFile: If a file contains invalid JSON or a KeyError occurs during loading.
         """
         # Setup logging:
-        self.logger: logging.Logger = logging.getLogger(__name__)
-        self.logger.info("Initialize.")
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+        logger.info("Initialize.")
+
         # Argument checks:
-        self.logger.debug("Argument checks...")
+        logger.debug("Argument checks...")
         if not isinstance(sync_socket, socket.socket):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('sync_socket', 'socket.socket', sync_socket))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('sync_socket', 'socket.socket', sync_socket))
             __type_error__("sync_socket", "socket.socket", sync_socket)
         if not isinstance(command_socket, socket.socket):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('command_socket', 'socket.socket', command_socket))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('command_socket', 'socket.socket', command_socket))
             __type_error__("command_socket", "socket.socket", command_socket)
         if not isinstance(config_path, str):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('config_path', 'str', config_path))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('config_path', 'str', config_path))
             __type_error__("config_path", "str", config_path)
         if not isinstance(sticker_packs, StickerPacks):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('sticker_packs', 'StickerPacks', sticker_packs))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('sticker_packs', 'StickerPacks', sticker_packs))
             __type_error__("sticker_packs", "StickerPacks", sticker_packs)
         if not isinstance(signal_account_path, str):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__("signal_account_path", 'str', signal_account_path))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__("signal_account_path", 'str', signal_account_path))
             __type_error__("signal_account_path", "str", signal_account_path)
         if not isinstance(environment, str):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('environment', 'str', environment))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('environment', 'str', environment))
         if number is not None and not isinstance(number, str):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('number', 'str', number))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('number', 'str', number))
             __type_error__("number", "str", number)
         if uuid is not None and not isinstance(uuid, str):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('uuid', 'Optional[str]', uuid))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('uuid', 'Optional[str]', uuid))
             __type_error__("uuid", "str", uuid)
         if not isinstance(do_load, bool):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('do_load', 'bool', do_load))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('do_load', 'bool', do_load))
             __type_error__("do_load", "bool", do_load)
         if device is not None and not isinstance(device, Device):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('device', 'Optional[Device]', device))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('device', 'Optional[Device]', device))
             __type_error__("device", "Optional[Device]", device)
         if devices is not None and not isinstance(devices, Devices):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('devices', 'Optional[Devices', devices))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('devices', 'Optional[Devices', devices))
             __type_error__("devices", "Optional[Devices]", devices)
         if contacts is not None and not isinstance(contacts, Contacts):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('contacts', 'Optional[Contacts]', contacts))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('contacts', 'Optional[Contacts]', contacts))
             __type_error__("contacts", "Optional[Contacts]", contacts)
         if groups is not None and not isinstance(groups, Groups):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('groups', 'Optional[Groups]', groups))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('groups', 'Optional[Groups]', groups))
             __type_error__("groups", "Optional[Groups]", groups)
         if profile is not None and not isinstance(profile, Profile):
-            self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('profile', 'Optional[Profile]', profile))
+            logger.critical("Raising TypeError:")
+            logger.critical(__type_err_msg__('profile', 'Optional[Profile]', profile))
             __type_error__("profile", "Optional[Profile]", profile)
 
         # Set internal Vars:
@@ -224,28 +226,28 @@ class Account(object):
             self.__do_load__()
         # If the account is registered, load account data from signal:
         if self.registered:
-            self.logger.info("Account is registered. Loading account data from signal.")
+            logger.info("Account is registered. Loading account data from signal.")
 
             # Load devices from signal:
-            self.logger.debug("Loading Devices...")
+            logger.debug("Loading Devices...")
             self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, account_device=self.device_id,
                                    do_sync=True)
             # Set this device:
             self.device = self.devices.get_account_device()
 
             # Load contacts from signal:
-            self.logger.debug("Loading Contacts...")
+            logger.debug("Loading Contacts...")
             self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path,
                                      account_id=self.number, account_path=self._account_path, do_load=True,
                                      do_sync=True)
 
             # Load groups from signal:
-            self.logger.debug("Loading Groups...")
+            logger.debug("Loading Groups...")
             self.groups = Groups(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                  account_contacts=self.contacts, do_sync=True)
 
             # Load messages from file:
-            self.logger.debug("Loading messages from disk....")
+            logger.debug("Loading messages from disk....")
             self.messages = Messages(command_socket=self._command_socket, config_path=self.config_path,
                                      account_id=self.number, account_path=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
@@ -253,17 +255,18 @@ class Account(object):
                                      sticker_packs=self._sticker_packs, do_load=True)
 
             # Load profile from file and merge self-contact.
-            self.logger.debug("Loading Profile from disk...")
+            logger.debug("Loading Profile from disk...")
             self.profile = Profile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
                                    contact_id=self.number, account_path=self._account_path, do_load=True,
                                    is_account_profile=True)
 
             # Merge disk profile and self-contact profile.
-            self.logger.debug("Merging account profiles...")
+            logger.debug("Merging account profiles...")
             self_contact = self.contacts.get_self()
-            self.profile.__merge__(self_contact.profile)
+            if self_contact is not None:
+                self.profile.__merge__(self_contact.profile)
         else:
-            self.logger.info("Account not registered.")
+            logger.info("Account not registered.")
             # Set devices to None:
             self.devices = None
             # Set this device to None:
@@ -276,7 +279,7 @@ class Account(object):
             self.messages = None
             # Set profile to None
             self.profile = None
-        self.logger.info("Initialization complete.")
+        logger.info("Initialization complete.")
         return
 
     def __load_version_5__(self, raw_account: dict[str, Any]) -> None:
@@ -286,7 +289,8 @@ class Account(object):
         :return: None
         :raises InvalidDataFile: On key error while loading the data.
         """
-        self.logger.debug("Loading version 5 data...")
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load_version_5__.__name__)
+        logger.debug("Loading version 5 data...")
         try:
             self.number = raw_account['username']
             self.device_id = raw_account['deviceId']
@@ -317,9 +321,9 @@ class Account(object):
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
             error_message: str = "KeyError while loading version 5 data: %s." % str(e.args)
-            self.logger.critical("Raising InvalidDataFile(%s), File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s), File: %s" % (error_message, self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
-        self.logger.debug("Loaded.")
+        logger.debug("Loaded.")
         return
 
     def __load_version_6__(self, raw_account: dict[str, Any]) -> None:
@@ -329,7 +333,8 @@ class Account(object):
         :return: None
         :raises InvalidDataFile: On KeyError while loading data.
         """
-        self.logger.debug("Loading version 6 account data...")
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load_version_6__.__name__)
+        logger.debug("Loading version 6 account data...")
         try:
             self.number = raw_account['username']
             self.username = raw_account['username']
@@ -358,8 +363,9 @@ class Account(object):
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
             error_message: str = "KeyError while loading version 6 data: %s." % str(e.args)
-            self.logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
+        logger.debug("Data loaded.")
         return
 
     def __load_version_8__(self, raw_account: dict[str, Any]) -> None:
@@ -369,7 +375,8 @@ class Account(object):
         :return: None
         :raises InvalidDataFile: If a KeyError occurs during the loading of data.
         """
-        self.logger.debug("Loading version 8 data...")
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load_version_8__.__name__)
+        logger.debug("Loading version 8 data...")
         try:
             self.service_environment = raw_account['serviceEnvironment']
             self.registered = raw_account['registered']
@@ -387,8 +394,9 @@ class Account(object):
             self.profile_key = raw_account['profileKey']
         except KeyError as e:
             error_message: str = "KeyError while loading version 8 data: %s." % str(e.args)
-            self.logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
+        logger.debug("Data loaded.")
         return
 
     def __do_load__(self) -> None:
@@ -398,19 +406,20 @@ class Account(object):
         :raises RuntimeError: On error while opening file.
         :raises InvalidDataFile: On JSON Decode error.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__do_load__.__name__)
         # Load the account detail file:
         try:
-            self.logger.debug("Loading detailed account data from %s." % self._account_file_path)
+            logger.debug("Loading detailed account data from %s." % self._account_file_path)
             file_handle: TextIO = open(self._account_file_path, 'r')  # Try to open the file for reading:
             raw_account: dict = json.loads(file_handle.read())  # Try to load the json from the file:
             file_handle.close()
         except (OSError, PermissionError, FileNotFoundError) as e:
             error_message: str = "Couldn't open '%s' for reading: %s" % (self._account_file_path, str(e.args))
-            self.logger.critical(error_message)
+            logger.critical(error_message)
             raise RuntimeError(error_message)
         except json.JSONDecodeError as e:
             error_message: str = "Failed to load JSON: %s" % e.msg
-            self.logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
 
         # Store and check version:
@@ -418,7 +427,7 @@ class Account(object):
         if self.version not in self.supportedAccountFileVersions:  # Currently 5, 6, and 8. I missed 7.
             error_message = "Account detail file '%s' is of version %i. Supported versions %s." \
                             % (self._account_file_path, raw_account['version'], str(self.supportedAccountFileVersions))
-            self.logger.critical("Raising UnsupportedVersion(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising UnsupportedVersion(%s). File: %s" % (error_message, self._account_file_path))
             raise UnsupportedVersion(error_message, self.version, self.supportedAccountFileVersions)
 
         # Set the properties according to the version:
@@ -443,7 +452,8 @@ class Account(object):
         :raises InvalidServerResponse: On error decoding JSON.
         :raises CommunicationsError: On error during signal communications.
         """
-        self.logger.info("Verify started.")
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.verify.__name__)
+        logger.info("Verify started.")
         # Create a verify command object:
         verify_command_obj = {
             "jsonrpc": "2.0",
@@ -458,22 +468,14 @@ class Account(object):
             verify_command_obj['params']['pin'] = pin
         json_command_str = json.dumps(verify_command_obj) + '\n'
         # Communicate with signal:
-        self.logger.debug("Sending JSON command: '%s'." % json_command_str.strip())
         __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationsError.
         response_str = __socket_receive__(self._sync_socket)  # Raises CommunicationsError.
-        self.logger.debug("Got response: %s" % response_str.strip())
-        # Parse response:
-        try:
-            response_obj: dict[str, Any] = json.loads(response_str)
-        except json.JSONDecodeError as e:
-            error_message: str = "Failed to decode json from server: %s." % e.msg
-            raise InvalidServerResponse(error_message, e)
-        # Check for error:
-        if 'error' in response_obj.keys():
-            error_message = "Signal error, code: %i, message: %s" % (
-                response_obj['error']['code'], response_obj['error']['message'])
-            self.logger.info('Verification failed.')
-            self.logger.debug("Returning False: %s" % error_message)
-            return False, error_message
-        self.logger.info("Verification successful.")
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1])
+        # TODO: Check for response error codes, usually -1 is a good assumption.
+        if error_occurred:
+            if error_code == -1:  # TODO: CHECK ERROR.
+                return False, "verification failed."
+
+        logger.info("Verification successful.")
         return True, "verification successful"
