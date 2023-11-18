@@ -49,6 +49,7 @@ class SignalCli(object):
         """
         # Super:
         object.__init__(self)
+
         # Setup logging.
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         logger.info("Initialize.")
