@@ -40,6 +40,8 @@ class Device(object):
         :param last_seen: Optional[Timestamp]: When this device was last seen.
         :raises RuntimeError: On invalid final device configuration.
         """
+        # Super:
+        object.__init__(self)
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Argument checks
