@@ -246,16 +246,17 @@ class Account(object):
 
             # Load groups from signal:
             logger.debug("Loading Groups...")
-            self.groups = Groups(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
-                                 account_contacts=self.contacts, do_sync=True)
+            self.groups = Groups(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                 config_path=self.config_path, account_id=self.number, account_contacts=self.contacts,
+                                 do_sync=True)
 
             # Load messages from file:
             logger.debug("Loading messages from disk....")
             self.messages = Messages(command_socket=self._command_socket, config_path=self.config_path,
                                      account_id=self.number, account_path=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
-                                     this_device=self.devices.get_this_device(),
-                                     sticker_packs=self._sticker_packs, do_load=True)
+                                     this_device=self.devices.get_this_device(), sticker_packs=self._sticker_packs,
+                                     do_load=True)
 
             # Load profile from file and merge self-contact.
             logger.debug("Loading Profile from disk...")
