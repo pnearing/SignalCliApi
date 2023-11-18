@@ -9,7 +9,7 @@ import socket
 import logging
 
 from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__
+    __check_response_for_error__, UNKNOWN_DEVICE_NAME
 from .signalDevice import Device
 from .signalTimestamp import Timestamp
 from .signalExceptions import SignalError
@@ -120,8 +120,7 @@ class Devices(object):
         device_count: int = 0
         for device_dict in from_dict['devices']:
             device = Device(sync_socket=self._sync_socket, account_id=self._account_id,
-                            this_device=self._this_device,
-                            from_dict=device_dict)
+                            this_device=self._this_device, from_dict=device_dict)
             self._devices.append(device)
             device_count += 1
         logger.debug("Loaded %i devices from dict." % device_count)
@@ -177,11 +176,11 @@ class Devices(object):
     #################################
     # Helpers:
     #################################
-    def __get_or_add__(self, name: str, device_id: int) -> tuple[bool, Device]:
+    def __get_or_add__(self, device_id: int, name: str = UNKNOWN_DEVICE_NAME) -> tuple[bool, Device]:
         """
         Get a device from the device list, or if not found, add it to the device list.
-        :param name: The name of the device.
-        :param device_id: The device ID.
+        :param device_id: int: The device ID.
+        :param name: str: The name of the device; Defaults to UNKNOWN_DEVICE_NAME
         :return: tuple[bool, Device]: The first element is if the device was added to the device list; And the second
             element is the existing device if found, or the new device if not found.
         """
