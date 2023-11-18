@@ -77,6 +77,12 @@ class Attachment(object):
             logger.critical("Raising ParameterError(%s)." % error_message)
             raise ParameterError(error_message)
 
+        # Value checks:
+        if local_path is not None and not os.path.exists(local_path):
+            error_message: str = "'local_path' %s, does not exist." % local_path
+            logger.critical("Raising FileNotFoundError(%s)." % error_message)
+            raise FileNotFoundError(error_message)
+
         # Set internal vars:
         self._config_path: str = config_path
         """The path to the signal-cli config directory."""
@@ -84,19 +90,25 @@ class Attachment(object):
         """The path to xdg-open executable."""
 
         # Set external vars:
+        # Content-Type:
         self.content_type: Optional[str] = None
         """The content-type of the attachment."""
+        # Filename:
         self.filename: Optional[str] = None
         """The filename of this attachment."""
+        # Size in bytes:
         self.size: Optional[int] = None
         """The size in bytes of the attachment."""
+        # Local path:
         self.local_path: Optional[str] = local_path
         """The path to the local copy of the attachment."""
+        # File exists:
         self.exists: bool = False
         """Does the local file exist?"""
         if local_path is not None:
             self.exists = os.path.exists(local_path)
-        self.thumbnail: Optional[Thumbnail] = None
+        # Thumbnail:
+        self.thumbnail: Optional[Thumbnail] = thumbnail
         """The Thumbnail object for this attachment."""
 
         # Parse from_dict:
@@ -108,16 +120,11 @@ class Attachment(object):
             logger.debug("Loading from raw signal dict.")
             self.__from_raw_attachment__(raw_attachment)
         # Set properties from the local path:
-        else:
-            logger.debug("local_path  been passed in.")
-            if self.local_path is not None:
-                self.exists = os.path.exists(self.local_path)
-                if self.exists:
-                    self.content_type = mimetypes.guess_type(local_path)
-                    self.filename = os.path.split(local_path)[-1]
-                    self.size = os.path.getsize(local_path)
-            else:
-                self.exists = False
+        elif local_path is not None:  # We've checked that local_path exists earlier and Failed if it doesn't.
+            logger.debug("'local_path' been passed in.")
+            self.content_type = mimetypes.guess_type(local_path)
+            self.filename = os.path.split(local_path)[-1]
+            self.size = os.path.getsize(local_path)
         return
 
     def __from_raw_attachment__(self, raw_attachment: dict[str, Any]) -> None:
