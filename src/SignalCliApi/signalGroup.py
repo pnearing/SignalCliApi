@@ -221,11 +221,11 @@ class Group(object):
     ######################
     # Overrides:
     ######################
-    def __eq__(self, __o: Self) -> bool:
-        if isinstance(__o, Group):
-            if self.id == __o.id:
+    def __eq__(self, other: Self) -> bool:
+        if isinstance(other, Group):
+            if self.id == other.id:
                 return True
-        return False
+        raise TypeError("Can only compare to Group object.")
 
     ###################################
     # To / From Dict:
