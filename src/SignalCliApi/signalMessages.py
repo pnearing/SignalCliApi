@@ -680,7 +680,7 @@ class Messages(object):
                 contact_id = result['recipientAddress']['number']
                 if contact_id is None:
                     contact_id = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contact_id)
                 # Message sent successfully
                 if result['type'] == "SUCCESS":
                     for message in sent_messages:
@@ -699,7 +699,7 @@ class Messages(object):
                 contact_id = result['recipientAddress']['number']
                 if contact_id is None or contact_id == '':
                     contact_id = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
+                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=contact_id)
 
                 # Message Sent successfully:
                 if result['type'] == 'SUCCESS':
