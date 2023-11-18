@@ -173,7 +173,7 @@ class Groups(object):
                 new_group_count += 1
                 self._groups.append(new_group)
             else:
-                old_group.__merge__(new_group)
+                old_group.__update__(new_group)
         logger.debug("Got %i groups, found %i new groups." % (group_count, new_group_count))
         return
 
