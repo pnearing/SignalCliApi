@@ -36,6 +36,9 @@ class Contacts(object):
         :param do_load: bool: Load contacts from disk.
         :param do_sync: bool: Load contact from signal, and merge with existing contacts.
         """
+        # Super:
+        object.__init__(self)
+
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         logger.info("Initialize.")

@@ -62,6 +62,9 @@ class Account(object):
         :raises TypeError: If a parameter is of invalid type.
         :raises InvalidDataFile: If a file contains invalid JSON or a KeyError occurs during loading.
         """
+        # Super:
+        object.__init__(self)
+
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         logger.info("Initialize.")

@@ -47,6 +47,8 @@ class SignalCli(object):
         :raises FileExistsError: If a socket file exists when it shouldn't.
         :raises RuntimeError: If an error occurs while loading signal data, more information in the error message.
         """
+        # Super:
+        object.__init__(self)
         # Setup logging.
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         logger.info("Initialize.")

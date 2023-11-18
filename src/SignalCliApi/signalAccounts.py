@@ -34,9 +34,19 @@ class Accounts(object):
                  sticker_packs: StickerPacks,
                  do_load: bool = False,
                  ) -> None:
+        """
+        Initialize the accounts:
+        :param sync_socket: socket.socket: The socket to run sync operations on.
+        :param command_socket: socket.socket: The socket to run commands on.
+        :param config_path: str: The path to the signal-cli direcotry.
+        :param sticker_packs: StickerPacks: The loaded StickerPacks object.
+        :param do_load: bool: Load from disk right away; Defaults to False.
+        """
+        # Super:
+        object.__init__(self)
+
         # Setup logging:
         self.logger = logging.getLogger(__name__)
-        """The module level logger."""
         self.logger.info("Initialize")
         # Argument checks:
         self.logger.debug("Type checks.")
