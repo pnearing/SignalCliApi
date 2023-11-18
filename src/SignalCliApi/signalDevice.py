@@ -1,81 +1,126 @@
 #!/usr/bin/env python3
-
-from typing import TypeVar, Optional
+"""
+File: signalDevice.py
+Store and handle a single device.
+"""
+import logging
+from typing import TypeVar, Optional, Any
 import socket
 
 from .signalTimestamp import Timestamp
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, PRIMARY_DEVICE_ID
 Self = TypeVar("Self", bound="Device")
-DEBUG: bool = False
 
 
 class Device(object):
-    """Class to store a device."""
+    """
+    Class to store a device.
+    """
     def __init__(self,
                  sync_socket: socket.socket,
                  account_id: str,
-                 account_device: Optional[int] = None,
-                 raw_device: Optional[dict] = None,
-                 from_dict: Optional[dict] = None,
+                 this_device: Optional[int] = None,
+                 raw_device: Optional[dict[str, Any]] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
                  device_id: Optional[int] = None,
                  name: Optional[str] = None,
                  created: Optional[Timestamp] = None,
                  last_seen: Optional[Timestamp] = None,
-                 is_account_device: Optional[bool] = None,
-                 is_primary_device: Optional[bool] = None,
                  ) -> None:
+        """
+        Initialize a device:
+        :param sync_socket: socket.socket: The socket to use for sync operations.
+        :param account_id: str: This account ID.
+        :param this_device: Optional[int]: The device ID of the device we're on.
+        :param raw_device: Optional[dict[str, Any]]: Load this device from a raw device dict from signal.
+        :param from_dict: Optional[dict[str, Any]]: Load this device from a dict created by __to_dict__().
+        :param device_id: Optional[int]: The device ID of this device.
+        :param name: Optional[str]: The name of this device.
+        :param created: Optional[Timestamp]: When this device was created.
+        :param last_seen: Optional[Timestamp]: When this device was last seen.
+        :raises RuntimeError: On invalid final device configuration.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Argument checks
         if not isinstance(sync_socket, socket.socket):
+            logger.critical("Raising TypeError:")
             __type_error__("sync_socket", "socket.socket", sync_socket)
         if not isinstance(account_id, str):
+            logger.critical("Raising TypeError:")
             __type_error__("account_id", "str", account_id)
-        if account_device is not None and not isinstance(account_device, int):
-            __type_error__("account_device", "Optional[int]", account_device)
+        if this_device is not None and not isinstance(this_device, int):
+            logger.critical("Raising TypeError:")
+            __type_error__("this_device", "Optional[int]", this_device)
         if raw_device is not None and not isinstance(raw_device, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("raw_device", "Optional[dict]", raw_device)
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("from_dict", "Optional[dict]", from_dict)
         if device_id is not None and not isinstance(device_id, int):
+            logger.critical("Raising TypeError:")
             __type_error__("device_id", "Optional[int]", device_id)
         if name is not None and not isinstance(name, str):
+            logger.critical("Raising TypeError:")
             __type_error__("name", "Optional[str]", name)
         if created is not None and not isinstance(created, Timestamp):
+            logger.critical("Raising TypeError:")
             __type_error__("created", "Optional[Timestamp]", created)
         if last_seen is not None and not isinstance(last_seen, Timestamp):
+            logger.critical("Raising TypeError:")
             __type_error__("last_seen", "Optional[Timestamp]", last_seen)
-        if is_account_device is not None and not isinstance(is_account_device, bool):
-            __type_error__("is_account_device", "Optional[bool]", is_account_device)
-        if is_primary_device is not None and not isinstance(is_primary_device, bool):
-            __type_error__("is_primary_device", "Optional[bool]", is_primary_device)
+
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
+        """The socket to preform sync operations on."""
         self._account_id: str = account_id
+        """This account ID."""
+
         # Set external properties:
         self.id: int = device_id
+        """The device ID."""
         self.name: Optional[str] = name
+        """The name of the device."""
         self.created: Optional[Timestamp] = created
+        """The Timestamp of when this device was created."""
         self.last_seen: Optional[Timestamp] = last_seen
-        self.is_account_device: Optional[bool] = is_account_device
-        self.is_primary_device: Optional[bool] = is_primary_device
+        """The Timestamp of when this device was last seen."""
+        self.is_this_device: Optional[bool] = None
+        """Is this device the device we're using?"""
+        self.is_primary_device: Optional[bool] = None
+
         # Parse Raw device:
         if raw_device is not None:
-            self.__fromRawDevice__(raw_device)
-            if self.id == account_device:
-                self.is_account_device = True
-            if self.id == 1:
+            logger.debug("Loading from raw device.")
+            self.__from_raw_device__(raw_device)
+            if self.id == this_device:
+                self.is_this_device = True
+            if self.id == PRIMARY_DEVICE_ID:
                 self.is_primary_device = True
         # Parse from dict:
         elif from_dict is not None:
+            logger.debug("Loading from dict.")
             self.__from_dict__(from_dict)
-        # Otherwise, assume all values have been specified.
+        # Otherwise, assume all values have been specified, and check that the ID at least is defined:
         else:
-            if self.id is not None and account_device is not None and self.id == account_device:
-                self.is_account_device = True
-            if self.id is not None and self.id == 1:
+            if self.id is None:
+                error_message: str = "Invalid device configuration, no device ID."
+                logger.critical("Raising RuntimeError(%s)." % error_message)
+                raise RuntimeError(error_message)
+            # Set properties:
+            if this_device is not None and self.id == this_device:
+                self.is_this_device = True
+            if self.id == PRIMARY_DEVICE_ID:
                 self.is_primary_device = True
         return
 
-    def __fromRawDevice__(self, raw_device: dict) -> None:
+    def __from_raw_device__(self, raw_device: dict[str, Any]) -> None:
+        """
+        Load properties from raw device dict from signal.
+        :param raw_device: dict[str, Any]: The dict provided by signal.
+        :return: None
+        """
         self.id = raw_device['id']
         self.name = raw_device['name']
         if raw_device['createdTimestamp'] is not None:
@@ -88,28 +133,37 @@ class Device(object):
             self.last_seen = None
         return
 
-    def __merge__(self, __o: Self) -> None:
+    def __merge__(self, other: Self) -> None:
+        """
+        Merge two devices, assuming the passed in device is the most up to date.
+        :param other: Device: The other device to merge with.
+        :return: None
+        """
         if self.name is None:
-            self.name = __o.name
-        if self.created != __o.created:
-            self.created = __o.created
-        if self.last_seen is not None and __o.last_seen is not None:
-            if self.last_seen < __o.last_seen:
-                self.last_seen = __o.last_seen
-            elif self.last_seen is None and __o.last_seen is not None:
-                self.last_seen = __o.last_seen
+            self.name = other.name
+        if self.created != other.created:
+            self.created = other.created
+        if self.last_seen is not None and other.last_seen is not None:
+            if self.last_seen < other.last_seen:
+                self.last_seen = other.last_seen
+            elif self.last_seen is None and other.last_seen is not None:
+                self.last_seen = other.last_seen
         return
 
     ##########################
     # To / From dict:
     ##########################
-    def __to_dict__(self) -> dict:
-        device_dict = {
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a json friendly dict to pass to __from_dict__()
+        :return: dict[str, Any]: The json friendly dict.
+        """
+        device_dict: dict[str, Any] = {
             'id': self.id,
             'name': self.name,
             'created': None,
             'lastSeen': None,
-            'isAccountDevice': self.is_account_device,
+            'isAccountDevice': self.is_this_device,
             'isPrimaryDevice': self.is_primary_device,
         }
         if self.created is not None:
@@ -118,7 +172,12 @@ class Device(object):
             device_dict['lastSeen'] = self.last_seen.__to_dict__()
         return device_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a dict created by __to_dict__().
+        :param from_dict: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         self.id = from_dict['id']
         self.name = from_dict['name']
         if from_dict['created'] is not None:
@@ -129,9 +188,32 @@ class Device(object):
             self.last_seen = Timestamp(from_dict=from_dict['lastSeen'])
         else:
             self.last_seen = None
-        self.is_account_device = from_dict['isAccountDevice']
+        self.is_this_device = from_dict['isAccountDevice']
         self.is_primary_device = from_dict['isPrimaryDevice']
         return
+
+    #########################
+    # Overrides:
+    #########################
+    def __eq__(self, other: Self) -> bool:
+        """
+        Compare equality against another device.
+        :param other: Device: The device to compare to.
+        :return: bool: True if the devices are equal, False if not.
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
+        if isinstance(other, Device):
+            return self.id == other.id
+        error_message: str = "Can only compare equality to another Device object."
+        logger.critical("Raising TypeError(%s)." % error_message)
+        raise TypeError(error_message)
+
+    def __str__(self) -> str:
+        """
+        Return a string representation of this device.
+        :return: str: The string representation of this device.
+        """
+        return self.get_display_name()
 
     ########################
     # Methods:
@@ -142,7 +224,9 @@ class Device(object):
         :param time_seen: Timestamp: The time this device was seen at.
         :raises TypeError: If time_seen not a Timestamp.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
         if not isinstance(time_seen, Timestamp):
+            logger.critical("Raising TypeError:")
             __type_error__("time_seen", "Timestamp", time_seen)
         if self.last_seen is not None:
             if self.last_seen < time_seen:
@@ -155,4 +239,4 @@ class Device(object):
         """
         Return a pretty name to display.
         """
-        return "%i<%s>" % (self.id, self.name)
+        return "%s<%i>" % (self.name, self.id)
