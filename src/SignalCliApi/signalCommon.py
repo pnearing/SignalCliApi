@@ -42,6 +42,10 @@ UNKNOWN_CONTACT_NAME: Final[str] = '<UNKNOWN-CONTACT>'
 UNKNOWN_GROUP_NAME: Final[str] = '<UNKNOWN-GROUP>'
 """The default name for an unknown group. If this is the group name it signals the library to update it if even an
     actual group name comes up."""
+UNKNOWN_DEVICE_NAME: Final[str] = '<UNKNOWN-DEVICE>'
+"""The default name for an unknown device."""
+PRIMARY_DEVICE_ID: Final[int] = 1
+"""The device ID of the primary device for an account."""
 
 
 ###########################
