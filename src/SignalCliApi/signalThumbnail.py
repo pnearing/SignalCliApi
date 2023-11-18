@@ -1,64 +1,120 @@
 #!/usr/bin/env python3
-
+"""
+File signalThumbnail.py
+Store and handle a signal thumbnail.
+"""
+import logging
+import mimetypes
 from typing import Optional, Any
 import os
 from subprocess import check_call, CalledProcessError
-
+from .signalExceptions import ParameterError
 from .signalCommon import __type_error__, __find_xdgopen__
-DEBUG: bool = False
 
 
 class Thumbnail(object):
     """Class to store a thumbnail."""
     def __init__(self,
                  config_path: str,
-                 from_dict: Optional[dict[str, object]] = None,
-                 raw_thumbnail: Optional[dict[str, object]] = None,
-                 content_type: Optional[str] = None,
-                 filename: Optional[str] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_thumbnail: Optional[dict[str, Any]] = None,
                  local_path: Optional[str] = None,
-                 size: Optional[int] = None,
                  ) -> None:
-        # Argument checks:
+        """
+        Initialize a Thumbnail.
+        :param config_path: str: The full path to the signal-cli config directory.
+        :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
+        :param raw_thumbnail: Optional[dict[str, Any]]: The raw dict provided by signal.
+        :param local_path: Optional[str]: The local path of the thumbnail.
+        """
+        # Super:
+        object.__init__(self)
+
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+
+        # Type checks:
         if not isinstance(config_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("config_path", "str", config_path)
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("from_dict", "dict", from_dict)
         if raw_thumbnail is not None and not isinstance(raw_thumbnail, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("raw_thumbnail", "dict", raw_thumbnail)
-        if content_type is not None and not isinstance(content_type, str):
-            __type_error__("content_type", "str", content_type)
-        if filename is not None and not isinstance(filename, str):
-            __type_error__("filename", "str", filename)
         if local_path is not None and not isinstance(local_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("local_path", "str", local_path)
-        if size is not None and not isinstance(size, int):
-            __type_error__("size", "int", size)
+
+        # Parameter checks:
+        not_nones: int = 0
+        for parameter in (from_dict, raw_thumbnail, local_path):
+            if parameter is not None:
+                not_nones += 1
+        if not_nones == 0:
+            error_message: str = "One of 'config_path', 'from_dict', or 'local_path' must be defined."
+            logger.critical("Raising ParameterError(%s)." % error_message)
+            raise ParameterError(error_message)
+        elif not_nones >= 2:
+            error_message: str = "Only one of 'config_path', 'from_dict', and 'local_path', can be defined at once."
+            logger.critical("Raising ParameterError(%s)." % error_message)
+            raise ParameterError(error_message)
+
+        # Value checks:
+        if local_path is not None and not os.path.exists(local_path):
+            error_message: str = "'local_path': %s, does not exist." % local_path
+            logger.critical("Raising FileNotFoundError(%s)." % error_message)
+            raise FileNotFoundError(error_message)
+
         # Set internal vars:
         self._config_path: str = config_path
+        """The full path to the signal-cli config directory."""
         self._xdgopen_path: Optional[str] = __find_xdgopen__()
+        """The full path to the xdg-open executable."""
+
         # Set external properties:
-        self.content_type: str = content_type
-        self.filename: str = filename
-        self.local_path: str = local_path
+        # Content-Type:
+        self.content_type: Optional[str] = None
+        """The thumbnail content-type."""
+        # Thumbnail filename:
+        self.filename: Optional[str] = None
+        """The thumbnail filename."""
+        # Local path:
+        self.local_path: Optional[str] = local_path
+        """The local path to the file."""
+        # Local path exists:
         self.exists: bool = False
-        if local_path is not None:
-            self.exists = os.path.exists(local_path)
-        self.size: int = size
+        """Does this file exist on disk?"""
+        # Size in bytes:
+        self.size: Optional[int] = None
+        """The size of the thumbnail file in bytes."""
+
         # Parse from_dict:
         if from_dict is not None:
+            logger.debug("Loading from dict.")
             self.__from_dict__(from_dict)
         # Parse raw thumbnail:
         elif raw_thumbnail is not None:
+            logger.debug("Loading from raw thumbnail.")
             self.__from_raw_thumbnail__(raw_thumbnail)
+        # Generate properties from local_path:
+        elif local_path is not None:
+            self.content_type = mimetypes.guess_type(local_path)
+            self.exists = os.path.exists(local_path)
+            self.size = os.path.getsize(local_path)
+            self.filename = os.path.split(local_path)[-1]
         return
 
     ###################
     # Init:
     ###################
     def __from_raw_thumbnail__(self, raw_thumbnail: dict[str, Any]) -> None:
-        if DEBUG:
-            print(raw_thumbnail)
+        """
+        Load properties from a dict provided by signal.
+        :param raw_thumbnail: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         self.content_type = raw_thumbnail['contentType']
         self.filename = raw_thumbnail['filename']
         self.local_path = os.path.join(self._config_path, 'attachments', raw_thumbnail['id'])
@@ -69,8 +125,12 @@ class Thumbnail(object):
     ############################
     # To / From dict:
     ############################
-    def __to_dict__(self) -> dict[str, object]:
-        thumbnail_dict = {
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Store properties in a JSON friendly dict.
+        :return: dict[str, Any]: The dict to provide to __from_dict__().
+        """
+        thumbnail_dict: dict[str, Any] = {
             'contentType': self.content_type,
             'filename': self.filename,
             'localPath': self.local_path,
@@ -78,16 +138,21 @@ class Thumbnail(object):
         }
         return thumbnail_dict
 
-    def __from_dict__(self, fromDict: dict[str, Any]) -> None:
-        self.content_type = fromDict['contentType']
-        self.filename = fromDict['filename']
-        self.local_path = fromDict['localPath']
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict created by __to_dict__().
+        :return: None
+        """
+        self.content_type = from_dict['contentType']
+        self.filename = from_dict['filename']
+        self.local_path = from_dict['localPath']
         self.exists = False
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)
         else:
             self.exists = False
-        self.size = fromDict['size']
+        self.size = from_dict['size']
         return
 
     ############################
