@@ -371,10 +371,10 @@ class ReceivedMessage(Message):
             else:
                 if result['recipientAddress']['number'] is not None:
                     added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                   result['recipientAddress']['number'])
+                                                                   number=result['recipientAddress']['number'])
                 else:
                     added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                   result['recipientAddress']['uuid'])
+                                                                   uuid=result['recipientAddress']['uuid'])
                 contact.seen(when)
         return when
 
