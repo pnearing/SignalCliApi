@@ -230,10 +230,10 @@ class Account(object):
 
             # Load devices from signal:
             logger.debug("Loading Devices...")
-            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, account_device=self.device_id,
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, this_device=self.device_id,
                                    do_sync=True)
             # Set this device:
-            self.device = self.devices.get_account_device()
+            self.device = self.devices.get_this_device()
 
             # Load contacts from signal:
             logger.debug("Loading Contacts...")
@@ -251,7 +251,7 @@ class Account(object):
             self.messages = Messages(command_socket=self._command_socket, config_path=self.config_path,
                                      account_id=self.number, account_path=self._account_path, contacts=self.contacts,
                                      groups=self.groups, devices=self.devices,
-                                     this_device=self.devices.get_account_device(),
+                                     this_device=self.devices.get_this_device(),
                                      sticker_packs=self._sticker_packs, do_load=True)
 
             # Load profile from file and merge self-contact.
