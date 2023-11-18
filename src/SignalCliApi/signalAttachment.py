@@ -105,8 +105,6 @@ class Attachment(object):
         # File exists:
         self.exists: bool = False
         """Does the local file exist?"""
-        if local_path is not None:
-            self.exists = os.path.exists(local_path)
         # Thumbnail:
         self.thumbnail: Optional[Thumbnail] = thumbnail
         """The Thumbnail object for this attachment."""
@@ -123,6 +121,7 @@ class Attachment(object):
         elif local_path is not None:  # We've checked that local_path exists earlier and Failed if it doesn't.
             logger.debug("'local_path' been passed in.")
             self.content_type = mimetypes.guess_type(local_path)
+            self.exists = os.path.exists(local_path)
             self.filename = os.path.split(local_path)[-1]
             self.size = os.path.getsize(local_path)
         return
