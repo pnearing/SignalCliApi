@@ -294,7 +294,7 @@ class ReceiveThread(threading.Thread):
                         command_socket=self._command_socket, account_id=self._account.number,
                         config_path=self._config_path, contacts=self._account.contacts,
                         groups=self._account.groups, devices=self._account.devices,
-                        this_device=self._account.devices.get_account_device(), raw_message=envelope_dict
+                        this_device=self._account.devices.get_this_device(), raw_message=envelope_dict
                     )
                     # Parse typing message:
                     if DEBUG:
