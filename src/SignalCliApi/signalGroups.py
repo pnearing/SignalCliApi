@@ -1,52 +1,89 @@
 #! /usr/bin/env python3
-
-from typing import Optional, Iterator
+"""
+File: signalGroups.py
+Contain and manage a list of groups.
+"""
+import logging
+from typing import Optional, Iterator, Any
 import socket
 import json
 
-from .signalCommon import __socket_receive__, __socket_send__, __type_error__
+from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __parse_signal_response__, \
+    __check_response_for_error__, UNKNOWN_GROUP_NAME
 from .signalGroup import Group
 from .signalContacts import Contacts
 
-# from signalSyncMessage import SyncMessage
-
-DEBUG: bool = False
-
 
 class Groups(object):
-    """Object containing all the groups acting like a list."""
+    """
+    Object containing all the groups acting like a list.
+    """
     def __init__(self,
                  sync_socket: socket.socket,
+                 command_socket: socket.socket,
                  config_path: str,
                  account_id: str,
                  account_contacts: Contacts,
-                 from_dict: Optional[dict] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
                  do_sync: bool = False
                  ) -> None:
-        # Arg checks:
+        """
+
+        :param sync_socket: socket.socket: The socket to run sync commands on.
+        :param command_socket: socket.socket: The socket to run commands on.
+        :param config_path: str: The path to the signal-cli config directory.
+        :param account_id: str: This account ID.
+        :param account_contacts: Contacts: The account's Contacts object.
+        :param from_dict: dict[str, Any]: Load the groups from a dict created by __to_dict__().
+        :param do_sync: bool: Sync data with signal; Defaults to False.
+        """
+        # Super:
+        object.__init__(self)
+
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+
+        # Type checks:
         if not isinstance(sync_socket, socket.socket):
+            logger.critical("Raising TypeError")
             __type_error__("sync_socket", "socket.socket", sync_socket)
         if not isinstance(config_path, str):
+            logger.critical("Raising TypeError")
             __type_error__("config_path", "str", config_path)
         if not isinstance(account_id, str):
+            logger.critical("Raising TypeError")
             __type_error__("account_id", "str", account_id)
         if not isinstance(account_contacts, Contacts):
+            logger.critical("Raising TypeError")
             __type_error__("account_contacts", "Contacts", account_contacts)
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError")
             __type_error__("from_dict", "Optional[dict]", from_dict)
         if not isinstance(do_sync, bool):
+            logger.critical("Raising TypeError")
             __type_error__("do_sync", "bool", do_sync)
+
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
+        """The socket to preform sync operations on."""
+        self._command_socket: socket.socket = command_socket
+        """The socket to preform commands on."""
         self._config_path: str = config_path
+        """The full path to the signal-cli config directory."""
         self._account_id: str = account_id
+        """This account ID."""
         self._contacts: Contacts = account_contacts
+        """This account's Contacts object."""
         self._groups: list[Group] = []
+        """The list of Group objects."""
+
         # Load from dict:
         if from_dict is not None:
+            logger.debug("Loading from dict.")
             self.__from_dict__(from_dict)
         # Load from signal
         if do_sync:
+            logger.debug("Syncing with signal.")
             self.__sync__()
         return
 
@@ -54,20 +91,40 @@ class Groups(object):
     # Overrides:
     ############################
     def __iter__(self) -> Iterator[Group]:
+        """
+        Iterate over the groups.
+        :return: Iterator[Group]: The iterator.
+        """
         return iter(self._groups)
+
+    def __len__(self) -> int:
+        """
+        The length of groups.
+        :return: int: The number of groups.
+        """
+        return len(self._groups)
 
     ############################
     # To / From Dict:
     ############################
-    def __to_dict__(self) -> dict[str, object]:
-        groups_dict = {
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict.
+        :return: dict[str, Any]: The dict to pass to __from_dict__()
+        """
+        groups_dict: dict[str, Any] = {
             "groups": []
         }
         for group in self._groups:
             groups_dict["groups"].append(group.__to_dict__())
         return groups_dict
 
-    def __from_dict__(self, from_dict: dict):
+    def __from_dict__(self, from_dict: dict[str, Any]):
+        """
+        Load the properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any] The dict provided by __to_dict__()
+        :return: None
+        """
         self._groups = []
         for groupDict in from_dict['groups']:
             group = Group(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
@@ -78,7 +135,14 @@ class Groups(object):
     ###################################
     # Sync with signal:
     ##################################
-    def __sync__(self) -> bool:
+    def __sync__(self) -> None:
+        """
+        Sync the groups with signal.
+        :return: None
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__sync__.__name__)
+        logger.debug("Syncing with signal.")
         # Create command object and json command string:
         list_groups_command_obj = {
             "jsonrpc": "2.0",
@@ -90,39 +154,45 @@ class Groups(object):
         }
         json_command_str = json.dumps(list_groups_command_obj) + '\n'
         # Communicate with signal:
-        __socket_send__(self._sync_socket, json_command_str)
-        response_string = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict = json.loads(response_string)
-        # print(responseObj)
-        # Check for error:
-        if 'error' in response_obj.keys():
-            return False
-        # Parse result:
-        group_added = False
+        __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationsError.
+        response_str: str = __socket_receive__(self._sync_socket)  # Raises CommunicationsError.
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)  # Raises InvalidServerResponse.
+        __check_response_for_error__(response_obj)  # Raises SignalError.
+
+        # Parse results:
+        group_count: int = 0
+        new_group_count: int = 0
         for raw_group in response_obj['result']:
+            group_count += 1
             new_group = Group(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
                               account_contacts=self._contacts, raw_group=raw_group)
             old_group = self.get_by_id(new_group.id)
             if old_group is None:
+                new_group_count += 1
                 self._groups.append(new_group)
-                group_added = True
             else:
                 old_group.__merge__(new_group)
-
-        return group_added
+        logger.debug("Got %i groups, found %i new groups." % (group_count, new_group_count))
+        return
 
     ##############################
     # Helpers:
     ##############################
     def __parse_sync_message__(self, sync_message) -> None:  # sync_message type SyncMessage
+        """
+        Parse a sync message.
+        :param sync_message: SyncMessage: The sync message to parse.
+        :return: None
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
         if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
             for group_id in sync_message.blocked_groups:
                 added, group = self.__get_or_add__("<UNKNOWN-GROUP>", group_id)
                 group.is_blocked = True
         else:
-            errorMessage = "groups can only parse sync message of type: SyncMessage.TYPE_BLOCKED_SYNC."
-            raise TypeError(errorMessage)
+            error_message: str = "groups can only parse sync message of type: SyncMessage.TYPE_BLOCKED_SYNC."
+            logger.critical("Raising TypeError(%s)." % error_message)
+            raise TypeError(error_message)
 
     ##############################
     # Getters:
@@ -134,8 +204,11 @@ class Groups(object):
         :returns: Optional[group]: The group, or None if not found.
         :raises: TypeError: If group_id is not a string.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_id.__name__)
         if not isinstance(group_id, str):
+            logger.critical("Raising TypeError:")
             __type_error__("group_id", "str", group_id)
+        # Search for group:
         for group in self._groups:
             if group.id == group_id:
                 return group
@@ -148,8 +221,11 @@ class Groups(object):
         :returns: Optional[group]: The group, or None if not found.
         :raises: TypeError: If name is not a string.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_name.__name__)
         if not isinstance(name, str):
+            logger.critical("Raising TypeError:")
             __type_error__("name", "str", name)
+        # Search for the group:
         for group in self._groups:
             if group.name == name:
                 return group
@@ -158,8 +234,14 @@ class Groups(object):
     ####################################
     # Helpers:
     ###################################
-    def __get_or_add__(self, name: str, group_id: str) -> tuple[bool, Group]:
-        # self.__sync__()
+    def __get_or_add__(self, group_id: str, name: str = UNKNOWN_GROUP_NAME) -> tuple[bool, Group]:
+        """
+        Get an existing group, or if not found, add it to the group list.
+        :param group_id: str: The group ID.
+        :param name: str: The group name; Defaults to UNKNOWN_GROUP_NAME.
+        :return: tuple[bool, Group]: The first element is True if added, False if not; And the second element is either
+            the existing Group object, or the newly added Group object.
+        """
         old_group = self.get_by_id(group_id)
         if old_group is not None:
             return False, old_group
