@@ -59,61 +59,83 @@ class CallbackIdx(IntEnum):
     PARAMS = 1
 
 
+class MessageTypes(IntEnum):
+    """
+    Enum for message types:
+    """
+    NOT_SET = 0
+    SENT = 1
+    RECEIVED = 2
+    TYPING = 3
+    RECEIPT = 4
+    STORY = 5
+    PAYMENT = 6
+    REACTION = 7
+    GROUP_UPDATE = 8
+    SYNC = 9
+    CALL = 10
+
+
 ####################################
-# xdg-open helper:
+# Find command helpers:
 ####################################
 def __find_xdgopen__() -> Optional[str]:
     """
     Use which to find xdg-open
     :return: Optional[str]: The path to xdg-open or None if not found.
     """
-    logger_name: str = __name__ + '.' + __find_xdgopen__.__name__
-    logger: logging.Logger = logging.getLogger(logger_name)
+    logger: logging.Logger = logging.getLogger(__name__ + '.' + __find_xdgopen__.__name__)
     logger.debug("Searching for xdg-open...")
     xdgopen_path: Optional[str]
     try:
-        xdgopen_path = check_output(['which', 'xdg-open'], text=True)
-        xdgopen_path = xdgopen_path.rstrip()
+        xdgopen_path = check_output(['which', 'xdg-open'], text=True).rstrip()
         logger.debug("xdg-open found at '%s'." % xdgopen_path)
     except CalledProcessError:
-        logger.warning("xdg-open not found.")
+        logger.warning("xdg-open not found, the functions named display() will do nothing.")
         xdgopen_path = None
     return xdgopen_path
 
 
-####################################
-# qrencode helper:
-####################################
 def __find_qrencode__() -> Optional[str]:
     """
     Use which to find qrencode.
     :return: Optional[str]: The path to qrencode, or None if not found.
     """
-    logger_name: str = __name__ + '.' + __find_qrencode__.__name__
-    logger: logging.Logger = logging.getLogger(logger_name)
+    logger: logging.Logger = logging.getLogger(__name__ + '.' + __find_qrencode__.__name__)
     logger.debug("Searching for qrencode...")
     qrencode_path: Optional[str]
     try:
-        qrencode_path = check_output(['which', 'qrencode'], text=True)
-        qrencode_path = qrencode_path.rstrip()
+        qrencode_path = check_output(['which', 'qrencode'], text=True).rstrip()
         logger.debug("qrencode found at: %s" % qrencode_path)
     except CalledProcessError:
         qrencode_path = None
-        logger.warning("qrencode not found.")
+        logger.warning("qrencode not found, cannot generate link qr-codes.")
     return qrencode_path
 
 
-####################################
-# Signal cli helpers:
-####################################
+def __find_convert__() -> Optional[str]:
+    """
+    Find the imageMagick convert utility.
+    :return: Optional[str]: The full path convert, or None if not found.
+    """
+    logger: logging.Logger = logging.getLogger(__name__ + '.' + __find_convert__.__name__)
+    logger.debug("Searching for convert...")
+    convert_path: Optional[str]
+    try:
+        convert_path = check_output(['which', 'convert'], text=True).rstrip()
+        logger.debug("convert found at: %s" % convert_path)
+    except CalledProcessError:
+        convert_path = None
+        logger.warning("convert not found, cannot generate thumbnails.")
+
+
 def __find_signal__() -> str | NoReturn:
     """
     Find signal-cli in it's many forms.
     :return: str | NoReturn: The path to [signal-cli | signal-cli-native | signal-cli-jre]
     :raises FileNotFoundError: If signal executable is not found.
     """
-    logger_name = __name__ + '.' + __find_signal__.__name__
-    logger: logging.Logger = logging.getLogger(logger_name)
+    logger: logging.Logger = logging.getLogger(__name__ + '.' + __find_signal__.__name__)
     signal_path: str
     try:
         logger.debug("Searching for signal-cli...")
