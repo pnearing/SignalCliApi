@@ -2,6 +2,7 @@
 from typing import Optional
 import socket
 
+from .signalCommon import __type_error__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -41,7 +42,7 @@ class GroupUpdate(Message):
         self.body: str = ''
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, Message.TYPE_GROUP_UPDATE_MESSAGE,
+                         raw_message, sender, recipient, device, timestamp, MessageTypes.GROUP_UPDATE,
                          is_delivered, time_delivered, is_read, time_read, is_viewed, time_viewed)
         self.__updateBody__()
         return

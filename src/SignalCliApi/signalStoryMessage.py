@@ -4,7 +4,7 @@ from typing import Optional, Any
 import socket
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -72,7 +72,7 @@ class StoryMessage(Message):
                 self.attachment_type = 'text'
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, Message.TYPE_STORY_MESSAGE)
+                         raw_message, sender, recipient, device, timestamp, MessageTypes.STORY)
         return
 
     ###########################

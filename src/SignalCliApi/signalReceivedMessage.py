@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 import pytz
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -178,7 +178,7 @@ class ReceivedMessage(Message):
         # Continue Init:
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, Message.TYPE_RECEIVED_MESSAGE, is_delivered,
+                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIVED, is_delivered,
                          time_delivered, is_read, time_read, is_viewed, time_viewed)
         # Mark this as delivered:
         if self.timestamp is not None:

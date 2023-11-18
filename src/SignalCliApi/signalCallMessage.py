@@ -2,7 +2,7 @@
 """File: signalCallMessage.py"""
 from typing import Optional, Any
 import socket
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -34,6 +34,7 @@ class CallMessage(Message):
                  call_type: Optional[str] = None,
                  opaque: Optional[str] = None,
                  ) -> None:
+
         # Type check arguments:
         if offer_id is not None and not isinstance(offer_id, int):
             __type_error__("offer_id", "Optional[int]", offer_id)
@@ -51,7 +52,7 @@ class CallMessage(Message):
         self.opaque: Optional[str] = opaque
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, this_device, None, Message.TYPE_CALL_MESSAGE)
+                         raw_message, sender, recipient, this_device, None, MessageTypes.CALL)
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)

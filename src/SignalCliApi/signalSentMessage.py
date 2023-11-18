@@ -6,7 +6,7 @@ from datetime import timedelta
 import json
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -192,7 +192,7 @@ class SentMessage(Message):
         # Continue init:
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, contacts.get_self(), recipient, this_device, timestamp, Message.TYPE_SENT_MESSAGE)
+                         raw_message, contacts.get_self(), recipient, this_device, timestamp, MessageTypes.SENT)
         return
 
     ##########################

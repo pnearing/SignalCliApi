@@ -7,7 +7,7 @@ import socket
 import json
 from syslog import syslog, LOG_INFO
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -134,14 +134,14 @@ class Messages(object):
         # Load messages: SentMessage | ReceivedMessage
         self.messages = []
         for message_dict in fromDict['messages']:
-            if message_dict['messageType'] == Message.TYPE_SENT_MESSAGE:
+            if message_dict['messageType'] == MessageTypes.SENT.value:
                 message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,
                                       sticker_packs=self._sticker_packs,
                                       from_dict=message_dict)
 
-            elif message_dict['messageType'] == Message.TYPE_RECEIVED_MESSAGE:
+            elif message_dict['messageType'] == MessageTypes.RECEIVED.value:
                 message = ReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
                                           config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                           devices=self._devices, this_device=self._this_device,
@@ -153,11 +153,11 @@ class Messages(object):
         # Load sync messages: GroupUpdate | SyncMessage
         self.sync = []
         for message_dict in fromDict['syncMessages']:
-            if message_dict['messageType'] == Message.TYPE_GROUP_UPDATE_MESSAGE:
+            if message_dict['messageType'] == MessageTypes.GROUP_UPDATE.value:
                 message = GroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device, from_dict=message_dict)
-            elif message_dict['messageType'] == Message.TYPE_SYNC_MESSAGE:
+            elif message_dict['messageType'] == MessageTypes.SYNC.value:
                 message = SyncMessage(command_socket=self._command_socket, account_id=self._account_id,
                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                       devices=self._devices, this_device=self._this_device,

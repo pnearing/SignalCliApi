@@ -5,7 +5,7 @@ import socket
 import json
 import sys
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -18,7 +18,7 @@ from .signalTimestamp import Timestamp
 DEBUG: bool = False
 
 Self = TypeVar("Self", bound="Reaction")
-
+Message.TYPE_REACTION_MESSAGE
 
 class Reaction(Message):
     """Class to store a reaction message."""
@@ -58,7 +58,7 @@ class Reaction(Message):
         self.previous_emoji: Optional[str] = None
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, contacts.get_self(), recipient, this_device, None, Message.TYPE_REACTION_MESSAGE)
+                         raw_message, contacts.get_self(), recipient, this_device, None, MessageTypes.REACTION)
 
         # Set body:
         self.__update_body__()
@@ -81,9 +81,9 @@ class Reaction(Message):
     ###############################
     # Overrides:
     ###############################
-    def __eq__(self, __o: Self) -> bool:
-        if isinstance(__o, Reaction):
-            if self.sender == __o.sender and self.emoji == __o.emoji:
+    def __eq__(self, other: Self) -> bool:
+        if isinstance(other, Reaction):
+            if self.sender == other.sender and self.emoji == other.emoji:
                 return True
         return False
 

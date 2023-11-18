@@ -3,7 +3,7 @@
 from typing import Optional, Iterable, Any
 import socket
 
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, MessageTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -74,7 +74,7 @@ class Receipt(Message):
         self.body: str = ''
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, Message.TYPE_RECEIPT_MESSAGE, is_delivered,
+                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIPT, is_delivered,
                          time_delivered, is_read, time_read, is_viewed, time_viewed)
         # Mark as read, viewed and delivered:
         if self.timestamp is not None:
