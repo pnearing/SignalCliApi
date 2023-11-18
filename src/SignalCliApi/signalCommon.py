@@ -36,6 +36,12 @@ NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 """Number format string."""
 SELF_CONTACT_NAME: Final[str] = 'Note-To-Self'
 """The contact name for the self-contact."""
+UNKNOWN_CONTACT_NAME: Final[str] = '<UNKNOWN-CONTACT>'
+"""The default name for an unknown contact. If this the contact name it signals the library to update it if ever an
+    actual name for the contact comes up."""
+UNKNOWN_GROUP_NAME: Final[str] = '<UNKNOWN-GROUP>'
+"""The default name for an unknown group. If this is the group name it signals the library to update it if even an
+    actual group name comes up."""
 
 
 ###########################
@@ -370,5 +376,5 @@ def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
     """
     logger: logging.Logger = logging.getLogger(__name__ + '.' + __type_error__.__name__)
     error_message: str = __type_err_msg__(var_name, valid_type_name, var)
-    logger.critical("Raising TypeError(%s)." % error_message)
+    logger.critical("--> TypeError(%s)." % error_message)
     raise TypeError(error_message)
