@@ -139,11 +139,7 @@ class Quote(object):
         # Load author
         author_number: str = raw_quote['authorNumber']
         author_uuid: str = raw_quote['authorUuid']
-        added, self.author = self._contacts.__get_or_add__(
-            name="<UNKNOWN-CONTACT>",
-            number=author_number,
-            uuid=author_uuid,
-        )
+        added, self.author = self._contacts.__get_or_add__(number=author_number, uuid=author_uuid,)
         # Load text
         self.text = raw_quote['text']
         # Load attachments
@@ -193,7 +189,7 @@ class Quote(object):
         # Set author
         self.author = None
         if from_dict['author'] is not None:
-            added, self.author = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['author'])
+            added, self.author = self._contacts.__get_or_add__(contact_id=from_dict['author'])
         # Set text
         self.text = from_dict['text']
         # Set attachments:
@@ -209,8 +205,7 @@ class Quote(object):
         # Set conversation:
         self.conversation = None
         if from_dict["conversationType"] == 'contact':
-            added, self.conversation = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                     contact_id=from_dict['conversation'])
+            added, self.conversation = self._contacts.__get_or_add__(contact_id=from_dict['conversation'])
         elif from_dict["conversationType"] == 'group':
             added, self.conversation = self._groups.__get_or_add__(group_id=from_dict['conversation'])
         return

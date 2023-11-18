@@ -50,12 +50,8 @@ class Mention(object):
     ########################
     def __from_raw_mention__(self, raw_mention: dict) -> None:
         print(raw_mention)
-        added, self.contact = self._contacts.__get_or_add__(
-            name=raw_mention['name'],
-            number=raw_mention['number'],
-            uuid=raw_mention['uuid']
-        )
-
+        added, self.contact = self._contacts.__get_or_add__(name=raw_mention['name'], number=raw_mention['number'],
+                                                            uuid=raw_mention['uuid'])
         self.start = raw_mention['start']
         self.length = raw_mention['length']
         return
@@ -90,7 +86,7 @@ class Mention(object):
         return mention_dict
 
     def __from_dict__(self, from_dict: dict) -> None:
-        added, self.contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id=from_dict['contactId'])
+        added, self.contact = self._contacts.__get_or_add__(contact_id=from_dict['contactId'])
         self.start = from_dict['start']
         self.length = from_dict['length']
         return

@@ -166,11 +166,9 @@ class Message(object):
             print(raw_message)
         # Parse Sender
             print("DEBUG: %s" % raw_message['sourceNumber'])
-        added, self.sender = self._contacts.__get_or_add__(
-            name=raw_message['sourceName'],
-            number=raw_message['sourceNumber'],
-            uuid=raw_message['sourceUuid']
-        )
+        added, self.sender = self._contacts.__get_or_add__(name=raw_message['sourceName'],
+                                                           number=raw_message['sourceNumber'],
+                                                           uuid=raw_message['sourceUuid'])
         if DEBUG:
             print("DEBUG:", self.sender.number)
         if added:
@@ -268,14 +266,13 @@ class Message(object):
 
     def __from_dict__(self, from_dict: dict) -> None:
         # Parse sender:
-        added, self.sender = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>", contact_id=from_dict['sender'])
+        added, self.sender = self._contacts.__get_or_add__(contact_id=from_dict['sender'])
         # Parse recipient type:
         self.recipient_type = from_dict['recipientType']
         # Parse recipient:
         if from_dict['recipient'] is not None:
             if self.recipient_type == 'contact':
-                added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>",
-                                                                      contact_id=from_dict['recipient'])
+                added, self.recipient = self._contacts.__get_or_add__(contact_id=from_dict['recipient'])
             elif self.recipient_type == 'group':
                 added, self.recipient = self._groups.__get_or_add__(group_id=from_dict['recipient'])
             else:

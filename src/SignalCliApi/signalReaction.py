@@ -72,11 +72,8 @@ class Reaction(Message):
         reactionDict: dict = raw_message['dataMessage']['reaction']
         # print(reactionDict)
         self.emoji = reactionDict['emoji']
-        added, self.target_author = self._contacts.__get_or_add__(
-            name="<UNKNOWN-CONTACT>",
-            number=reactionDict['targetAuthorNumber'],
-            uuid=reactionDict['targetAuthorUuid'],
-        )
+        added, self.target_author = self._contacts.__get_or_add__(number=reactionDict['targetAuthorNumber'],
+                                                                  uuid=reactionDict['targetAuthorUuid'])
         self.target_timestamp = Timestamp(timestamp=reactionDict['targetSentTimestamp'])
         self.is_remove = reactionDict['isRemove']
         return
@@ -113,8 +110,7 @@ class Reaction(Message):
         self.emoji = from_dict['emoji']
         # Parse target author:
         if from_dict['targetAuthorId'] is not None:
-            added, self.target_author = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                      contact_id=from_dict['targetAuthorId'])
+            added, self.target_author = self._contacts.__get_or_add__(contact_id=from_dict['targetAuthorId'])
         else:
             self.target_author = None
         # Parse target timestamp:

@@ -370,11 +370,9 @@ class ReceivedMessage(Message):
                     print(error_message, file=sys.stderr)
             else:
                 if result['recipientAddress']['number'] is not None:
-                    added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                   number=result['recipientAddress']['number'])
+                    added, contact = self._contacts.__get_or_add__(number=result['recipientAddress']['number'])
                 else:
-                    added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>",
-                                                                   uuid=result['recipientAddress']['uuid'])
+                    added, contact = self._contacts.__get_or_add__(uuid=result['recipientAddress']['uuid'])
                 contact.seen(when)
         return when
 

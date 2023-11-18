@@ -127,8 +127,9 @@ class Groups(object):
         """
         self._groups = []
         for groupDict in from_dict['groups']:
-            group = Group(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
-                          account_contacts=self._contacts, from_dict=groupDict)
+            group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                          config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
+                          from_dict=groupDict)
             self._groups.append(group)
         return
 
@@ -164,7 +165,8 @@ class Groups(object):
         new_group_count: int = 0
         for raw_group in response_obj['result']:
             group_count += 1
-            new_group = Group(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
+            new_group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                              config_path=self._config_path, account_id=self._account_id,
                               account_contacts=self._contacts, raw_group=raw_group)
             old_group = self.get_by_id(new_group.id)
             if old_group is None:
@@ -245,7 +247,8 @@ class Groups(object):
         old_group = self.get_by_id(group_id)
         if old_group is not None:
             return False, old_group
-        new_group = Group(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
-                          account_contacts=self._contacts, name=name, group_id=group_id)
+        new_group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                          config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
+                          name=name, group_id=group_id)
         self._groups.append(new_group)
         return True, new_group

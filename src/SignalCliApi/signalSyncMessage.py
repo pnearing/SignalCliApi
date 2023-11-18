@@ -96,7 +96,7 @@ class SyncMessage(Message):
             read_message_list: list[dict[str, Any]] = raw_sync_message['read_messages']
             self.read_messages: list[tuple[Contact, Timestamp]] = []
             for read_message_dict in read_message_list:
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", read_message_dict['sender'])
+                added, contact = self._contacts.__get_or_add__(contact_id=read_message_dict['sender'])
                 timestamp = Timestamp(timestamp=read_message_dict['timestamp'])
                 self.read_messages.append((contact, timestamp))
         ######### Sent message ########
@@ -158,7 +158,7 @@ class SyncMessage(Message):
         # Load read messages:
         self.read_messages = []
         for (contact_id, timestamp_dict) in from_dict['readMessages']:
-            added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contact_id)
+            added, contact = self._contacts.__get_or_add__(contact_id=contact_id)
             timestamp = Timestamp(from_dict=timestamp_dict)
             self.read_messages.append((contact, timestamp))
         # Set blocked groups and contacts:

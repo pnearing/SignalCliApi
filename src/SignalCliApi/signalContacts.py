@@ -333,7 +333,7 @@ class Contacts(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
         if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
             for contact_id in sync_message.blocked_contacts:
-                added, contact = self.__get_or_add__(UNKNOWN_CONTACT_NAME, contact_id=contact_id)
+                added, contact = self.__get_or_add__(contact_id=contact_id)
                 contact.is_blocked = True
             self.__save__()
         else:

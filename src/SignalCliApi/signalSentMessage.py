@@ -206,8 +206,7 @@ class SentMessage(Message):
         # Load recipient and recipient type:
         if raw_sent_message['destination'] is not None:
             self.recipient_type = 'contact'
-            added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>",
-                                                                  number=raw_sent_message['destinationNumber'],
+            added, self.recipient = self._contacts.__get_or_add__(number=raw_sent_message['destinationNumber'],
                                                                   uuid=raw_sent_message['destinationUuid'])
         elif 'groupInfo' in raw_sent_message.keys():
             self.recipient_type = 'group'
@@ -369,8 +368,8 @@ class SentMessage(Message):
         # Load sent_to:
         self.sent_to = []
         if from_dict['sentTo'] is not None:
-            for contactId in from_dict['sentTo']:
-                added, contact = self._contacts.__get_or_add__("<UNKNOWN-CONTACT>", contactId)
+            for contact_id in from_dict['sentTo']:
+                added, contact = self._contacts.__get_or_add__(contact_id=contact_id)
                 self.sent_to.append(contact)
         # Load delivery_receipts:
         self.delivery_receipts = []
