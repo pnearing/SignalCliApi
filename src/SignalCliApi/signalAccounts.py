@@ -169,10 +169,10 @@ class Accounts(object):
     ##############################
     # Overrides:
     ##############################
-    def __iter__(self) -> Iterator:
+    def __iter__(self) -> Iterator[Account]:
         """
         Return an iterator over the accounts.
-        :return: Iterator: The iterator.
+        :return: Iterator[Account]: The iterator.
         """
         global ACCOUNTS
         return iter(ACCOUNTS)
