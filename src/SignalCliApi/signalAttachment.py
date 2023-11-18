@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-
-from typing import TypeVar, Optional
+"""
+File: signalAttachment.py
+Store and manage a signal attachment.
+"""
+import logging
+from typing import TypeVar, Optional, Any
 import mimetypes
 import os
 from subprocess import check_call, CalledProcessError
@@ -10,8 +14,6 @@ from .signalThumbnail import Thumbnail
 
 Self = TypeVar("Self", bound="Attachment")
 
-DEBUG: bool = False
-
 
 class Attachment(object):
     """
@@ -20,59 +22,98 @@ class Attachment(object):
 
     def __init__(self,
                  config_path: str,
-                 from_dict: Optional[dict] = None,
-                 raw_attachment: Optional[dict] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_attachment: Optional[dict[str, Any]] = None,
                  content_type: Optional[str] = None,
                  file_name: Optional[str] = None,
                  size: Optional[int] = None,
                  local_path: Optional[str] = None,
                  thumbnail: Optional[Thumbnail] = None,
                  ) -> None:
+        """
+        Initialize an Attachment object.
+        :param config_path: str: The path to the signal-cli config directory.
+        :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
+        :param raw_attachment: Optional[dict[str, Any]]: The dict provided by signal.
+        :param content_type: Optional[str]: The attachment content-type.
+        :param file_name: Optional[str]: The filename of the attachment.
+        :param size: Optional[int]: The size of the attachment in bytes.
+        :param local_path: Optional[str]: The local path of this attachment.
+        :param thumbnail: Optional[Thumbnail]: The Thumbnail object for this attachment.
+        """
+        # Super:
+        object.__init__(self)
+
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+
+        # Type checks:
         # Check config_path:
         if not isinstance(config_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("config_path", "str", config_path)
         # Check from_dict:
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("from_dict", "dict[str, object]", from_dict)
         # Check raw Attachment:
         if raw_attachment is not None and not isinstance(raw_attachment, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("raw_attachment", "dict[str, object]", raw_attachment)
         # Check the content type:
         if content_type is not None and not isinstance(content_type, str):
+            logger.critical("Raising TypeError:")
             __type_error__("content_type", "str", content_type)
         # Check filename:
         if file_name is not None and not isinstance(file_name, str):
+            logger.critical("Raising TypeError:")
             __type_error__("filename", "str", file_name)
         # Check size:
         if size is not None and not isinstance(size, int):
+            logger.critical("Raising TypeError:")
             __type_error__("size", "int", size)
         # Check local_path:
         if local_path is not None and not isinstance(local_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("local_path", "str", local_path)
         # Check thumbnail:
         if thumbnail is not None and not isinstance(thumbnail, Thumbnail):
+            logger.critical("Raising TypeError:")
             __type_error__("thumbnail", "Thumbnail", thumbnail)
 
         # Set internal vars:
         self._config_path: str = config_path
+        """The path to the signal-cli config directory."""
         self._xdgopen_path: Optional[str] = __find_xdgopen__()
+        """The path to xdg-open executable."""
+
         # Set external vars:
         self.content_type: Optional[str] = content_type
+        """The content-type of the attachment."""
         self.filename: Optional[str] = file_name
+        """The filename of this attachment."""
         self.size: Optional[int] = size
+        """The size in bytes of the attachment."""
         self.local_path: Optional[str] = local_path
+        """The path to the local copy of the attachment."""
         self.exists: bool = False
+        """Does the local file exist?"""
         if local_path is not None:
             self.exists = os.path.exists(local_path)
         self.thumbnail: Thumbnail = thumbnail
+        """The Thumbnail object for this attachment."""
+
         # Parse from_dict:
         if from_dict is not None:
+            logger.debug("Loading from dict.")
             self.__from_dict__(from_dict)
         # Parse from raw Attachment
         elif raw_attachment is not None:
+            logger.debug("Loading from raw signal dict.")
             self.__from_raw_attachment__(raw_attachment)
         # Set properties from the local path:
         else:
+            logger.debug("Properties have been passed in.")
             if self.local_path is not None:
                 self.exists = os.path.exists(self.local_path)
                 if self.exists:
@@ -83,7 +124,12 @@ class Attachment(object):
                 self.exists = False
         return
 
-    def __from_raw_attachment__(self, raw_attachment: dict) -> None:
+    def __from_raw_attachment__(self, raw_attachment: dict[str, Any]) -> None:
+        """
+        Load from a raw dict provided by signal.
+        :param raw_attachment: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         self.content_type = raw_attachment['contentType']
         self.id = raw_attachment['id']
         self.filename = raw_attachment['filename']
@@ -105,7 +151,11 @@ class Attachment(object):
     #########################
     # To / From Dict:
     #########################
-    def __to_dict__(self) -> dict:
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict.
+        :return: dict[str, Any]: The dict to pass to __from_dict__()
+        """
         attachment_dict = {
             'contentType': self.content_type,
             'id': self.id,
@@ -118,7 +168,12 @@ class Attachment(object):
             attachment_dict['thumbnail'] = self.thumbnail.__to_dict__()
         return attachment_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict provided by __to_dict__()
+        :return: None
+        """
         self.content_type = from_dict['contentType']
         self.id = from_dict['id']
         self.filename = from_dict['filename']
@@ -136,25 +191,19 @@ class Attachment(object):
     ########################
     # Getters:
     ########################
-    def get_file_path(self) -> Optional[str]:
+    def get_local_path(self) -> Optional[str]:
         """
         Get the local path.
-        :returns: Optional[str]: The path to the local copy of the file, if not found, and a thumbnail exists it will
-                                    return the path to the local thumbnail file, otherwise it will return None.
+        :returns: Optional[str]: The path to the local copy of the file or None.
         """
-        if self.local_path is not None:
-            return self.local_path
-        if self.thumbnail is not None and self.thumbnail.local_path is not None:
-            return self.thumbnail.local_path
-        return None
+        return self.local_path
 
     ########################
     # Methods:
     ########################
     def display(self) -> bool:
         """
-        Call xdg-open on the local copy of the attachment if it exists, if it doesn't exist and a thumbnail does, it
-            will try to call xdg-open on the thumbnail.
+        Call xdg-open on the local copy of the attachment if it exists.
         :returns: bool: True if xdg-open was successfully called.
         """
         if self._xdgopen_path is None:
@@ -165,6 +214,3 @@ class Attachment(object):
                 return True
             except CalledProcessError:
                 return False
-        elif self.thumbnail is not None:
-            return self.thumbnail.display()
-        return False
