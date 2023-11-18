@@ -19,9 +19,9 @@ class Error(Exception):
         :param error: Optional[Exception]: The actual exception that was raised.
         :param args: tuple[*Any]: Additional arguments to store in the Exception. 
         """
-        Exception.__init__(self, *args)
-        self._message: str = message
-        self._error: Optional[Exception] = error
+        Exception.__init__(self, message, error, *args)
+        self._message: str = self.args[0]
+        self._error: Optional[Exception] = self.args[1]
         return
     
     @property
