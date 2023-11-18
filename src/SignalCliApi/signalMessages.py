@@ -676,7 +676,7 @@ class Messages(object):
             for result in results_list:
                 # Gather the group and contact:
                 group_id = result['groupId']
-                added, group = self._groups.__get_or_add__("<UNKNOWN-GROUP>", group_id)
+                added, group = self._groups.__get_or_add__(group_id=group_id)
                 contact_id = result['recipientAddress']['number']
                 if contact_id is None:
                     contact_id = result['recipientAddress']['uuid']

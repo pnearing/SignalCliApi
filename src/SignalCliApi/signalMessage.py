@@ -180,8 +180,7 @@ class Message(object):
         if 'dataMessage' in raw_message.keys():
             dataMessage: dict[str, Any] = raw_message['dataMessage']
             if 'groupInfo' in dataMessage.keys():
-                added, self.recipient = self._groups.__get_or_add__("<UNKNOWN-GROUP>",
-                                                                    dataMessage['groupInfo']['groupId'])
+                added, self.recipient = self._groups.__get_or_add__(group_id=dataMessage['groupInfo']['groupId'])
                 self.recipient_type = 'group'
         if self.recipient is None:
             self.recipient = self._contacts.get_self()
@@ -278,8 +277,7 @@ class Message(object):
                 added, self.recipient = self._contacts.__get_or_add__(name="<UNKNOWN-CONTACT>",
                                                                       contact_id=from_dict['recipient'])
             elif self.recipient_type == 'group':
-                added, self.recipient = self._groups.__get_or_add__(name="<UNKNOWN-GROUP>",
-                                                                    group_id=from_dict['recipient'])
+                added, self.recipient = self._groups.__get_or_add__(group_id=from_dict['recipient'])
             else:
                 raise ValueError("invalid recipient type in from_dict: %s" % self.recipient_type)
         # Parse device:
