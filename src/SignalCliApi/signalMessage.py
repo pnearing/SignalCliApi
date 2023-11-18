@@ -3,7 +3,7 @@
 from typing import TypeVar, Optional, Any
 import socket
 
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, UNKNOWN_DEVICE_NAME
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -187,7 +187,7 @@ class Message(object):
             self.recipient = self._contacts.get_self()
             self.recipient_type = 'contact'
         # Parse device:
-        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", raw_message['sourceDevice'])
+        added, self.device = self.sender.devices.__get_or_add__(device_id=raw_message['sourceDevice'])
         if added:
             self._contacts.__save__()
         # Parse Timestamp:
@@ -284,7 +284,7 @@ class Message(object):
                 raise ValueError("invalid recipient type in from_dict: %s" % self.recipient_type)
         # Parse device:
 
-        added, self.device = self.sender.devices.__get_or_add__("<UNKNOWN-DEVICE>", from_dict['device'])
+        added, self.device = self.sender.devices.__get_or_add__(device_id=from_dict['device'])
         if added:
             self._contacts.__save__()
         # Parse timestamp:

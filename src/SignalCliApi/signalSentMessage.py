@@ -6,7 +6,7 @@ from datetime import timedelta
 import json
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -216,7 +216,7 @@ class SentMessage(Message):
         # Load timestamp:
         self.timestamp = Timestamp(timestamp=raw_sent_message['timestamp'])
         # Load Device:
-        added, self.device = self._devices.__get_or_add__("<UNKNOWN-DEVICE>", raw_message['sourceDevice'])
+        added, self.device = self._devices.__get_or_add__(device_id=raw_message['sourceDevice'])
 
         # Load body:
         self.body = raw_sent_message['message']
