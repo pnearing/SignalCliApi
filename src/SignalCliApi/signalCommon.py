@@ -10,7 +10,7 @@ import socket
 import select
 import re
 import logging
-from enum import IntEnum
+from enum import IntEnum, auto
 from .signalExceptions import CommunicationsError, SignalError, InvalidServerResponse
 
 ###################
@@ -49,11 +49,11 @@ PRIMARY_DEVICE_ID: Final[int] = 1
 
 
 ###########################
-# Index's:
+# Enum's:
 ###########################
 class CallbackIdx(IntEnum):
     """
-    Enum for callback index's.
+    Enum to index the callbacks. (Callable, Optional[list[Any]])
     """
     CALLABLE = 0
     PARAMS = 1
@@ -63,17 +63,25 @@ class MessageTypes(IntEnum):
     """
     Enum for message types:
     """
-    NOT_SET = 0
-    SENT = 1
-    RECEIVED = 2
-    TYPING = 3
-    RECEIPT = 4
-    STORY = 5
-    PAYMENT = 6
-    REACTION = 7
-    GROUP_UPDATE = 8
-    SYNC = 9
-    CALL = 10
+    NOT_SET = auto()
+    SENT = auto()
+    RECEIVED = auto()
+    TYPING = auto()
+    RECEIPT = auto()
+    STORY = auto()
+    PAYMENT = auto()
+    REACTION = auto()
+    GROUP_UPDATE = auto()
+    SYNC = auto()
+    CALL = auto()
+
+
+class RecipientTypes(IntEnum):
+    """
+    Enum to store message recipient types.
+    """
+    GROUP = auto()
+    CONTACT = auto()
 
 
 ####################################
