@@ -18,7 +18,7 @@ from .signalTimestamp import Timestamp
 DEBUG: bool = False
 
 Self = TypeVar("Self", bound="Reaction")
-Message.TYPE_REACTION_MESSAGE
+
 
 class Reaction(Message):
     """Class to store a reaction message."""
