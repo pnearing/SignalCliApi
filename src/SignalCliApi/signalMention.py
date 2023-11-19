@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Signal Mention"""
+"""
+File: signalMention.py
+Class to store and handle a mention.
+"""
+import logging
 from typing import TypeVar, Optional, Any
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalCommon import __type_error__
-DEBUG: bool = False
 Self = TypeVar("Self", bound="Mention")
 
 
 class Mention(object):
-    """Object for a mention."""
+    """
+    Object for a mention.
+    """
     def __init__(self,
                  contacts: Contacts,
                  from_dict: Optional[dict[str, Any]] = None,
@@ -18,25 +23,53 @@ class Mention(object):
                  start: Optional[int] = None,
                  length: Optional[int] = None,
                  ) -> None:
+        """
+        Initialize a new mention.
+        :param contacts: Contacts, The accounts contacts object.
+        :param from_dict: Optional[dict[str, Any]]: Load from a dict provided by __to_dict__()
+        :param raw_mention: Optional[dict[str, Any]]: Load from a dict provided by signal.
+        :param contact: Optional[Contact]: The contact this mention refers to.
+        :param start: Optional[int]: Where in the body the mention starts.
+        :param length: Optional[int]: How long the mention is.
+        """
+        # Super:
+        super().__init__()
+
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+
         # Argument checks:
         if not isinstance(contacts, Contacts):
+            logger.critical("Raising TypeError:")
             __type_error__("contacts", "Contacts", contacts)
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("from_dict", "Optional[dict]", from_dict)
         if raw_mention is not None and not isinstance(raw_mention, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("raw_mention", "Optional[dict]", raw_mention)
         if contact is not None and not isinstance(contact, Contact):
+            logger.critical("Raising TypeError:")
             __type_error__("contact", "Optional[Contact]", contact)
         if start is not None and not isinstance(start, int):
+            logger.critical("Raising TypeError:")
             __type_error__("start", "Optional[int]", start)
         if length is not None and not isinstance(length, int):
+            logger.critical("Raising TypeError:")
             __type_error__("length", "Optional[int]", length)
+
         # Set internal properties:
         self._contacts: Contacts = contacts
+        """This accounts Contact object."""
+
         # Set external properties:
         self.contact: Contact = contact
+        """The contact this mention refers to."""
         self.start: int = start
+        """The start position in the body where this mention starts."""
         self.length: int = length
+        """The length of the mention."""
+
         # Parse from dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)
@@ -48,10 +81,15 @@ class Mention(object):
     ########################
     # Init:
     ########################
-    def __from_raw_mention__(self, raw_mention: dict) -> None:
-        print(raw_mention)
+    def __from_raw_mention__(self, raw_mention: dict[str, Any]) -> None:
+        """
+        Load properties from raw mention provided by signal.
+        :param raw_mention: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         added, self.contact = self._contacts.__get_or_add__(name=raw_mention['name'], number=raw_mention['number'],
                                                             uuid=raw_mention['uuid'])
+        self._contacts.__save__()
         self.start = raw_mention['start']
         self.length = raw_mention['length']
         return
@@ -60,24 +98,40 @@ class Mention(object):
     # Overrides:
     ######################
     def __str__(self) -> str:
+        """
+        String representation of the mention.
+        :return:
+        """
         return "%i:%i:%s" % (self.start, self.length, self.contact.get_id())
 
-    def __eq__(self, __o: Self) -> bool:
-        if isinstance(__o, Mention):
-            if self.start != __o.start:
+    def __eq__(self, other: Self) -> bool:
+        """
+        Calculate equality.
+        :param other: Mention: The mention to compare with.
+        :return: bool
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
+        if isinstance(other, Mention):
+            if self.start != other.start:
                 return False
-            elif self.length != __o.length:
+            elif self.length != other.length:
                 return False
-            elif self.contact != __o.contact:
+            elif self.contact != other.contact:
                 return False
             else:
                 return True
-        return False
+        error_message: str = "Can only calculate equality with a Mention object."
+        logger.critical("Raising TypeError(%s)." % error_message)
+        raise TypeError(error_message)
 
     ######################
     # To / From Dict:
     ######################
-    def __to_dict__(self) -> dict[str, object]:
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a jSON friendly dict.
+        :return: dict[str, Any]: The dict to provide to __from_dict__().
+        """
         mention_dict = {
             "contactId": self.contact.get_id(),
             "start": self.start,
@@ -85,8 +139,14 @@ class Mention(object):
         }
         return mention_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict created by __to_dict__().
+        :return: None
+        """
         added, self.contact = self._contacts.__get_or_add__(contact_id=from_dict['contactId'])
+        self._contacts.__save__()
         self.start = from_dict['start']
         self.length = from_dict['length']
         return
