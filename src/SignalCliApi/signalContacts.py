@@ -259,12 +259,9 @@ class Contacts(object):
         logger.info("Loading contacts from disk: '%s'" % self._json_file_path)
         # Try and open the file for reading:
         try:
-            logger.debug("Opening file...")
             file_handle: TextIO = open(self._json_file_path, 'r')
-            logger.debug("Loading JSON from file...")
             contacts_dict: dict[str, Any] = json.loads(file_handle.read())
             file_handle.close()
-            logger.debug("File closed.")
         except (FileNotFoundError, OSError, PermissionError) as e:
             error_message: str = "Couldn't open '%s' for reading: %s" % (self._json_file_path, str(e.args))
             logger.critical("Raising RuntimeError(%s)." % error_message)
@@ -458,6 +455,8 @@ class Contacts(object):
             contact_id = uuid
         # try to add to signal and return:
         added, contact, _ = self.add(name, contact_id)
+        # Save the new contact:
+        self.__save__()
         return added, contact
 
     ##################################
