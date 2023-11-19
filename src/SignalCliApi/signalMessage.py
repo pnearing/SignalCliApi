@@ -7,7 +7,7 @@ from typing import TypeVar, Optional, Any
 import socket
 import logging
 
-from .signalCommon import __type_error__, MessageTypes, UNKNOWN_DEVICE_NAME
+from .signalCommon import __type_error__, MessageTypes, RecipientTypes
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -38,12 +38,12 @@ class Message(object):
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
                  message_type: MessageTypes = MessageTypes.NOT_SET,
-                 is_delivered: bool = False,
-                 time_delivered: Optional[Timestamp] = None,
-                 is_read: bool = False,
-                 time_read: Optional[Timestamp] = None,
-                 is_viewed: bool = False,
-                 time_viewed: Optional[Timestamp] = None,
+                 # is_delivered: bool = False,
+                 # time_delivered: Optional[Timestamp] = None,
+                 # is_read: bool = False,
+                 # time_read: Optional[Timestamp] = None,
+                 # is_viewed: bool = False,
+                 # time_viewed: Optional[Timestamp] = None,
                  ) -> None:
         """
         Initialize a message.
@@ -61,12 +61,12 @@ class Message(object):
         :param device: Optional[Device] = None: The device this message was sent from.
         :param timestamp: Optional[Timestamp] = None: The timestamp object of this message.
         :param message_type: int = TYPE_NOT_SET: The type of message this is.
-        :param is_delivered: bool = False: If this message was delivered.
-        :param time_delivered: Optional[Timestamp] = None: The Timestamp object for when this was delivered.
-        :param is_read: bool = False: If this message was read.
-        :param time_read: Optional[Timestamp] = None: The Timestamp object for when this message was read.
-        :param is_viewed: bool = False: If this message was viewed.
-        :param time_viewed: Optional[Timestamp] = None: The timestamp object for when this message was viewed.
+        # :param is_delivered: bool = False: If this message was delivered.
+        # :param time_delivered: Optional[Timestamp] = None: The Timestamp object for when this was delivered.
+        # :param is_read: bool = False: If this message was read.
+        # :param time_read: Optional[Timestamp] = None: The Timestamp object for when this message was read.
+        # :param is_viewed: bool = False: If this message was viewed.
+        # :param time_viewed: Optional[Timestamp] = None: The timestamp object for when this message was viewed.
         :returns: None
         """
         # Super:
@@ -115,27 +115,27 @@ class Message(object):
         if timestamp is not None and not isinstance(timestamp, Timestamp):
             logger.critical("Raising TypeError:")
             __type_error__("timestamp", "Timestamp", timestamp)
-        if not isinstance(message_type, int):
+        if not isinstance(message_type, MessageTypes):
             logger.critical("Raising TypeError:")
-            __type_error__("message_type", "int", message_type)
-        if not isinstance(is_delivered, bool):
-            logger.critical("Raising TypeError:")
-            __type_error__("is_delivered", "bool", is_delivered)
-        if time_delivered is not None and not isinstance(time_delivered, Timestamp):
-            logger.critical("Raising TypeError:")
-            __type_error__("time_delivered", "Timestamp", time_delivered)
-        if not isinstance(is_read, bool):
-            logger.critical("Raising TypeError:")
-            __type_error__("is_read", "bool", is_read)
-        if time_read is not None and not isinstance(time_read, Timestamp):
-            logger.critical("Raising TypeError:")
-            __type_error__("time_read", "Timestamp", time_read)
-        if not isinstance(is_viewed, bool):
-            logger.critical("Raising TypeError:")
-            __type_error__("is_viewed", "bool", is_viewed)
-        if time_viewed is not None and not isinstance(time_viewed, Timestamp):
-            logger.critical("Raising TypeError:")
-            __type_error__("time_viewed", "Timestamp", time_viewed)
+            __type_error__("message_type", "MessageTypes(enum)", message_type)
+        # if not isinstance(is_delivered, bool):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("is_delivered", "bool", is_delivered)
+        # if time_delivered is not None and not isinstance(time_delivered, Timestamp):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("time_delivered", "Timestamp", time_delivered)
+        # if not isinstance(is_read, bool):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("is_read", "bool", is_read)
+        # if time_read is not None and not isinstance(time_read, Timestamp):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("time_read", "Timestamp", time_read)
+        # if not isinstance(is_viewed, bool):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("is_viewed", "bool", is_viewed)
+        # if time_viewed is not None and not isinstance(time_viewed, Timestamp):
+        #     logger.critical("Raising TypeError:")
+        #     __type_error__("time_viewed", "Timestamp", time_viewed)
 
         # Set internal vars:
         self._command_socket: socket.socket = command_socket
@@ -158,7 +158,7 @@ class Message(object):
         """The sender of the message."""
         self.recipient: Contact | Group = recipient
         """The recipient of the message."""
-        self.recipient_type: Optional[str] = None
+        self.recipient_type: Optional[RecipientTypes] = None
         """The recipient type of the message, either 'contact' or 'group'."""
         self.device: Device = device
         """The device the message was sent from."""
@@ -166,17 +166,17 @@ class Message(object):
         """The timestamp object for this message."""
         self.message_type: MessageTypes = message_type
         """The message type."""
-        self.is_delivered: bool = is_delivered
+        self.is_delivered: bool = False
         """Is this message delivered?"""
-        self.time_delivered: Optional[Timestamp] = time_delivered
+        self.time_delivered: Optional[Timestamp] = None
         """Timestamp of when this message was delivered."""
-        self.is_read: bool = is_read
+        self.is_read: bool = False
         """Is this message read?"""
-        self.time_read: Optional[Timestamp] = time_read
+        self.time_read: Optional[Timestamp] = None
         """Timestamp of when this message was read."""
-        self.is_viewed: bool = is_viewed
+        self.is_viewed: bool = False
         """Is this message viewed?"""
-        self.time_viewed: Optional[Timestamp] = time_viewed
+        self.time_viewed: Optional[Timestamp] = None
         """Timestamp of when this message was viewed."""
 
         # Parse from dict:
@@ -189,15 +189,15 @@ class Message(object):
             self.__from_raw_message__(raw_message)
             self.sender.seen(self.timestamp)
             self.device.seen(self.timestamp)
-            if self.recipient_type == 'contact':
+            if self.recipient_type == RecipientTypes.CONTACT:
                 self.recipient.seen(self.timestamp)
 
         # Set recipient type
         if self.recipient is not None:
             if isinstance(self.recipient, Contact):
-                self.recipient_type = 'contact'
+                self.recipient_type = RecipientTypes.CONTACT
             elif isinstance(self.recipient, Group):
-                self.recipient_type = 'group'
+                self.recipient_type = RecipientTypes.GROUP
         return
 
     #######################
@@ -221,10 +221,10 @@ class Message(object):
             dataMessage: dict[str, Any] = raw_message['dataMessage']
             if 'groupInfo' in dataMessage.keys():
                 added, self.recipient = self._groups.__get_or_add__(group_id=dataMessage['groupInfo']['groupId'])
-                self.recipient_type = 'group'
+                self.recipient_type = RecipientTypes.GROUP
         if self.recipient is None:
             self.recipient = self._contacts.get_self()
-            self.recipient_type = 'contact'
+            self.recipient_type = RecipientTypes.CONTACT
         # Parse device:
         added, self.device = self.sender.devices.__get_or_add__(device_id=raw_message['sourceDevice'])
         if added:
@@ -288,7 +288,7 @@ class Message(object):
         message_dict = {
             'sender': None,
             'recipient': None,
-            'recipientType': self.recipient_type,
+            'recipientType': self.recipient_type.value,
             'device': None,
             'timestamp': None,
             'messageType': self.message_type.value,
@@ -323,18 +323,14 @@ class Message(object):
         """
         # Parse sender:
         _, self.sender = self._contacts.__get_or_add__(contact_id=from_dict['sender'])
-        self._contacts.__save__()
         # Parse recipient type:
-        self.recipient_type = from_dict['recipientType']
+        self.recipient_type = RecipientTypes(from_dict['recipientType'])
         # Parse recipient:
         if from_dict['recipient'] is not None:
-            if self.recipient_type == 'contact':
+            if self.recipient_type == RecipientTypes.CONTACT:
                 _, self.recipient = self._contacts.__get_or_add__(contact_id=from_dict['recipient'])
-                self._contacts.__save__()
-            elif self.recipient_type == 'group':
+            elif self.recipient_type == RecipientTypes.GROUP:
                 _, self.recipient = self._groups.__get_or_add__(group_id=from_dict['recipient'])
-            else:
-                raise ValueError("invalid recipient type in from_dict: %s" % self.recipient_type)
         # Parse device:
 
         _, self.device = self.sender.devices.__get_or_add__(device_id=from_dict['device'])
@@ -366,52 +362,77 @@ class Message(object):
     ###############################
     # Methods:
     ###############################
-    def mark_delivered(self, when: Timestamp) -> None:
+    def mark_delivered(self, when: Optional[Timestamp] = None) -> None:
         """
         Mark a message as delivered.
-        :param when: Timestamp: The time delivered.
+        :param when: Optional[Timestamp]: The time delivered, if None, NOW is used.
         :returns: None
         :raises: TypeError: If when is not a Timestamp.
         """
+        # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_delivered.__name__)
-        if not isinstance(when, Timestamp):
+        # Type check when:
+        if when is not None and not isinstance(when, Timestamp):
             logger.critical("Raising TypeError:")
             __type_error__('when', 'Timestamp', when)
+        # If we're already delivered, do nothing:
         if self.is_delivered:
             return
+        # Mark as delivered.
         self.is_delivered = True
-        self.time_delivered = when
+        # Set timestamp:
+        if when is None:
+            self.time_delivered = Timestamp(now=True)
+        else:
+            self.time_delivered = when
         return
 
-    def mark_read(self, when: Timestamp) -> None:
+    def mark_read(self, when: Optional[Timestamp]) -> None:
         """
         Mark a message as read.
-        :param when: Timestamp: The time read.
+        :param when: Optional[Timestamp]: The time read, if None, NOW is used.
         :returns: None
         :raises: TypeError: If when is not a Timestamp.
         """
+        # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_read.__name__)
-        if not isinstance(when, Timestamp):
+        # Type check when:
+        if when is not None and not isinstance(when, Timestamp):
             logger.critical("Raising TypeError:")
             __type_error__('when', 'Timestamp', when)
+        # If we're already read do nothing:
         if self.is_read:
             return
+        # Mark as read:
         self.is_read = True
-        self.time_read = when
+        # Set timestamp:
+        if when is None:
+            self.time_read = Timestamp(now=True)
+        else:
+            self.time_read = when
         return
 
-    def mark_viewed(self, when: Timestamp) -> None:
+    def mark_viewed(self, when: Optional[Timestamp]) -> None:
         """
         Mark a message as viewed.
-        :param when: Timestamp: The time viewed.
+        :param when: Optional[Timestamp]: The time viewed, if None, NOW is used.
         :returns: None
         :raises: TypeError if when is not a Timestamp.
         """
+        # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_viewed.__name__)
-        if not isinstance(when, Timestamp):
+        # Type check when:
+        if when is not None and not isinstance(when, Timestamp):
+            logger.critical("Raising TypeError:")
             __type_error__('when', 'Timestamp', when)
+        # If already viewed, do nothing.
         if self.is_viewed:
             return
+        # Mark as viewed:
         self.is_viewed = True
-        self.time_viewed = when
+        # Set timestamp:
+        if when is None:
+            self.time_viewed = Timestamp(now=True)
+        else:
+            self.time_viewed = when
         return
