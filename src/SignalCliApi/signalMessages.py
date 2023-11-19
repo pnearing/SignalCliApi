@@ -11,7 +11,7 @@ import json
 from syslog import syslog, LOG_INFO
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, __parse_signal_response__,\
-    __check_response_for_error__
+    __check_response_for_error__, RecipientTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -635,13 +635,13 @@ class Messages(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.send_message.__name__)
 
         # Validate recipients:
-        recipient_type: str = ''
+        recipient_type: Optional[RecipientTypes] = None
         target_recipients: list[Contact | Group]
         if isinstance(recipients, Contact):
-            recipient_type = 'contact'
+            recipient_type = RecipientTypes.CONTACT
             target_recipients = [recipients]
         elif isinstance(recipients, Group):
-            recipient_type = 'group'
+            recipient_type = RecipientTypes.GROUP
             target_recipients = [recipients]
         elif isinstance(recipients, Iterable):
             target_recipients = []
@@ -653,9 +653,9 @@ class Messages(object):
                 if i == 0:
                     checkType = type(recipient)
                     if isinstance(recipient, Contact):
-                        recipient_type = 'contact'
+                        recipient_type = RecipientTypes.CONTACT
                     else:
-                        recipient_type = 'group'
+                        recipient_type = RecipientTypes.GROUP
                 elif not isinstance(recipient, checkType):
                     logger.critical("Raising TypeError:")
                     __type_error__("recipients[%i]", str(checkType), recipient)
@@ -771,16 +771,17 @@ class Messages(object):
         }
 
         # Add recipients:
-        if recipient_type == 'group':
+        if recipient_type == RecipientTypes.GROUP:
             send_command_obj['params']['groupId'] = []
             for group in target_recipients:
                 send_command_obj['params']['groupId'].append(group.get_id())
-        elif recipient_type == 'contact':
+        elif recipient_type == RecipientTypes.CONTACT:
             send_command_obj['params']['recipient'] = []
             for contact in target_recipients:
                 send_command_obj['params']['recipient'].append(contact.get_id())
         else:
-            error_message: str = "'recipient_type' must be either 'contact' or 'group', we should never get here."
+            error_message: str = ("'recipient_type' (which might be None) must be either 'contact' or 'group', we should"
+                                  " never get here.")
             logger.critical("Raising ValueError(%s)." % error_message)
             raise ValueError(error_message)
 
@@ -835,16 +836,22 @@ class Messages(object):
 
         # Parse response and check for error:
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, ())
+        # TODO: Check if there are other errors somehow.
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
 
         # Check for error:
         if error_occurred:
             return_value: list[tuple[bool, Contact | Group, str]] = []
-            for recipient in target_recipients:
-                error_message: str = "signal error while sending message: Code: %i, Message: %s" \
-                                     % (signal_code, signal_message)
-                return_value.append((False, recipient, error_message))
-                return tuple(return_value)
+            error_message: str = "signal error while sending message: Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            if recipient_type == RecipientTypes.CONTACT:
+                for recipient in target_recipients:
+                    return_value.append((False, recipient, error_message))
+            elif recipient_type == RecipientTypes.GROUP:
+                for group in target_recipients:
+                    for recipient in group.members:
+                        return_value.append((False, recipient, error_message))
+            return tuple(return_value)
 
         # Some messages sent, some may have failed.
         results_list: list[dict[str, Any]] = response_obj['result']['results']
@@ -854,7 +861,7 @@ class Messages(object):
 
         # Parse results:
         return_value: list[tuple[bool, Contact | Group, SentMessage]] = []
-        if recipient_type == 'group':
+        if recipient_type == RecipientTypes.GROUP:
             sent_messages: list[SentMessage] = []
             for recipient in target_recipients:
                 sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
@@ -884,14 +891,14 @@ class Messages(object):
                 else:
                     return_value.append((False, contact, result['type']))
             return tuple(return_value)
-        # Recipient type == Contact
-        else:
+
+        elif recipient_type == RecipientTypes.CONTACT:
             for result in results_list:
                 # Gather contact:
                 contact_id = result['recipientAddress']['number']
                 if contact_id is None or contact_id == '':
                     contact_id = result['recipientAddress']['uuid']
-                added, contact = self._contacts.__get_or_add__(contact_id=contact_id)
+                _, contact = self._contacts.__get_or_add__(contact_id=contact_id)
 
                 # Message Sent successfully:
                 if result['type'] == 'SUCCESS':
