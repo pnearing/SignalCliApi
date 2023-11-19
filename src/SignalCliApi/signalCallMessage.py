@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""File: signalCallMessage.py"""
+"""
+File: signalCallMessage.py
+"""
+import logging
 from typing import Optional, Any
 import socket
 from .signalCommon import __type_error__, MessageTypes
@@ -11,12 +14,11 @@ from .signalGroup import Group
 from .signalGroups import Groups
 from .signalMessage import Message
 
-DEBUG: bool = False
-
 
 class CallMessage(Message):
-    """Class to store a call message."""
-
+    """
+    Class to store a call message.
+    """
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
@@ -25,34 +27,40 @@ class CallMessage(Message):
                  groups: Groups,
                  devices: Devices,
                  this_device: Device,
-                 from_dict: Optional[dict] = None,
-                 raw_message: Optional[dict] = None,
-                 sender: Optional[Contact] = None,
-                 recipient: Optional[Contact | Group] = None,
-                 offer_id: Optional[int] = None,
-                 sdp: Optional[Any] = None,
-                 call_type: Optional[str] = None,
-                 opaque: Optional[str] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_message: Optional[dict[str, Any]] = None,
+                 # sender: Optional[Contact] = None,
+                 # recipient: Optional[Contact | Group] = None,
+                 # offer_id: Optional[int] = None,
+                 # sdp: Optional[Any] = None,
+                 # call_type: Optional[str] = None,
+                 # opaque: Optional[str] = None,
                  ) -> None:
+        """
+        Initialize a call message.
+        :param command_socket: socket.socket: The socket to run commands on.
+        :param account_id: str: This account's ID.
+        :param config_path: str: The full path to the signal-cli config directory.
+        :param contacts: Contacts: This accounts Contacts object.
+        :param groups: Groups: This accounts Groups object.
+        :param devices: Devices: This accounts Devices object.
+        :param this_device: Device: The Device object for the device we're using.
+        :param from_dict: dict[str, Any]: Load properties from a dict created by __to_dict__()
+        :param raw_message:  dict[str, Any]: Load properties from a dict provided by signal.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
-        # Type check arguments:
-        if offer_id is not None and not isinstance(offer_id, int):
-            __type_error__("offer_id", "Optional[int]", offer_id)
-        if sdp is not None and not isinstance(sdp, object):
-            __type_error__("sdp", "Optional[object]", sdp)  # NOTE: Shouldn't get here, this is here as a placeholder
-            #                                                until I know the type returned by signal.
-        if call_type is not None and not isinstance(call_type, str):
-            __type_error__("call_type", "Optional[str]", call_type)
-        if opaque is not None and not isinstance(opaque, str):
-            __type_error__("opaque", "Optional[str]", opaque)
         # Set external properties:
-        self.offer_id: Optional[int] = offer_id
-        self.sdp: Optional[Any] = sdp
-        self.call_type: Optional[str] = call_type
-        self.opaque: Optional[str] = opaque
+        self.offer_id: Optional[int] = None
+        self.sdp: Optional[Any] = None
+        self.call_type: Optional[str] = None
+        self.opaque: Optional[str] = None
+
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, this_device, None, MessageTypes.CALL)
+                         raw_message, None, None, None, None, MessageTypes.CALL)
+
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)
@@ -62,7 +70,12 @@ class CallMessage(Message):
     ###############################
     # Init:
     ###############################
-    def __from_raw_message__(self, raw_message: dict) -> None:
+    def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
+        """
+        Load properties from a dict created by signal.
+        :param raw_message: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         super().__from_raw_message__(raw_message)
         offer_message: dict[str, object] = raw_message['callMessage']['offerMessage']
         self.offer_id = offer_message['id']
@@ -74,15 +87,24 @@ class CallMessage(Message):
     ###############################
     # To / From dict:
     ###############################
-    def __to_dict__(self) -> dict:
-        call_message_dict: dict[str, object] = super().__to_dict__()
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Generate a JSON friendly dict for this message.
+        :return: dict[str, Any]: The dict to provide to __from_dict__()
+        """
+        call_message_dict: dict[str, Any] = super().__to_dict__()
         call_message_dict['offerId'] = self.offer_id
         call_message_dict['sdp'] = self.sdp
         call_message_dict['type'] = self.call_type
         call_message_dict['opaque'] = self.opaque
         return call_message_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         super().__from_dict__(from_dict)
         self.offer_id = from_dict['offerId']
         self.sdp = from_dict['sdp']
