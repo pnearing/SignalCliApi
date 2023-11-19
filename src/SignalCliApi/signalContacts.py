@@ -20,6 +20,7 @@ class Contacts(object):
     """Object to contain a contact list."""
 
     def __init__(self,
+                 command_socket: socket.socket,
                  sync_socket: socket.socket,
                  config_path: str,
                  account_id: str,
@@ -29,6 +30,7 @@ class Contacts(object):
                  ) -> None:
         """
         Initialize the contacts.
+        :param command_socket: socket.socket: The socket to use for commands.
         :param sync_socket: socket.socket: The socket to use for sync operations.
         :param config_path: str: The path to the signal-cli config directory.
         :param account_id: str: The account ID, Either the number or the uuid.
@@ -45,6 +47,9 @@ class Contacts(object):
 
         # Argument checks:
         logger.debug("Type checks...")
+        if not isinstance(command_socket, socket.socket):
+            logger.critical("Raising TypeError:")
+            __type_error__('command_socket', 'socket.socket', command_socket)
         if not isinstance(sync_socket, socket.socket):
             logger.critical("Raising TypeError:")
             __type_error__("sync_socket", "socket.socket", sync_socket)
@@ -75,6 +80,8 @@ class Contacts(object):
             raise ValueError(error_message)
 
         # Set internal vars:
+        self._command_socket: socket.socket = command_socket
+        """The socket to run commands on."""
         self._sync_socket: socket.socket = sync_socket
         """The socket to use for sync operations."""
         self._config_path: str = config_path
@@ -203,7 +210,8 @@ class Contacts(object):
         self._contacts = []
         count: int = 0
         for contact_dict in from_dict['contacts']:
-            contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path, account_id=self._account_id,
+            contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                              config_path=self._config_path, account_id=self._account_id,
                               account_path=self._account_path, from_dict=contact_dict)
             self._contacts.append(contact)
             count += 1
@@ -302,16 +310,16 @@ class Contacts(object):
         new_count: int = 0
         for raw_contact in response_obj['result']:
             # Create new contact:
-            new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                  account_id=self._account_id, account_path=self._account_path,
-                                  raw_contact=raw_contact)
+            new_contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                                  config_path=self._config_path, account_id=self._account_id,
+                                  account_path=self._account_path, raw_contact=raw_contact)
             # Increment total count:
             total_count += 1
             # Check for existing contact:
             contact_found = False
             for contact in self._contacts:
                 if contact == new_contact:
-                    contact.__merge__(new_contact)
+                    contact.__update__(new_contact)
                     contact_found = True
             # If contact not found add the new contact.
             if not contact_found:
@@ -646,13 +654,15 @@ class Contacts(object):
         # Create a new contact object:
         new_contact: Contact
         if phone_number_match is not None:  # Reuse phone number match from value check.
-            new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                  account_id=self._account_id, account_path=self._account_path, name=name,
-                                  number=contact_id)
+            new_contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                                  config_path=self._config_path, account_id=self._account_id,
+                                  account_path=self._account_path, name=name, number=contact_id
+                                  )
         else:
-            new_contact = Contact(sync_socket=self._sync_socket, config_path=self._config_path,
-                                  account_id=self._account_id, account_path=self._account_path, name=name,
-                                  uuid=contact_id)
+            new_contact = Contact(command_socket=self._sync_socket, sync_socket=self._sync_socket,
+                                  config_path=self._config_path, account_id=self._account_id,
+                                  account_path=self._account_path, name=name, uuid=contact_id
+                                  )
 
         # Store the contact:
         self._contacts.append(new_contact)
