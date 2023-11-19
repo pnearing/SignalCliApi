@@ -20,19 +20,9 @@ Self = TypeVar("Self", bound="Message")
 
 
 class Message(object):
-    """Base class for a message."""
-    # TYPE_NOT_SET: int = 0
-    # TYPE_SENT_MESSAGE: int = 1
-    # TYPE_RECEIVED_MESSAGE: int = 2
-    # TYPE_TYPING_MESSAGE: int = 3
-    # TYPE_RECEIPT_MESSAGE: int = 4
-    # TYPE_STORY_MESSAGE: int = 5
-    # TYPE_PAYMENT_MESSAGE: int = 6
-    # TYPE_REACTION_MESSAGE: int = 7
-    # TYPE_GROUP_UPDATE_MESSAGE: int = 8
-    # TYPE_SYNC_MESSAGE: int = 9
-    # TYPE_CALL_MESSAGE: int = 10
-
+    """
+    Base class for a message.
+    """
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
