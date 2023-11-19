@@ -1,62 +1,136 @@
 #!/usr/bin/env python3
-
+"""
+File: signalContact.py
+Store and manage a single contact.
+"""
+import logging
 from typing import TypeVar, Optional, Any
 import socket
 import json
-import sys
 
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
-    __check_response_for_error__
+    __check_response_for_error__, UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME
 from .signalProfile import Profile
 from .signalTimestamp import Timestamp
 from .signalDevices import Devices
 
 Self = TypeVar("Self", bound="Contact")
 
-DEBUG: bool = False
-
 
 class Contact(object):
     """Class to store a contact."""
     def __init__(self,
+                 command_socket: socket.socket,
                  sync_socket: socket.socket,
                  config_path: str,
                  account_id: str,
                  account_path: str,
-                 from_dict: Optional[dict] = None,
-                 raw_contact: Optional[dict] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_contact: Optional[dict[str, Any]] = None,
                  name: Optional[str] = None,
                  number: Optional[str] = None,
                  uuid: Optional[str] = None,
-                 profile: Optional[Profile] = None,
-                 devices: Optional[Devices] = None,
-                 is_blocked: Optional[bool] = None,
+                 is_blocked: bool = False,
                  expiration: Optional[int] = None,
-                 is_typing: Optional[bool] = None,
-                 last_typing_change: Optional[Timestamp] = None,
-                 last_seen: Optional[Timestamp] = None,
                  color: Optional[str] = None,
                  ) -> None:
-        # TODO: Argument checks:
+        """
+        Initialize a Contact.
+        :param command_socket: socket.socket: The socket to run commands with.
+        :param sync_socket: socket.socket: The socket to run sync operations with.
+        :param config_path: str: The full path to the signal-cli config directory.
+        :param account_id: str: This account's ID.
+        :param account_path: str: The path to this accounts data directory.
+        :param from_dict: Optional[dict[str, Any]]: Load from a dict created by __to_dict__()
+        :param raw_contact: Optional[dict[str, Any]]: Load from a dict provided by signal.
+        :param name: Optional[str]: The name of this contact.
+        :param number: Optional[str]: The phone number of this contact.
+        :param uuid: Optional[str]: The UUID of the contact.
+        :param is_blocked: bool: If this contact should be blocked.
+        :param expiration: Optional[int]: The expiration of this contact in seconds.
+        :param color: Optional[str]: The colour of this contact.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
+
+        # Type checks:
+        if not isinstance(command_socket, socket.socket):
+            logger.critical("Raising TypeError:")
+            __type_error__('command_socket', 'socket.socket', command_socket)
+        if not isinstance(sync_socket, socket.socket):
+            logger.critical("Raising TypeError:")
+            __type_error__('sync_socket', 'socket.socket', sync_socket)
+        if not isinstance(config_path, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('config_path', 'str', config_path)
+        if not isinstance(account_id, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('account_id', 'str', account_id)
+        if not isinstance(account_path, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('account_path', 'str', account_path)
+        if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
+            __type_error__('from_dict', 'Optional[dict[str, Any]]', from_dict)
+        if raw_contact is not None and not isinstance(raw_contact, dict):
+            logger.critical("Raising TypeError:")
+            __type_error__('raw_contact', 'Optional[dict[str, Any]]', raw_contact)
+        if name is not None and not isinstance(name, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('name', 'Optional[str]', name)
+        if number is not None and not isinstance(number, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('number', 'Optional[str]', number)
+        if uuid is not None and not isinstance(uuid, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('uuid', 'Optional[str]', uuid)
+        if not isinstance(is_blocked, bool):
+            logger.critical("Raising TypeError:")
+            __type_error__('is_blocked', 'bool', is_blocked)
+        if expiration is not None and not isinstance(expiration, int):
+            logger.critical("Raising TypeError:")
+            __type_error__('expiration', 'Optional[int]', expiration)
+        if color is not None and not isinstance(color, str):
+            logger.critical("Raising TypeError:")
+            __type_error__('color', 'Optional[str]', color)
+
         # Set internal vars:
+        self._command_socket: socket.socket = command_socket
+        """The socket to run commands on."""
         self._sync_socket: socket.socket = sync_socket
+        """The socket to run sync operations on."""
         self._config_path: str = config_path
+        """The full path to the signal-cli config directory."""
         self._account_path: str = account_path
+        """The full path to the account data directory."""
         self._account_id: str = account_id
+        """This account's ID."""
 
         # Set external properties:
         self.name: Optional[str] = name
+        """The name of the contact."""
         self.number: Optional[str] = number
+        """The phone number of the contact."""
         self.uuid: Optional[str] = uuid
-        self.profile: Optional[Profile] = profile
-        self.devices: Devices = devices
+        """The UUID of the contact."""
+        self.profile: Optional[Profile] = None
+        """The profile of the contact."""
+        self.devices: Optional[Devices] = None
+        """The contacts device list."""
         self.is_blocked: bool = is_blocked
+        """Is this contact blocked?"""
         self.expiration: Optional[int] = expiration
-        self.is_typing: Optional[bool] = is_typing
-        self.last_typing_change: Optional[Timestamp] = last_typing_change
-        self.last_seen: Optional[Timestamp] = last_seen
+        """Expiration in seconds."""
+        self.is_typing: bool = False
+        """Is this contact typing?"""
+        self.last_typing_change: Optional[Timestamp] = None
+        """The Timestamp of the last typing change."""
+        self.last_seen: Optional[Timestamp] = None
+        """The last time this contact was seen."""
         self.color: Optional[str] = color
+        """The colour of the contact."""
         self.is_self: bool = False
+        """Is this the self-contact."""
 
         # Parse from dict:
         if from_dict is not None:
@@ -68,10 +142,10 @@ class Contact(object):
         # Mark as self:
         if self.number == self._account_id:
             self.is_self = True
-            self.name = "Note-To-Self"
+            self.name = SELF_CONTACT_NAME
 
         # Catch unknown contact:
-        if self.name == "<UNKNOWN-CONTACT>":
+        if self.name == UNKNOWN_CONTACT_NAME:
             if self.profile is not None:
                 self.set_name(self.profile.name)
                 self.name = self.profile.name  # Force the name for this session if setting it failed.
@@ -85,8 +159,12 @@ class Contact(object):
     ##################
     # Init:
     ##################
-    def __from_raw_contact__(self, raw_contact: dict) -> None:
-        # print(raw_contact)
+    def __from_raw_contact__(self, raw_contact: dict[str, Any]) -> None:
+        """
+        Load properties from a raw contact dict.
+        :param raw_contact: dict[str, Any]: The dict provided by signal.
+        :return: None
+        """
         if raw_contact['name'] == '':
             self.name = None
         else:
@@ -109,36 +187,47 @@ class Contact(object):
     ##########################
     # Overrides:
     ##########################
-    def __eq__(self, __o: Self) -> bool:
+    def __eq__(self, other: Self) -> bool:
         """
         Determine equality.
-        :param __o: The other object.
+        :param other: The other object.
         :return: bool: the equality result.
         """
-        if isinstance(__o, Contact):
+        logger: logging.Logger = logging.getLogger('__name__' + '.' + self.__eq__.__name__)
+        if isinstance(other, Contact):
             number_match: bool = False
             uuid_match: bool = False
-            if self.number is not None and __o.number is not None:
-                number_match = self.number == __o.number
-            if self.uuid is not None and __o.uuid is not None:
-                uuid_match = self.uuid == __o.uuid
-            if self.uuid is None or __o.uuid is None:
+            if self.number is not None and other.number is not None:
+                number_match = self.number == other.number
+            if self.uuid is not None and other.uuid is not None:
+                uuid_match = self.uuid == other.uuid
+            if self.uuid is None or other.uuid is None:
                 return number_match
-            elif self.number is None or __o.number is None:
+            elif self.number is None or other.number is None:
                 return uuid_match
             else:
                 return number_match and uuid_match
-        raise TypeError("can only check against another Contact object.")
+        error_message: str = "can only check against another Contact object."
+        logger.critical("Raising TypeError(%s)." % error_message)
+        raise TypeError(error_message)
 
     def __str__(self) -> str:
-        return_val: str = "%s(%s)" % (self.name, self.number)
+        """
+        String representation of this contact.
+        :return: str
+        """
+        return_val: str = "%s(%s)" % (self.name, self.get_id())
         return return_val
 
     #########################
     # To / From Dict:
     #########################
-    def __to_dict__(self) -> dict:
-        contact_dict = {
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict.
+        :return: dict[str, Any]: The dict to provide to __from_dict__()
+        """
+        contact_dict: dict[str, Any] = {
             'name': self.name,
             'number': self.number,
             'uuid': self.uuid,
@@ -161,7 +250,12 @@ class Contact(object):
             contact_dict['lastSeen'] = self.last_seen.__to_dict__()
         return contact_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: Load from a dict provided by __to_dict__().
+        :return: None
+        """
         self.name = from_dict['name']
         self.number = from_dict['number']
         self.uuid = from_dict['uuid']
@@ -221,12 +315,12 @@ class Contact(object):
                 return self.profile.name
             else:
                 return self.name
-        if self.name is not None and self.name != '' and self.name != "<UNKNOWN-CONTACT>":
+        if self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME:
             return self.name
         elif self.profile is not None and self.profile.name != '':
             return self.profile.name
         else:
-            return "<UNKNOWN-CONTACT>"
+            return UNKNOWN_CONTACT_NAME
 
     ###########################
     # Setters:
@@ -272,14 +366,19 @@ class Contact(object):
     #########################
     # Helpers:
     #########################
-    def __merge__(self, __o: Self) -> None:
-        self.name = __o.name
-        self.is_blocked = __o.is_blocked
-        self.expiration = __o.expiration
-        if self.profile is not None and __o.profile is not None:
-            self.profile.__merge__(__o.profile)
-        elif self.profile is None and __o.profile is not None:
-            self.profile = __o.profile
+    def __update__(self, other: Self) -> None:
+        """
+        Update a contact given another contact assumed to be more recent.
+        :param other: Contact: The other contact to update from.
+        :return: None
+        """
+        self.name = other.name
+        self.is_blocked = other.is_blocked
+        self.expiration = other.expiration
+        if self.profile is not None and other.profile is not None:
+            self.profile.__update__(other.profile)
+        elif self.profile is None and other.profile is not None:
+            self.profile = other.profile
         return
 
     ############################
@@ -291,10 +390,12 @@ class Contact(object):
         :param time_seen: Timestamp: The time this contact was seen at.
         :raises: TypeError: If time_seen is not a Timestamp object.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
         if not isinstance(time_seen, Timestamp):
+            logger.critical("Raising TypeError:")
             __type_error__('time_seen', 'Timestamp', time_seen)
         if self.last_seen is not None:
-            if self.last_seen < time_seen:
+            if time_seen > self.last_seen:
                 self.last_seen = time_seen
         else:
             self.last_seen = time_seen
