@@ -268,7 +268,7 @@ class Account(object):
             logger.debug("Merging account profiles...")
             self_contact = self.contacts.get_self()
             if self_contact is not None:
-                self.profile.__merge__(self_contact.profile)
+                self.profile.__update__(self_contact.profile)
         else:
             logger.info("Account not registered.")
             # Set devices to None:

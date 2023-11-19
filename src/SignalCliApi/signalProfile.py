@@ -252,13 +252,13 @@ class Profile(object):
             self.name = self.family_name
         return
 
-    def __merge__(self, __o: Self) -> None:
-        self.given_name = __o.given_name
-        self.family_name = __o.family_name
-        self.about = __o.about
-        self.emoji = __o.emoji
-        self.coin_address = __o.coin_address
-        self.last_update = __o.last_update
+    def __update__(self, other: Self) -> None:
+        self.given_name = other.given_name
+        self.family_name = other.family_name
+        self.about = other.about
+        self.emoji = other.emoji
+        self.coin_address = other.coin_address
+        self.last_update = other.last_update
         if self._is_account_profile:
             self.__save__()
         return
