@@ -7,7 +7,7 @@ import json
 
 from .signalAttachment import Attachment
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes,\
-    RecipientTypes
+    RecipientTypes, ReceiptTypes
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -402,13 +402,13 @@ class SentMessage(Message):
     # Helpers:
     ###########################
     def __parse_receipt__(self, receipt: Receipt) -> None:
-        if receipt.receiptType == Receipt.TYPE_DELIVERY:
+        if receipt.receipt_type == ReceiptTypes.DELIVER:
             self.mark_delivered(receipt.when)
             self.delivery_receipts.append(receipt)
-        elif receipt.receiptType == Receipt.TYPE_READ:
+        elif receipt.receipt_type == ReceiptTypes.READ:
             self.mark_read(receipt.when)
             self.read_receipts.append(receipt)
-        elif receipt.receiptType == Receipt.TYPE_VIEWED:
+        elif receipt.receipt_type == ReceiptTypes.VIEWED:
             self.mark_viewed(receipt.when)
             self.viewed_receipts.append(receipt)
         else:
