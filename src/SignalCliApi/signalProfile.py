@@ -17,10 +17,13 @@ from .signalExceptions import InvalidDataFile
 # Define Self:
 Self = TypeVar("Self", bound="Profile")
 
+# Constants:
 NOT_ACCOUNT_PROFILE_MESSAGE: Final[str] = 'this is not the account profile, not setting property'
 VALUE_ALREADY_SET_MESSAGE: Final[str] = "property already set to value"
 SUCCESS_MESSAGE: Final[str] = "SUCCESS"
 
+# Non-fatal error codes to ignore while setting properties:
+NON_FATAL_ERROR_CODES: Final[list[int]] = []
 
 class Profile(object):
     """Class containing the profile for either a contact or the account."""
@@ -374,7 +377,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal error while setting profile given name. Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
@@ -422,7 +425,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal error while setting profile family name. Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
@@ -471,7 +474,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal error while setting profile about. Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
@@ -520,7 +523,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal returned an error while setting profile emoji. Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
@@ -570,7 +573,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_error = __check_response_for_error__(response_obj, [])
+        error_occurred, signal_code, signal_error = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal error occurred while setting profile coin address. Code: %i, Message: %s" \
                                  % (signal_code, signal_error)
@@ -620,7 +623,7 @@ class Profile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
             error_message: str = "signal error while setting profile avatar. Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
