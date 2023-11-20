@@ -7,7 +7,7 @@ from datetime import timedelta, datetime
 import pytz
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -47,12 +47,6 @@ class ReceivedMessage(Message):
                  recipient: Optional[Contact | Group] = None,
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
-                 is_delivered: bool = False,
-                 time_delivered: Optional[Timestamp] = None,
-                 is_read: bool = False,
-                 time_read: Optional[Timestamp] = None,
-                 is_viewed: bool = False,
-                 time_viewed: Optional[Timestamp] = None,
                  body: Optional[str] = None,
                  attachments: Optional[Iterable[Attachment] | Attachment] = None,
                  mentions: Optional[Iterable[Mention] | Mention] = None,
@@ -61,7 +55,7 @@ class ReceivedMessage(Message):
                  quote: Optional[Quote] = None,
                  expiration: Optional[timedelta] = None,
                  expiration_timestamp: Optional[Timestamp] = None,
-                 isExpired: bool = False,
+                 is_expired: bool = False,
                  previews: Optional[Iterable[Preview] | Preview] = None,
                  ) -> None:
         # Check sticker packs:
@@ -121,8 +115,8 @@ class ReceivedMessage(Message):
         if expiration_timestamp is not None:
             if not isinstance(expiration_timestamp, Timestamp):
                 __type_error__("expiration_timestamp", "Timestamp", expiration_timestamp)
-        if not isinstance(isExpired, bool):
-            __type_error__("is_expired", "bool", isExpired)
+        if not isinstance(is_expired, bool):
+            __type_error__("is_expired", "bool", is_expired)
         # Check preview:
         preview_list: list[Preview] = []
         if previews is not None:
@@ -172,14 +166,13 @@ class ReceivedMessage(Message):
         # Set expiry:
         self.expiration: Optional[timedelta] = expiration
         self.expiration_timestamp: Optional[Timestamp] = expiration_timestamp
-        self.is_expired: bool = isExpired
+        self.is_expired: bool = is_expired
         # Set preview:
         self.previews: Optional[list[Preview]] = preview_list
         # Continue Init:
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIVED, is_delivered,
-                         time_delivered, is_read, time_read, is_viewed, time_viewed)
+                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIVED)
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)
@@ -225,10 +218,10 @@ class ReceivedMessage(Message):
                                                            sticker_id=stickerDict['stickerId'])
         # Parse Quote
         if 'quote' in data_message.keys():
-            if self.recipient_type == 'group':
+            if self.recipient_type == RecipientTypes.GROUP:
                 self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                    raw_quote=data_message['quote'], conversation=self.recipient)
-            elif self.recipient_type == 'contact':
+            elif self.recipient_type == RecipientTypes.CONTACT:
                 self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                    raw_quote=data_message['quote'], conversation=self.sender)
         # Parse preview:
@@ -401,7 +394,7 @@ class ReceivedMessage(Message):
         Check if this is a group invite, it's an invitation if it's a group message without a body, a sticker, etc.
         :returns: bool: True if this is an invitation.
         """
-        if self.recipient_type != 'group':
+        if self.recipient_type != RecipientTypes.GROUP:
             return False
         if self.body is not None:
             return False
@@ -467,11 +460,11 @@ class ReceivedMessage(Message):
         :returns: Quote: This message as a quote.
         """
         quote: Quote
-        if self.recipient_type == 'contact':
+        if self.recipient_type == RecipientTypes.CONTACT:
             quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.sender)
-        elif self.recipient_type == 'group':
+        elif self.recipient_type == RecipientTypes.GROUP:
             quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.recipient)
@@ -506,14 +499,14 @@ class ReceivedMessage(Message):
             errorMessage = "emoji must be str of len 1|2"
             raise ValueError(errorMessage)
         # Create reaction
-        if self.recipient_type == 'contact':
+        if self.recipient_type == RecipientTypes.CONTACT:
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
                                 this_device=self._this_device, recipient=self.sender, emoji=emoji,
                                 target_author=self.sender,
                                 target_timestamp=self.timestamp)
-        elif self.recipient_type == 'group':
+        elif self.recipient_type == RecipientTypes.GROUP:
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
