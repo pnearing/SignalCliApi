@@ -42,7 +42,7 @@ class Quote(object):
         :param groups: Groups: This accounts' Groups object.
         :param from_dict: Optional[dict[str, Any]]: The dict created by __to_dict__().
         :param raw_quote: Optional[dict[str, Any]]: The dict provided by signal.
-        :param timestamp: Optional[Timestamp]: The timestamp. # TODO: Figure out a better description.
+        :param timestamp: Optional[Timestamp]: The timestamp.# TODO: Figure out a better description.
         :param author: Optional[Contact]: The author of the quote.
         :param text: Optional[str]: The text of the quote.
         :param attachments: Optional[Iterable[Attachment] | Attachment]: Any attachments of the quote.
