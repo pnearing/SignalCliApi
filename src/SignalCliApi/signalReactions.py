@@ -194,16 +194,14 @@ class Reactions(object):
         # Parse a remove request:
         if reaction.is_remove:
             self.__remove_reaction__(reaction)
-            reaction.is_parsed = True
         # Add the reaction if no previous reaction:
         elif previous_reaction is None:
             self.__add_reaction__(reaction)
-            reaction.is_parsed = True
         # Otherwise, replace the existing reaction:
-        elif previous_reaction is not None:
+        else:
             reaction.is_change = True
             self.__replace_reaction__(previous_reaction, reaction)
-            reaction.is_parsed = True
+        reaction.is_parsed = True
         return reaction.is_parsed
 
     def __add_reaction__(self, new_reaction: Reaction) -> None:
