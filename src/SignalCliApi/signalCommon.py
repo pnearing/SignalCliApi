@@ -84,6 +84,14 @@ class RecipientTypes(IntEnum):
     CONTACT = auto()
 
 
+class ConversationTypes(IntEnum):
+    """
+    Enum to store conversation types.
+    """
+    CONTACT = auto()
+    GROUP = auto()
+
+
 ####################################
 # Find command helpers:
 ####################################
@@ -132,9 +140,10 @@ def __find_convert__() -> Optional[str]:
     try:
         convert_path = check_output(['which', 'convert'], text=True).rstrip()
         logger.debug("convert found at: %s" % convert_path)
+        return convert_path
     except CalledProcessError:
-        convert_path = None
         logger.warning("convert not found, cannot generate thumbnails.")
+    return None
 
 
 def __find_signal__() -> str | NoReturn:
