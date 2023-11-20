@@ -54,7 +54,7 @@ class Reaction(Message):
         :param this_device: Device: The Device object for the device we're currently on.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: The dict provided by signal.
-        :param recipient: Optional[Contact | Group]: The recipient of this message.
+        :param recipient: Optional[Contact | Group]: The recipient of this reaction message.
         :param emoji: Optional[str]: The unicode emoji.
         :param target_author: Optional[Contact]: The author of the message reacted to.
         :param target_timestamp: Optional[Timestamp]: The timestamp of the message reacted to.
@@ -80,6 +80,8 @@ class Reaction(Message):
         # Set internal properties:
         self._has_been_removed: bool = False
         """Has the removal message been sent for this message."""
+        self._is_change: bool = False  # GETTER / SETTERS ADDED AT END OF FILE
+        """Is this a change message?"""
 
         # Set external properties:
         self.emoji: Optional[str] = emoji
@@ -90,10 +92,11 @@ class Reaction(Message):
         """The Timestamp object of the message that was reacted to."""
         self.is_remove: bool = is_remove
         """Is this a removal message?"""
-        self.is_change: bool = False
-        """Is this a change message?"""
         self.previous_emoji: Optional[str] = None
         """The previous emoji if this is a change message."""
+        self.is_parsed: bool = False
+        """Has this reaction been parsed?"""
+
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
                          raw_message, contacts.get_self(), recipient, this_device, None, MessageTypes.REACTION)
@@ -246,9 +249,10 @@ class Reaction(Message):
         :return: tuple[bool, str]: The first element is a boolean indicating success or failure; The second element is
             a string, either 'SUCCESS' on success, or an error message on failure.
         """
-        # TODO: remove a reaction.
+        # TODO: remove a reaction in signal.
         if self._has_been_removed:
             return False, "already removed"
+        self._has_been_removed = True
         return False, "NOT-IMPLEMENTED"
 
     ###########################
@@ -318,4 +322,35 @@ class Reaction(Message):
 
         else:
             self.body = 'Invalid reaction.'
+        return
+
+    ###############################
+    # Properties:
+    ###############################
+    @property
+    def is_change(self) -> bool:
+        """
+        Is this a change reaction?
+        Getter.
+        :return: bool: True, this is a change message, False, it is not.
+        """
+        return self._is_change
+
+    @is_change.setter
+    def is_change(self, value) -> None:
+        """
+        Is this a change reaction?
+        Setter.
+        :param value: bool: The value to set to.
+        :return: None
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + 'is_change_setter()')
+        # Type check value:
+        if not isinstance(value, bool):
+            logger.critical("Raising TypeError:")
+            __type_error__('value', 'bool', value)
+        old_value: bool = self._is_change
+        self._is_change = value
+        if old_value != value:
+            self.__update_body__()
         return
