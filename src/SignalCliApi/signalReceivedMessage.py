@@ -7,7 +7,8 @@ from datetime import timedelta, datetime
 import pytz
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes,\
+    ReceiptTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -327,7 +328,17 @@ class ReceivedMessage(Message):
     #####################
     # Helpers:
     #####################
-    def __send_receipt__(self, receipt_type: str) -> Timestamp:
+    def __send_receipt__(self, receipt_type: RecipientTypes) -> Timestamp:
+
+        # Parse receipt type:
+        type_string: str
+        if receipt_type == ReceiptTypes.READ:
+            type_string = 'read'
+        elif receipt_type == ReceiptTypes.VIEWED:
+            type_string = 'viewed'
+        else:
+            raise RuntimeError("Can't send this type of receipt.")
+
         # Create send receipt command object and json command string.
         send_receipt_command_obj = {
             "jsonrpc": "2.0",
@@ -336,7 +347,7 @@ class ReceivedMessage(Message):
             "params": {
                 "account": self._account_id,
                 "recipient": self.sender.get_id(),
-                "type": receipt_type,
+                "type": type_string,
                 "targetTimestamp": self.timestamp.timestamp,
             }
         }
