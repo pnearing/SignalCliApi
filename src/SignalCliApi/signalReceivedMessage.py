@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
+"""
+File: signalReceivedMessage.py
+Store and handle an incoming message.
+"""
+import logging
 from typing import TypeVar, Optional, Iterable, Any
 import socket
 import json
-import sys
 from datetime import timedelta, datetime
 import pytz
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes,\
-    ReceiptTypes
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes, \
+    ReceiptTypes, __parse_signal_response__, __check_response_for_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -24,14 +28,16 @@ from .signalReaction import Reaction
 from .signalReactions import Reactions
 from .signalSticker import Sticker, StickerPacks
 from .signalTimestamp import Timestamp
+from .signalSentMessage import SentMessage
 
-DEBUG: bool = False
-
+# Define self:
 Self = TypeVar("Self", bound="ReceivedMessage")
 
 
 class ReceivedMessage(Message):
-    """Class to store a message that has been received."""
+    """
+    Class to store a message that has been received.
+    """
 
     def __init__(self,
                  command_socket: socket.socket,
@@ -44,141 +50,71 @@ class ReceivedMessage(Message):
                  sticker_packs: StickerPacks,
                  from_dict: Optional[dict] = None,
                  raw_message: Optional[dict] = None,
-                 sender: Optional[Contact] = None,
-                 recipient: Optional[Contact | Group] = None,
-                 device: Optional[Device] = None,
-                 timestamp: Optional[Timestamp] = None,
-                 body: Optional[str] = None,
-                 attachments: Optional[Iterable[Attachment] | Attachment] = None,
-                 mentions: Optional[Iterable[Mention] | Mention] = None,
-                 reactions: Optional[Iterable[Reaction]] | Reactions | Reaction = None,
-                 sticker: Optional[Sticker] = None,
-                 quote: Optional[Quote] = None,
-                 expiration: Optional[timedelta] = None,
-                 expiration_timestamp: Optional[Timestamp] = None,
-                 is_expired: bool = False,
-                 previews: Optional[Iterable[Preview] | Preview] = None,
                  ) -> None:
+        """
+        Initialize a ReceivedMessage object.
+        :param command_socket: socket.socket: The socket to use for commands.
+        :param account_id: str: This accounts' ID.
+        :param config_path: str: The full path to signal-cli config directory.
+        :param contacts: Contacts: This accounts' Contacts object.
+        :param groups: Groups: This accounts' Groups object.
+        :param devices: Devices: This accounts' Devices object.
+        :param this_device: Device: The Device object for the device we're on.
+        :param sticker_packs: StickerPacks: The loaded sticker packs.
+        :param from_dict: Optional[dict[str, Any]]: A dict created by __to_dict__().
+        :param raw_message: Optional[dict[str, Any]]: A dict provided by signal.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Check sticker packs:
         if not isinstance(sticker_packs, StickerPacks):
+            logger.critical("Raising TypeError:")
             __type_error__("sticker_packs", "StickerPacks", sticker_packs)
-        # Check Body:
-        if body is not None and not isinstance(body, str):
-            __type_error__("body", "Optional[str]", body)
-        # Check attachments:
-        attachment_list: list[Attachment] = []
-        if attachments is not None:
-            if isinstance(attachments, Attachment):
-                attachment_list.append(attachments)
-            elif isinstance(attachments, Iterable):
-                for i, attachment in enumerate(attachments):
-                    if not isinstance(attachment, Attachment):
-                        __type_error__("attachments[%i]" % i, "Attachment", attachment)
-                    attachment_list.append(attachment)
-            else:
-                __type_error__("attachments", "Optional[Iterable[Attachment] | Attachment", attachments)
-        # Check mentions:
-        mentions_list: list[Mention] = []
-        if mentions is not None:
-            if isinstance(mentions, Mention):
-                mentions_list.append(mentions)
-            elif isinstance(mentions, Iterable):
-                for i, mention in enumerate(mentions):
-                    if not isinstance(mention, Mention):
-                        __type_error__("mentions[%i]" % i, "Mention", mention)
-                    mentions_list.append(mention)
-            else:
-                __type_error__("mentions", "Optional[Iterable[Mention] | Mention]", mentions)
-        # Check reactions:
-        reaction_list: list[Reaction] = []
-        if reactions is not None:
-            if isinstance(reactions, Reactions):
-                pass
-            elif isinstance(reactions, Reaction):
-                reaction_list.append(reactions)
-            elif isinstance(reactions, Iterable):
-                for i, reaction in enumerate(reactions):
-                    if not isinstance(reaction, Reaction):
-                        __type_error__('reactions[%i]' % i, "Reaction", reaction)
-                    reaction_list.append(reaction)
-            else:
-                __type_error__("reactions", "Optional[Iterable[Reaction] | Reactions | Reaction]", reactions)
-        # Check sticker:
-        if sticker is not None and not isinstance(sticker, Sticker):
-            __type_error__("sticker", "Sticker", sticker)
-        # Check quote:
-        if quote is not None and not isinstance(quote, Quote):
-            __type_error__("quote", "Quote", quote)
-        # Check expiry:
-        if expiration is not None:
-            if not isinstance(expiration, timedelta):
-                __type_error__("expiry", "timedelta", expiration)
-        if expiration_timestamp is not None:
-            if not isinstance(expiration_timestamp, Timestamp):
-                __type_error__("expiration_timestamp", "Timestamp", expiration_timestamp)
-        if not isinstance(is_expired, bool):
-            __type_error__("is_expired", "bool", is_expired)
-        # Check preview:
-        preview_list: list[Preview] = []
-        if previews is not None:
-            if isinstance(previews, Preview):
-                preview_list.append(previews)
-            elif isinstance(previews, Iterable):
-                for i, preview in enumerate(previews):
-                    if not isinstance(preview, Preview):
-                        __type_error__("previews[%i]" % i, "Preview", preview)
-                    preview_list.append(preview)
-            else:
-                __type_error__("previews", "Iterable[Preview] | Preview", previews)
 
         # Set internal vars:
         self._sticker_packs: StickerPacks = sticker_packs
+        """The loaded sticker packs."""
+
         # Set external properties:
         # Set body:
-        self.body: Optional[str] = body
+        self.body: Optional[str] = None
+        """The body of the message."""
         # Set Attachments:
-        self.attachments: Optional[list[Attachment]]
-        if len(attachment_list) == 0:
-            self.attachments = None
-        else:
-            self.attachments = attachment_list
+        self.attachments: Optional[list[Attachment]] = None
+        """The attachments to this message.."""
         # Set mentions:
-        self.mentions: Mentions
-        if len(mentions_list) == 0:
-            self.mentions = Mentions(contacts=contacts)
-        else:
-            self.mentions = Mentions(contacts=contacts, mentions=mentions_list)
+        self.mentions: Mentions = Mentions(contacts=contacts)
+        """Any mentions in this message."""
         # Set reactions:
-        self.reactions: Reactions
-        if isinstance(reactions, Reactions):
-            self.reactions = reactions
-        if len(reaction_list) == 0:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
-                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
-                                       this_device=this_device)
-        else:
-            self.reactions = Reactions(command_socket=command_socket, account_id=account_id,
-                                       config_path=self._config_path, contacts=contacts, groups=groups, devices=devices,
-                                       this_device=this_device, reactions=reaction_list)
+        self.reactions: Reactions = Reactions(command_socket=command_socket, account_id=account_id,
+                                              config_path=config_path, contacts=contacts, groups=groups,
+                                              devices=devices, this_device=this_device)
+        """The reactions to this message."""
         # Set sticker:
-        self.sticker: Optional[Sticker] = sticker
+        self.sticker: Optional[Sticker] = None
+        """The sticker of this message."""
         # Set quote:
-        self.quote: Optional[Quote] = quote
+        self.quote: Optional[Quote] = None
+        """This messages quote."""
         # Set expiry:
-        self.expiration: Optional[timedelta] = expiration
-        self.expiration_timestamp: Optional[Timestamp] = expiration_timestamp
-        self.is_expired: bool = is_expired
+        self.expiration: Optional[timedelta] = None
+        """The expiration time as a timedelta in seconds."""
+        self.expiration_timestamp: Optional[Timestamp] = None
+        """The Timestamp for when this message expires."""
+        self.is_expired: bool = False
+        """Is this message expired?"""
         # Set preview:
-        self.previews: Optional[list[Preview]] = preview_list
-        # Continue Init:
+        self.previews: Optional[list[Preview]] = None
+        """Any previews this message holds."""
+
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIVED)
+                         raw_message, None, None, None, None, MessageTypes.RECEIVED)
+
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)
-        # Check if this is expired:
-        self.__check_expired__()
+
         # Check if this is a group invite, it'll be a group message with no: body, attachment, sticker etc.
         self.is_group_invite = self.__check_invite__()
         if self.is_group_invite:
@@ -189,10 +125,13 @@ class ReceivedMessage(Message):
     ######################
     # Init:
     ######################
-    def __from_raw_message__(self, raw_message: dict) -> None:
+    def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
+        """
+        Load properties from a dict provided by signal.
+        :param raw_message: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         super().__from_raw_message__(raw_message)
-        print("ReceivedMessage.__from_raw_message__")
-        print(raw_message)
         data_message: dict[str, Any] = raw_message['dataMessage']
         # Parse body:
         self.body = data_message['message']
@@ -213,10 +152,9 @@ class ReceivedMessage(Message):
             self.mentions = Mentions(contacts=self._contacts, raw_mentions=data_message['mentions'])
         # Parse sticker:
         if 'sticker' in data_message.keys():
-            stickerDict: dict[str, Any] = data_message['sticker']
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
-            self.sticker = self._sticker_packs.get_sticker(pack_id=stickerDict['packId'],
-                                                           sticker_id=stickerDict['stickerId'])
+            self.sticker = self._sticker_packs.get_sticker(pack_id=data_message['sticker']['packId'],
+                                                           sticker_id=data_message['sticker']['stickerId'])
         # Parse Quote
         if 'quote' in data_message.keys():
             if self.recipient_type == RecipientTypes.GROUP:
@@ -226,8 +164,8 @@ class ReceivedMessage(Message):
                 self.quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                    raw_quote=data_message['quote'], conversation=self.sender)
         # Parse preview:
-        self.previews = []
         if 'previews' in data_message.keys():
+            self.previews = []
             for rawPreview in data_message['previews']:
                 preview = Preview(config_path=self._config_path, raw_preview=rawPreview)
                 self.previews.append(preview)
@@ -237,8 +175,12 @@ class ReceivedMessage(Message):
     #####################
     # To / From Dict:
     #####################
-    def __to_dict__(self) -> dict:
-        received_message_dict = super().__to_dict__()
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict of this received message.
+        :return: dict[str, Any]: The dict to provide to __from_dict__().
+        """
+        received_message_dict: dict[str, Any] = super().__to_dict__()
         # Set body:
         received_message_dict['body'] = self.body
         # Set attachments
@@ -250,8 +192,6 @@ class ReceivedMessage(Message):
         # Set mentions:
         received_message_dict['mentions'] = self.mentions.__to_dict__()
         # Set reactions:
-        # receivedMessageDict['reactions'] = None
-        # if (self.reactions != None):
         received_message_dict['reactions'] = self.reactions.__to_dict__()
         # Set sticker:
         received_message_dict['sticker'] = None
@@ -264,21 +204,30 @@ class ReceivedMessage(Message):
         received_message_dict['quote'] = None
         if self.quote is not None:
             received_message_dict['quote'] = self.quote.__to_dict__()
-        # Set expiration:
+        # Set is expired:
         received_message_dict['isExpired'] = self.is_expired
+        # Set expiration (timedelta)
         received_message_dict['expiration'] = None
-        received_message_dict['expirationTimestamp'] = None
         if self.expiration is not None:
             received_message_dict['expiration'] = self.expiration.seconds
+        # Set expiration timestamp:
+        received_message_dict['expirationTimestamp'] = None
         if self.expiration_timestamp is not None:
             received_message_dict['expirationTimestamp'] = self.expiration_timestamp.__to_dict__()
         # Set previews:
-        received_message_dict['previews'] = []
-        for preview in self.previews:
-            received_message_dict['previews'].append(preview.__to_dict__())
+        received_message_dict['previews'] = None
+        if self.previews is not None:
+            received_message_dict['previews'] = []
+            for preview in self.previews:
+                received_message_dict['previews'].append(preview.__to_dict__())
         return received_message_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict created by __to_dict__().
+        :return: None
+        """
         super().__from_dict__(from_dict)
         # Load body:
         self.body = from_dict['body']
@@ -292,8 +241,6 @@ class ReceivedMessage(Message):
         # Load mentions:
         self.mentions = Mentions(contacts=self._contacts, from_dict=from_dict['mentions'])
         # Load reactions:
-        # self.reactions = None
-        # if (from_dict['reactions'] != None):
         self.reactions = Reactions(command_socket=self._command_socket, account_id=self._account_id,
                                    config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                    devices=self._devices, this_device=self._this_device,
@@ -320,16 +267,30 @@ class ReceivedMessage(Message):
         if from_dict['expirationTimestamp'] is not None:
             self.expiration_timestamp = Timestamp(from_dict=from_dict['expirationTimestamp'])
         # Load previews:
-        self.previews = []
-        for preview_dict in from_dict['previews']:
-            self.previews.append(Preview(config_path=self._config_path, from_dict=preview_dict))
+        self.previews = None
+        if from_dict['previews'] is not None:
+            self.previews = []
+            for preview_dict in from_dict['previews']:
+                self.previews.append(Preview(config_path=self._config_path, from_dict=preview_dict))
         return
 
     #####################
     # Helpers:
     #####################
-    def __send_receipt__(self, receipt_type: RecipientTypes) -> Timestamp:
-
+    def __send_receipt__(self, receipt_type: ReceiptTypes) -> tuple[bool, Timestamp | str]:
+        """
+        Send a receipt using signal.
+        :param receipt_type: ReceiptTypes: The type of receipt to send; Either ReceiptTypes.READ or ReceiptTypes.VIEWED.
+        :return: tuple[bool, str | Timestamp]: The first element is True or False for success or failure.
+            The second element is either the Timestamp object of the receipts' 'when' on success, or an error message,
+            stating what went wrong.
+        :raises RuntimeError: On invalid receipt type.
+        :raises CommunicationsError: On error communicating with signal.
+        :raises InvalidServerResponse: On error loading signal JSON.
+        :raises SignalError: On error sent by signal.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__send_receipt__.__name__)
         # Parse receipt type:
         type_string: str
         if receipt_type == ReceiptTypes.READ:
@@ -337,7 +298,9 @@ class ReceivedMessage(Message):
         elif receipt_type == ReceiptTypes.VIEWED:
             type_string = 'viewed'
         else:
-            raise RuntimeError("Can't send this type of receipt.")
+            error_message: str = "Can't send this type of receipt: %s." % str(receipt_type)
+            logger.critical("Raising RuntimeError(%s).")
+            raise RuntimeError(error_message)
 
         # Create send receipt command object and json command string.
         send_receipt_command_obj = {
@@ -351,39 +314,47 @@ class ReceivedMessage(Message):
                 "targetTimestamp": self.timestamp.timestamp,
             }
         }
-        json_command_str = json.dumps(send_receipt_command_obj) + '\n'
+        json_command_str: str = json.dumps(send_receipt_command_obj) + '\n'
+
         # Communicate with signal:
         __socket_send__(self._command_socket, json_command_str)
-        response_str = __socket_receive__(self._command_socket)
-        # Parse Response:
-        response_obj: dict = json.loads(response_str)
-        # Check for error:
-        if 'error' in response_obj.keys():
-            error_message = "signal error while sending receipt. Code: %i Message: %s" % (response_obj['error']['code'],
-                                                                                          response_obj["error"][
-                                                                                              'message'])
-            raise RuntimeError(error_message)
-        # Result is a dict:
-        # print(responseObj)
-        when = Timestamp(timestamp=response_obj['result']['timestamp'])
-        # Parse results:
-        for result in response_obj['result']['results']:
-            if result['type'] != 'SUCCESS':
-                if DEBUG:
-                    error_message = "in send receipt, result type not SUCCESS: %s" % result['type']
-                    print(error_message, file=sys.stderr)
-            else:
-                if result['recipientAddress']['number'] is not None:
-                    added, contact = self._contacts.__get_or_add__(number=result['recipientAddress']['number'])
-                else:
-                    added, contact = self._contacts.__get_or_add__(uuid=result['recipientAddress']['uuid'])
-                contact.seen(when)
-        return when
+        response_str: str = __socket_receive__(self._command_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
-    def __set_expiry__(self, time_opened: Timestamp):
+        # Check for error:
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal error while sending receipt. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
+        # Result is a dict:
+        result_obj = response_obj['result']
+        when = Timestamp(timestamp=result_obj['timestamp'])
+        # Parse results:
+        for result in result_obj['results']:
+            if result['type'] != 'SUCCESS':
+                warning_message: str = "While sending result['type'] != 'SUCCESS'. result['type'] == %s" \
+                                       % result['type']
+                logger.warning(warning_message)
+            else:
+                recipient: dict[str, str] = result['recipientAddress']
+                _, contact = self._contacts.__get_or_add__(number=recipient['number'], uuid=recipient['uuid'])
+                contact.seen(when)
+        return True, when
+
+    def __set_expiry__(self, time_opened: Timestamp) -> None:
+        """
+        Set the expiration_timestamp property according to when it was opened.
+        :param time_opened: Optional[Timestamp]: The timestamp of when opened; If None, NOW is used.
+        :return: None
+        """
         if self.expiration is not None:
-            expiryDateTime = time_opened.date_time + self.expiration
-            self.expiration_timestamp = Timestamp(date_time=expiryDateTime)
+            expiry_datetime = time_opened.datetime + self.expiration
+            self.expiration_timestamp = Timestamp(datetime_obj=expiry_datetime)
+        else:
+            self.expiration_timestamp = None
         return
 
     def __check_expired__(self) -> bool:
@@ -391,11 +362,8 @@ class ReceivedMessage(Message):
         Check and set is_expired.
         :returns: bool: True if this run has set the expired flag.
         """
-        if self.expiration is None:
-            return False
         if self.expiration_timestamp is not None:
-            now = datetime.now(tz=pytz.UTC)
-            if self.expiration_timestamp.get_datetime() <= now:
+            if self.expiration_timestamp.datetime <= pytz.utc.localize(datetime.utcnow()):
                 self.is_expired = True
                 return True
         return False
@@ -405,27 +373,19 @@ class ReceivedMessage(Message):
         Check if this is a group invite, it's an invitation if it's a group message without a body, a sticker, etc.
         :returns: bool: True if this is an invitation.
         """
-        if self.recipient_type != RecipientTypes.GROUP:
-            return False
-        if self.body is not None:
-            return False
-        if self.attachments is not None:
-            return False
-        if len(self.mentions) != 0:
-            return False
-        if self.sticker is not None:
-            return False
-        if self.quote is not None:
-            return False
-        return True
+        if self.recipient_type == RecipientTypes.GROUP and self.body is None:
+            if self.attachments is None and len(self.mentions) == 0:
+                if self.sticker is None and self.quote is None:
+                    return True
+        return False
 
     #####################
     # Methods:
     #####################
-    def mark_delivered(self, when: Timestamp) -> None:
+    def mark_delivered(self, when: Optional[Timestamp] = None) -> None:
         """
         Mark the message as delivered.
-        :param when: Timestamp: When the message was delivered.
+        :param when: Optional[Timestamp]: When the message was delivered, if None NOW is used.
         :returns: None
         :raises: TypeError: If when is not a Timestamp object, raised by super()
         """
@@ -434,42 +394,70 @@ class ReceivedMessage(Message):
     def mark_read(self, when: Timestamp = None, send_receipt: bool = True) -> None:
         """
         Mark the message as read.
-        :param when: Timestamp: When the message was read.
-        :param send_receipt: bool: Send the read receipt.
+        :param when: Timestamp: When the message was read; If this is None, NOW is used.
+        :param send_receipt: bool: Send the read receipt; If this is True, 'when' is ignored.
         :returns: None
-        :raises: TypeError: If when not a Timestamp object, raised by super(), or if send_receipt is not a bool.
+        :raises TypeError: If when not a Timestamp object, raised by super(), or if send_receipt is not a bool.
+        :raises RuntimeError: On error sending receipt.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_read.__name__)
+        # Type check send_receipt, when is type checked by super.
         if not isinstance(send_receipt, bool):
+            logger.critical("Raising TypeError:")
             __type_error__("send_receipt", "bool", send_receipt)
+        # Send the read receipt if requested:
         if send_receipt:
-            when = self.__send_receipt__('read')
-        elif when is None:
-            when = Timestamp(now=True)
-        self.__set_expiry__(when)
-        return super().mark_read(when)
+            is_success, results = self.__send_receipt__(ReceiptTypes.READ)
+            if not is_success:
+                error_message: str = "failed to send read receipt: %s" % results
+                logger.critical("Raising RuntimeError(%s)." % error_message)
+                raise RuntimeError(error_message)
+            time_read = results
+        else:
+            time_read = when
+        # Set expiry and run super()
+        self.__set_expiry__(time_read)
+        super().mark_read(time_read)
+        return
 
     def mark_viewed(self, when: Timestamp = None, send_receipt: bool = True) -> None:
         """
         Mark the message as viewed.
-        :param when: Timestamp: When the message was viewed.
-        :param send_receipt: bool: Send a viewed receipt.
+        :param when: Timestamp: When the message was viewed; If this is None, NOW is used.
+        :param send_receipt: bool: Send a viewed receipt; If this is True, then when is ignored.
         :returns: None
         :raises: TypeError: If when not a Timestamp object, raised by super(), or if send_receipt is not a bool.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_viewed.__name__)
+        # Type check send receipt, when is type checked in super:
         if not isinstance(send_receipt, bool):
+            logger.critical("Raising TypeError:")
             __type_error__("send_receipt", "bool", send_receipt)
+        # If receipt requested, send the receipt:
         if send_receipt:
-            when = self.__send_receipt__('viewed')
-        elif when is None:
-            when = Timestamp(now=True)
-        self.__set_expiry__(when)
-        return super().mark_viewed(when)
+            is_success, results = self.__send_receipt__(ReceiptTypes.VIEWED)
+            if not is_success:
+                error_message: str = "failed to send viewed receipt: %s" % results
+                logger.critical("Raising RuntimeError(%s)." % error_message)
+                raise RuntimeError(error_message)
+            time_viewed = results
+        else:
+            time_viewed = when
+        # set the expiry and run the super().
+        self.__set_expiry__(time_viewed)
+        super().mark_viewed(time_viewed)
+        return
 
     def get_quote(self) -> Quote:
         """
         Get a quote object for this message.
         :returns: Quote: This message as a quote.
+        :raises ValueError: On invalid recipient_type.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_quote.__name__)
         quote: Quote
         if self.recipient_type == RecipientTypes.CONTACT:
             quote = Quote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
@@ -480,7 +468,9 @@ class ReceivedMessage(Message):
                           timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
                           conversation=self.recipient)
         else:
-            raise ValueError("invalid recipient_type in ReceivedMessage.get_quote")
+            error_message: str = "invalid recipient_type: %s" % str(self.recipient_type)
+            logger.critical("Raising ValueError(%s)." % error_message)
+            raise ValueError(error_message)
         return quote
 
     def parse_mentions(self) -> Optional[str]:
@@ -496,20 +486,25 @@ class ReceivedMessage(Message):
         """
         Create and send a Reaction to this message.
         :param emoji: str: The emoji to react with.
-        :returns: tuple[bool, Reaction | str]: Returns a tuple, the bool is True if reaction sent successfully, and
-                                                False if not.  If sent, the second element of the tuple will be the
-                                                Reaction object, otherwise, if not sent, the second element contains an
-                                                error message.
+        :returns: tuple[bool, Reaction | str]: The first element of the returned tuple is a bool, which is True or False
+            depending on success or failure.
+            The second element of the tuple will either be a Reaction object on success, or an error message stating
+            what went wrong on failure.
         :raises: TypeError: If emoji is not a string.
         :raises: ValueError: If emoji length is not one or two characters.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.react.__name__)
         # Argument check:
         if not isinstance(emoji, str):
+            logger.critical("Raising TypeError:")
             __type_error__('emoji', "str, len = 1|2", emoji)
-        if len(emoji) != 1 and len(emoji) != 2:
-            errorMessage = "emoji must be str of len 1|2"
-            raise ValueError(errorMessage)
+        if 1 <= len(emoji) <= 4:
+            error_message: str = "emoji must be str of len 1->4"
+            logger.critical("Raising ValueError(%s)." % error_message)
+            raise ValueError(error_message)
         # Create reaction
+        reaction: Reaction
         if self.recipient_type == RecipientTypes.CONTACT:
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
@@ -524,14 +519,26 @@ class ReceivedMessage(Message):
                                 this_device=self._this_device, recipient=self.recipient, emoji=emoji,
                                 target_author=self.sender, target_timestamp=self.timestamp)
         else:
-            errorMessage = "Invalid recipient type."
-            return False, errorMessage
+            error_message: str = "Invalid recipient type."
+            return False, error_message
         # Send reaction:
         sent, message = reaction.send()
         if not sent:
             return False, message
         # Parse reaction:
-        self.reactions.__parse__(reaction)
+        parsed: bool = self.reactions.__parse__(reaction)
+        if not parsed:
+            error_message: str = "failed to parse reaction."
+            logger.critical("Raising RuntimeError(%s)." % error_message)
+            raise RuntimeError(error_message)
         return True, reaction
 
     # TODO: Reply to this message, create a sent message with this as an attached quote.
+    def reply(self,
+              body: Optional[str] = None,
+              attachments: Optional[Iterable[Attachment | str] | Attachment | str] = None,
+              mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
+              sticker: Optional[Sticker] = None,
+              preview: Optional[Preview] = None,
+              ) -> tuple[tuple[bool, Contact | Group, str | SentMessage], ...]:
+        raise NotImplementedError()
