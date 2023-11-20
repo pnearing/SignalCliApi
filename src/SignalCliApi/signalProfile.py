@@ -1,17 +1,25 @@
 #!/usr/bin/env python3
-"""File: signalProfile.py"""
-from typing import TypeVar, Optional, Any
+"""
+File: signalProfile.py
+Store and maintain a signal profile.
+"""
+import logging
+from typing import TypeVar, Optional, Any, Final
 import os
 import json
-import sys
 import socket
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
+    __check_response_for_error__
 from .signalTimestamp import Timestamp
+from .signalExceptions import InvalidDataFile
 
-DEBUG: bool = False
-
+# Define Self:
 Self = TypeVar("Self", bound="Profile")
+
+NOT_ACCOUNT_PROFILE_MESSAGE: Final[str] = 'this is not the account profile, not setting property'
+VALUE_ALREADY_SET_MESSAGE: Final[str] = "property already set to value"
+SUCCESS_MESSAGE: Final[str] = "SUCCESS"
 
 
 class Profile(object):
@@ -22,57 +30,68 @@ class Profile(object):
                  account_id: str,
                  contact_id: str,
                  account_path: Optional[str] = None,
-                 from_dict: Optional[dict] = None,
-                 raw_profile: Optional[dict] = None,
-                 given_name: Optional[str] = None,
-                 family_name: Optional[str] = None,
-                 about: Optional[str] = None,
-                 emoji: Optional[str] = None,
-                 coin_address: Optional[str] = None,
-                 avatar: Optional[str] = None,
-                 last_update: Optional[Timestamp] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_profile: Optional[dict[str, Any]] = None,
                  is_account_profile: bool = False,
                  do_load: bool = False,
                  ) -> None:
+        """
+        Initialize a profile object.
+        :param sync_socket: socket.socket: The socket to run sync operations on.
+        :param config_path: str: The full path to the signal-cli config directory.
+        :param account_id: str: This account's ID.
+        :param contact_id: str: The contact ID for the account that this profile is for.
+        :param account_path: str: The path to this account's data directory.
+        :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
+        :param raw_profile: Optional[dict[str, Any]]: The dict provided by signal.
+        :param is_account_profile: bool: Is this the profile for this account?
+        :param do_load: bool: Try and load from disk.
+        """
+        # Super:
+        super().__init__()
+
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Check args:
         if not isinstance(sync_socket, socket.socket):
+            logger.critical("Raising TypeError:")
             __type_error__("sync_socket", "socket.socket", sync_socket)
         if not isinstance(config_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("config_path", "str", config_path)
         if not isinstance(account_id, str):
+            logger.critical("Raising TypeError:")
             __type_error__("account_id", "str", account_id)
         if not isinstance(contact_id, str):
+            logger.critical("Raising TypeError:")
             __type_error__("contact_id", "str", contact_id)
         if account_path is not None and not isinstance(account_path, str):
+            logger.critical("Raising TypeError:")
             __type_error__("account_path", "str", account_path)
         if from_dict is not None and not isinstance(from_dict, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("from_dict", "dict", from_dict)
         if raw_profile is not None and not isinstance(raw_profile, dict):
+            logger.critical("Raising TypeError:")
             __type_error__("raw_profile", "dict", raw_profile)
-        if given_name is not None and not isinstance(given_name, str):
-            __type_error__("given_name", "str", given_name)
-        if family_name is not None and not isinstance(family_name, str):
-            __type_error__("family_name", "str", family_name)
-        if about is not None and not isinstance(about, str):
-            __type_error__("about", "str", about)
-        if emoji is not None and not isinstance(emoji, str):
-            __type_error__("emoji", "str", emoji)
-        if coin_address is not None and not isinstance(coin_address, str):
-            __type_error__("coin_address", "str", coin_address)
-        if avatar is not None and not isinstance(avatar, str):
-            __type_error__("avatar", "str", avatar)
-        if last_update is not None and not isinstance(last_update, Timestamp):
-            __type_error__("last_update", "Timestamp", last_update)
         if not isinstance(is_account_profile, bool):
+            logger.critical("Raising TypeError:")
             __type_error__("is_account_profile", "bool", is_account_profile)
         if not isinstance(do_load, bool):
+            logger.critical("Raising TypeError:")
             __type_error__("do_load", "bool", do_load)
+
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
+        """The socket to preform sync operations on."""
         self._config_path: str = config_path
+        """The full path to the signal-cli config directory."""
         self._account_id: str = account_id
+        """This account's ID."""
         self._contact_id: str = contact_id
+        """The contact ID of this profile, needed for locating avatar."""
         self._profile_file_path: Optional[str]
+        """The full path to this profile if stored on disk. NOTE: Only the account profile is saved on disk."""
         if account_path is not None:
             self._profile_file_path = os.path.join(account_path, 'profile.json')
         else:
@@ -80,14 +99,15 @@ class Profile(object):
         self._from_signal: bool = False
         self._is_account_profile: bool = is_account_profile
         # Set external vars:
-        self.given_name: Optional[str] = given_name
-        self.family_name: Optional[str] = family_name
+        self.given_name: Optional[str] = None
+        self.family_name: Optional[str] = None
         self.name: str = ''
-        self.about: Optional[str] = about
-        self.emoji: Optional[str] = emoji
-        self.coin_address: Optional[str] = coin_address
-        self.avatar: Optional[str] = avatar
-        self.last_update: Optional[Timestamp] = last_update
+        self.about: Optional[str] = None
+        self.emoji: Optional[str] = None
+        self.coin_address: Optional[str] = None
+        self.avatar: Optional[str] = None
+        self.last_update: Optional[Timestamp] = None
+
         # Parse from dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)
@@ -97,11 +117,10 @@ class Profile(object):
             self.__from_raw_profile__(raw_profile)
         # Do load from file:
         elif do_load:
-            try:
+            if os.path.exists(self._profile_file_path):
                 self.__load__()
-            except RuntimeError:
-                if DEBUG:
-                    print("INFO: Creating empty profile for account: %s" % self._account_id, file=sys.stderr)
+            else:
+                logger.warning("Saving empty profile to disk.")
                 self.__save__()
         # Find avatar:
         self.__find_avatar__()
@@ -109,8 +128,12 @@ class Profile(object):
             self.__save__()
         return
 
-    def __from_raw_profile__(self, raw_profile: dict) -> None:
-        # print (raw_profile)
+    def __from_raw_profile__(self, raw_profile: dict[str, Any]) -> None:
+        """
+        Load properties from a dict provided by signal.
+        :param raw_profile: dict[str, Any]: The dict to load from.
+        :return: None
+        """
         self.given_name = raw_profile['givenName']
         self.family_name = raw_profile['familyName']
         self.__set_name__()
@@ -128,7 +151,11 @@ class Profile(object):
     # To / From Dict:
     ######################
 
-    def __to_dict__(self) -> dict:
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict for this profile.
+        :return: dict[str, Any]: The dict to provide to __from_dict__().
+        """
         profile_dict = {
             'givenName': self.given_name,
             'familyName': self.family_name,
@@ -142,7 +169,12 @@ class Profile(object):
             profile_dict['lastUpdate'] = self.last_update.__to_dict__()
         return profile_dict
 
-    def __from_dict__(self, from_dict: dict) -> None:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict created by __to_dict__()
+        :return: None
+        """
         # Set properties:
         self.given_name = from_dict['givenName']
         self.family_name = from_dict['familyName']
@@ -162,55 +194,66 @@ class Profile(object):
     # Save / Load:
     ####################################
     def __save__(self) -> bool:
+        """
+        Save this profile to disk.
+        :return: bool: True if successfully saved, False if not.
+        :raises RuntimeError: On error opening the profile json file.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__save__.__name__)
         # Checks:
         if not self._is_account_profile:
-            if DEBUG:
-                errorMessage = "WARNING: Not account profile cannot save."
-                print(errorMessage, file=sys.stderr)
+            warning_message: str = "This isn't the account profile, not saving."
+            logger.warning(warning_message)
             return False
         if self._profile_file_path is None:
-            if DEBUG:
-                errorMessage = "WARNING: File path not set, cannot save."
-                print(errorMessage, file=sys.stderr)
+            warning_message: str = "'self._profile_file_path' is None, not saving."
+            logger.warning(warning_message)
             return False
         # Create json string to save:
-        profileDict: dict = self.__to_dict__()
-        profileJson: str = json.dumps(profileDict)
+        profile_dict: dict[str, Any] = self.__to_dict__()
+        profile_json: str = json.dumps(profile_dict, indent=4)
         # Open the file:
         try:
-            fileHandle = open(self._profile_file_path, 'w')
-        except Exception as e:
-            errorMessage = "FATAL: Couldn't open '%s' for writing: %s" % (self._profile_file_path, str(e.args))
-            raise RuntimeError(errorMessage)
-        # Write to the file and close it.
-        fileHandle.write(profileJson)
-        fileHandle.close()
+            file_handle = open(self._profile_file_path, 'w')
+            file_handle.write(profile_json)
+            file_handle.close()
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            error_message: str = "Couldn't open '%s' for writing: %s" % (self._profile_file_path, str(e.args))
+            logger.critical("Raising RuntimeError(%s)." % error_message)
+            raise RuntimeError(error_message)
         return True
 
     def __load__(self) -> bool:
+        """
+        Load this profile from disk.
+        :return: bool: True this was successfully loaded, False it was not.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load__.__name__)
+
         # Do checks:
-        if self._profile_file_path is None:
-            if DEBUG:
-                error_message = "WARNING: Profile file path not set, cannot load."
-                print(error_message, file=sys.stderr)
-            return False
         if not self._is_account_profile:
-            if DEBUG:
-                error_message = "WARNING: Not account profile, cannot load."
-                print(error_message, file=sys.stderr)
+            warning_message: str = "This is not the account profile, not loading."
+            logger.warning(warning_message)
+            return False
+        if self._profile_file_path is None:
+            warning_message: str = "'self._profile_file_path' is None, not loading."
+            logger.warning(warning_message)
             return False
         # Try to open file:
         try:
             file_handle = open(self._profile_file_path, 'r')
-        except Exception as e:
-            error_message = "FATAL: Couldn't open file '%s' for reading: %s" % (self._profile_file_path, str(e.args))
-            raise RuntimeError(error_message)
-        # Try to load the json:
-        try:
             profile_dict: dict[str, object] = json.loads(file_handle.read())
-        except json.JSONDecodeError as e:
-            error_message = "FATAL: Couldn't load json from '%s': %s" % (self._profile_file_path, e.msg)
+            file_handle.close()
+        except (OSError, FileNotFoundError, PermissionError) as e:
+            error_message: str = "Couldn't open file '%s' for reading: %s" % (self._profile_file_path, str(e.args))
+            logger.critical("Raising RuntimeError(%s)." % error_message)
             raise RuntimeError(error_message)
+        except json.JSONDecodeError as e:
+            error_message: str = "Couldn't load json from '%s': %s" % (self._profile_file_path, e.msg)
+            logger.critical("Raising InvalidDataFile(%s)." % error_message)
+            raise InvalidDataFile(error_message, e, self._profile_file_path)
         # Load from dict:
         self.__from_dict__(profile_dict)
         return True
@@ -219,29 +262,43 @@ class Profile(object):
     # Helper methods:
     #######################
     def __find_avatar__(self) -> bool:
+        """
+        Find the avatar file for this profile.
+        :return: bool: True if the avatar was found, False if not.
+        """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__find_avatar__.__name__)
+
+        # Check if avatar already exists:
         if self.avatar is not None:
-            if not os.path.exists(self.avatar):
-                if DEBUG:
-                    errorMessage = "WARNING: Couldn't find avatar: '%s', searching..." % self.avatar
-                    print(errorMessage, file=sys.stderr)
+            if os.path.exists(self.avatar):
+               return True
+            else:
+                warning_message: str = "Current avatar points to non-existent file, searching for new avatar."
+                logger.warning(warning_message)
                 self.avatar = None
+
         # Try profile avatar:
-        if self.avatar is None:
-            avatarFileName = 'profile-' + self._contact_id
-            avatarFilePath = os.path.join(self._config_path, 'avatars', avatarFileName)
-            if os.path.exists(avatarFilePath):
-                self.avatar = avatarFilePath
-        # Try contact avatar:
-        if self.avatar is None:
-            avatarFileName = 'contact-' + self._contact_id
-            avatarFilePath = os.path.join(self._config_path, 'avatars', avatarFileName)
-            if os.path.exists(avatarFilePath):
-                self.avatar = avatarFilePath
-        if self.avatar is not None:
+        avatar_filename = 'profile-' + self._contact_id
+        avatar_file_path = os.path.join(self._config_path, 'avatars', avatar_filename)
+        if os.path.exists(avatar_file_path):
+            self.avatar = avatar_file_path
             return True
+
+        # Try contact avatar:
+        avatar_filename = 'contact-' + self._contact_id
+        avatar_file_path = os.path.join(self._config_path, 'avatars', avatar_filename)
+        if os.path.exists(avatar_file_path):
+            self.avatar = avatar_file_path
+            return True
+        # Avatar was not found:
         return False
 
     def __set_name__(self) -> None:
+        """
+        Set the name property from the given name and family name properties.
+        :return: None
+        """
         if self.given_name is None and self.family_name is None:
             self.name = ''
         elif self.given_name is not None and self.family_name is not None:
@@ -253,6 +310,14 @@ class Profile(object):
         return
 
     def __update__(self, other: Self) -> None:
+        """
+        Update this profile from another given profile.
+        :param other: Profile: The profile to update from.
+        :return: None
+        """
+        # If other is older than self, do nothing.
+        if other.last_update < self.last_update:
+            return
         self.given_name = other.given_name
         self.family_name = other.family_name
         self.about = other.about
@@ -266,19 +331,30 @@ class Profile(object):
     ###############################
     # Setters:
     ###############################
-    def set_given_name(self, value: str) -> bool:
+    def set_given_name(self, value: str) -> tuple[bool, str]:
         """
         Set the given name for the account profile.
         :param value: str: The value to set the given name to.
-        :returns: bool: True if successfully updated, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True if successfully set, False if not.
+            The second element is the string "SUCCESS" if successfully set, otherwise it will contain an error message
+            stating what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If Signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_given_name.__name__)
+        # Type check value:
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this isn't the account profile, we can't update, so do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
+
+        # If given name is already set, do nothing:
         if self.given_name == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
+
         # Create set given name object and json command string:
         set_given_name_obj = {
             "jsonrpc": "2.0",
@@ -289,39 +365,46 @@ class Profile(object):
                 "given_name": value,
             }
         }
-        json_command_str = json.dumps(set_given_name_obj) + '\n'
+
+        json_command_str: str = json.dumps(set_given_name_obj) + '\n'
+
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
-        # print(responseObj)
+        response_str: str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
         # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                errorMessage = "DEBUG: Signal error while setting given name. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(errorMessage, file=sys.stderr)
-            return False
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal error while setting profile given name. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.given_name = value
-        return True
+        return True, SUCCESS_MESSAGE
 
-    def set_family_name(self, value: str) -> bool:
+    def set_family_name(self, value: str) -> tuple[bool, str]:
         """
         Set the family name for the account profile.
         :param value: str: The value to set the family name to.
-        :returns: bool: True if successfully updated, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True or False for success or failure.
+            The second element will be the string "SUCCESS" on success, or a message describing what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If Signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_family_name.__name__)
+        # Type check value:
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this isn't the account profile, do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
         if self.family_name == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
         # Create command object and json command string:
         set_family_name_command_obj = {
             "jsonrpc": "2.0",
@@ -332,38 +415,45 @@ class Profile(object):
                 "family_name": value,
             }
         }
-        json_command_str = json.dumps(set_family_name_command_obj) + '\n'
+        json_command_str: str = json.dumps(set_family_name_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
+        response_str: str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
         # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                error_message = "DEBUG: Signal error while setting family name. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(error_message, file=sys.stderr)
-            return False
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal error while setting profile family name. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.family_name = value
-        return True
+        return True, SUCCESS_MESSAGE
 
-    def set_about(self, value: str) -> bool:
+    def set_about(self, value: str) -> tuple[bool, str]:
         """
         Set the 'about' for the account profile.
         :param value: str: The value to set the 'about' to.
-        :returns: bool: True if successfully updated, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True or False for success or failure.
+            The second element is either the string "SUCCESS" on success or a message stating what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_about.__name__)
+        # Type check value:
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this is not the account profile, do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
+        # If about is already set to value, do nothing:
         if self.about == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
         # Create command object and json command string:
         set_about_command_obj = {
             "jsonrpc": "2.0",
@@ -374,38 +464,45 @@ class Profile(object):
                 "about": value,
             }
         }
-        json_command_str = json.dumps(set_about_command_obj) + '\n'
+        json_command_str: str = json.dumps(set_about_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
+        response_str: str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
         # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                error_message = "DEBUG: Signal error while setting about. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(error_message, file=sys.stderr)
-            return False
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal error while setting profile about. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.about = value
-        return True
+        return True, SUCCESS_MESSAGE
 
-    def set_emoji(self, value: str) -> bool:
+    def set_emoji(self, value: str) -> tuple[bool, str]:
         """
         Set the emoji for the account profile.
         :param value: str: The value to set the emoji to.
-        :returns: bool: True if successfully set, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True or False for success or failure.
+            The second element is the string "SUCCESS" on success or a message stating what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_emoji.__name__)
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this is not the account profile, do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
+        # If emoji is already set to value, do nothing:
         if self.emoji == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
+
         # Create command object and json command string:
         set_emoji_command_obj = {
             "jsonrpc": "2.0",
@@ -416,38 +513,45 @@ class Profile(object):
                 "aboutEmoji": value,
             }
         }
-        json_command_str = json.dumps(set_emoji_command_obj) + '\n'
+        json_command_str: str = json.dumps(set_emoji_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
-        # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                error_message = "DEBUG: Signal error while setting emoji. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(error_message, file=sys.stderr)
-            return False
+        response_str : str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
+        # Check error:
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal returned an error while setting profile emoji. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.emoji = value
-        return True
+        return True, SUCCESS_MESSAGE
 
-    def set_coin_address(self, value: str) -> bool:
+    def set_coin_address(self, value: str) -> tuple[bool, str]:
         """
         Set the mobile coin address.
         :param value: str: The value to set the mobile coin address to.
-        :returns: bool: True if successfully updated, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True or False for success or failure.
+            The second element is either the string "SUCCESS" if successful, or a message stating what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_coin_address.__name__)
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this isn't the account profile, do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
+        # If the value is already set, do nothing:
         if self.coin_address == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
+
         # Create command object and json command string:
         set_coin_address_command_obj = {
             "jsonrpc": "2.0",
@@ -458,38 +562,46 @@ class Profile(object):
                 "mobileCoinAddress": value,
             }
         }
-        json_command_str = json.dumps(set_coin_address_command_obj) + '\n'
+        json_command_str: str = json.dumps(set_coin_address_command_obj) + '\n'
+
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
+        response_str: str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
         # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                error_message = "DEBUG: Signal error while setting coin address. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(error_message, file=sys.stderr)
-            return False
+        error_occurred, signal_code, signal_error = __check_response_for_error__(response_obj, [])
+        if error_occurred:
+            error_message: str = "signal error occurred while setting profile coin address. Code: %i, Message: %s" \
+                                 % (signal_code, signal_error)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.coin_address = value
-        return True
+        return True, SUCCESS_MESSAGE
 
-    def set_avatar(self, value: str) -> bool:
+    def set_avatar(self, value: str) -> tuple[bool, str]:
         """
         Set the avatar for the account profile.
         :param value: str: The path to the image to set the avatar to.
-        :returns: bool: True if successfully updated, False if not.
-        :raises: TypeError: If value is not a string.
+        :returns: tuple[bool, str]: The first element is True or False for success or failure.
+            The second element is either the string "SUCCESS" on success or a message stating what went wrong.
+        :raises TypeError: If value is not a string.
+        :raises SignalError: If Signal returns an error.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.set_avatar.__name__)
+        # Type check value:
         if not isinstance(value, str):
+            logger.critical("Raising TypeError:")
             __type_error__("value", "str", value)
+        # If this isn't the account profile, do nothing:
         if not self._is_account_profile:
-            return False
+            return False, NOT_ACCOUNT_PROFILE_MESSAGE
+        # If avatar already set to value, do nothing:
         if self.avatar == value:
-            return False
+            return False, VALUE_ALREADY_SET_MESSAGE
         # Create command object and json command string:
         set_avatar_command_obj = {
             "jsonrpc": "2.0",
@@ -500,21 +612,21 @@ class Profile(object):
                 "avatar": value,
             }
         }
-        json_command_str = json.dumps(set_avatar_command_obj) + '\n'
+        json_command_str: str = json.dumps(set_avatar_command_obj) + '\n'
+
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
-        # Parse response:
-        response_obj: dict[str, Any] = json.loads(response_str)
+        response_str: str = __socket_receive__(self._sync_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+
         # Check for error:
-        if 'error' in response_obj.keys():
-            if DEBUG:
-                error_message = "DEBUG: Signal error while setting avatar. Code: %i Message: %s" % (
-                    response_obj['error']['code'],
-                    response_obj['error']['message']
-                )
-                print(error_message, file=sys.stderr)
-            return False
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj)
+        if error_occurred:
+            error_message: str = "signal error while setting profile avatar. Code: %i, Message: %s" \
+                                 % (signal_code, signal_message)
+            logger.warning(error_message)
+            return False, error_message
+
         # Set the property
         self.avatar = value
-        return True
+        return True, SUCCESS_MESSAGE
