@@ -92,6 +92,15 @@ class ConversationTypes(IntEnum):
     GROUP = auto()
 
 
+class ReceiptTypes(IntEnum):
+    """
+    Enum to store different receipt types:
+    """
+    NOT_SET = auto()
+    DELIVER = auto()
+    READ = auto()
+    VIEWED = auto()
+
 ####################################
 # Find command helpers:
 ####################################
