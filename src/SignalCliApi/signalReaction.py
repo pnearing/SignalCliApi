@@ -7,7 +7,6 @@ import logging
 from typing import TypeVar, Optional, Any
 import socket
 import json
-import sys
 
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes, \
     __parse_signal_response__, __check_response_for_error__
@@ -59,7 +58,7 @@ class Reaction(Message):
         :param emoji: Optional[str]: The unicode emoji.
         :param target_author: Optional[Contact]: The author of the message reacted to.
         :param target_timestamp: Optional[Timestamp]: The timestamp of the message reacted to.
-        :param is_remove: bool: If True this is a removal message.
+        :param is_remove: bool: If True, this is a removal message.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
