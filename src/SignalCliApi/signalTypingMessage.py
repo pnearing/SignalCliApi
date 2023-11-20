@@ -3,7 +3,7 @@
 from typing import Optional, Any
 import socket
 
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, RecipientTypes
 from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
@@ -87,15 +87,15 @@ class TypingMessage(Message):
     def __update_body__(self) -> None:
         if self.sender is not None and self.action is not None and self.time_changed is not None:
             if self.recipient is not None and self.recipient_type is not None:
-                if self.recipient_type == 'contact':
+                if self.recipient_type == RecipientTypes.CONTACT:
                     self.body = "At %s, %s %s typing." % (
                         self.time_changed.get_display_time(), self.sender.get_display_name(),
                         self.action.lower())
-                elif self.recipient_type == 'group':
+                elif self.recipient_type == RecipientTypes.GROUP:
                     self.body = "At %s, %s %s typing in group %s." % (
                         self.time_changed.get_display_time(), self.sender.get_display_name(),
                         self.action.lower(), self.recipient.get_display_name())
                 else:
-                    raise ValueError("invalid recipient_type: %s" % self.recipient_type)
+                    raise ValueError("invalid recipient_type: %s" % str(self.recipient_type))
         else:
             self.body = "Invalid typing message."

@@ -6,7 +6,8 @@ from datetime import timedelta
 import json
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes
+from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes,\
+    RecipientTypes
 from .signalContacts import Contacts
 from .signalContact import Contact
 from .signalDevices import Devices
@@ -205,11 +206,11 @@ class SentMessage(Message):
         raw_sent_message: dict[str, object] = raw_message['sync_message']['sentMessage']
         # Load recipient and recipient type:
         if raw_sent_message['destination'] is not None:
-            self.recipient_type = 'contact'
+            self.recipient_type = RecipientTypes.CONTACT
             added, self.recipient = self._contacts.__get_or_add__(number=raw_sent_message['destinationNumber'],
                                                                   uuid=raw_sent_message['destinationUuid'])
         elif 'groupInfo' in raw_sent_message.keys():
-            self.recipient_type = 'group'
+            self.recipient_type = RecipientTypes.GROUP
             added, self.recipient = self._groups.__get_or_add__(group_id=raw_sent_message['groupInfo']['groupId'])
         # Load timestamp:
         self.timestamp = Timestamp(timestamp=raw_sent_message['timestamp'])
@@ -255,10 +256,10 @@ class SentMessage(Message):
         self.is_sent = True
         # Set sent to, if a group, assume sent to all current members.
         self.sent_to = []
-        if self.recipient_type == 'group':
+        if self.recipient_type == RecipientTypes.GROUP:
             for contact in self.recipient.members:
                 self.sent_to.append(contact)
-        elif self.recipient_type == 'contact':
+        elif self.recipient_type == RecipientTypes.CONTACT:
             self.sent_to = [self.recipient]
         return
 
@@ -464,14 +465,14 @@ class SentMessage(Message):
             error_message = "emoji must be str of len 1 or 2"
             raise ValueError(error_message)
         # Create reaction
-        if self.recipient_type == 'contact':
+        if self.recipient_type == RecipientTypes.CONTACT:
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
                                 this_device=self._this_device, recipient=self.sender, emoji=emoji,
                                 target_author=self.sender,
                                 target_timestamp=self.timestamp)
-        elif self.recipient_type == 'group':
+        elif self.recipient_type == RecipientTypes.GROUP:
             reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
                                 config_path=self._config_path,
                                 contacts=self._contacts, groups=self._groups, devices=self._devices,
