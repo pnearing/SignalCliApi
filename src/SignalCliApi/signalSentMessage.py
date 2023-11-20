@@ -418,8 +418,8 @@ class SentMessage(Message):
 
     def __set_expiry__(self, time_opened: Timestamp) -> None:
         if self.expiration is not None:
-            expiryDateTime = time_opened.date_time + self.expiration
-            self.expiration_timestamp = Timestamp(date_time=expiryDateTime)
+            expiry_datetime = time_opened.datetime + self.expiration
+            self.expiration_timestamp = Timestamp(datetime_obj=expiry_datetime)
         return
 
     ###########################
