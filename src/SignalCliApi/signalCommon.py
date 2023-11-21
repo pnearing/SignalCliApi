@@ -46,7 +46,7 @@ UNKNOWN_DEVICE_NAME: Final[str] = '<UNKNOWN-DEVICE>'
 """The default name for an unknown device."""
 PRIMARY_DEVICE_ID: Final[int] = 1
 """The device ID of the primary device for an account."""
-
+STICKER_MANIFEST_FILENAME: Final[str] = 'manifest.json'
 
 ###########################
 # Enum's:
