@@ -163,18 +163,22 @@ class Mentions(object):
     #########################################
     # Helpers:
     #########################################
-    def __parse_mentions__(self, body: str) -> str:
+    def __parse_mentions__(self, body: Optional[str]) -> Optional[str]:
         """
         Insert mentions into the body of a message.
         :param body: str: The body of the message containing the mentions.
         :return: str: The body with mentions inserted.
         """
-        if not isinstance(body, str):
-            __type_error__("body", "str", body)
-        for mention in self._mentions:
-            body_start = body[:mention.start]
-            body_end = body[mention.start + mention.length:]
-            body = body_start + '@' + mention.contact.get_display_name() + body_end
+        # TODO: Look over this, it might not work as is.
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_mentions__.__name__)
+        if body is not None and not isinstance(body, str):
+            logger.critical("Raising TypeError:")
+            __type_error__("body", "Optional[str]", body)
+        if body is not None:
+            for mention in self._mentions:
+                body_start = body[:mention.start]
+                body_end = body[mention.start + mention.length:]
+                body = body_start + '@' + mention.contact.get_display_name() + body_end
         return body
 
     #######################################
