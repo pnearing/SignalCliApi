@@ -189,8 +189,7 @@ class Message(object):
             self.__from_raw_message__(raw_message)
             self.sender.seen(self.timestamp)
             self.device.seen(self.timestamp)
-            if self.recipient_type == RecipientTypes.CONTACT:
-                self.recipient.seen(self.timestamp)
+            self.recipient.seen(self.timestamp)  # Both Group and Contact have a seen function.
 
         # Set recipient type
         if self.recipient is not None:
