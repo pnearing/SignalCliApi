@@ -11,29 +11,18 @@ from .signalContact import Contact
 from .signalContacts import Contacts
 from .signalDevice import Device
 from .signalDevices import Devices
-from .signalGroup import Group
 from .signalGroups import Groups
 from .signalMessage import Message
 from .signalSticker import StickerPacks
 from .signalTimestamp import Timestamp
-from .signalCommon import __type_error__, MessageTypes, SyncTypes, SentMessageTypes
+from .signalCommon import __type_error__, MessageTypes, SyncTypes
 
 
 # noinspection GrazieInspection
 class SyncMessage(Message):
-    """Class to store the different type of sync messages."""
-
-    # Sync message types:
-    # TYPE_CONTACT_SYNC: int = 1
-    # TYPE_GROUPS_SYNC: int = 2
-    # TYPE_SENT_MESSAGE_SYNC: int = 3
-    # TYPE_READ_MESSAGE_SYNC: int = 4
-    # TYPE_BLOCKED_SYNC: int = 5
-
-    # Sent message, message types:
-    # SENT_TYPE_SENT_MESSAGE: int = 1
-    # SENT_TYPE_GROUP_UPDATE_MESSAGE: int = 2
-
+    """
+    Class to store the different type of sync messages.
+    """
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
