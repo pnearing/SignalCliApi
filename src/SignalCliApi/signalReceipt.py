@@ -53,10 +53,14 @@ class Receipt(Message):
         :param device: Optional[Device]: The device this receipt was generated from.
         :param timestamp: Optional[Timestamp]: The timestamp of the receipt.
         """
+        # Set internal properties:
+        self._is_parsed: bool = False
+        """Has this receipt been parsed yet?"""
+
         # Set external properties:
         # Set when:
         self.when: Optional[Timestamp] = None
-        """When this was read / veiwed / delivered."""
+        """When this was read / viewed / delivered."""
         # Set receipt Type:
         self.receipt_type: ReceiptTypes = ReceiptTypes.NOT_SET
         """The type of receipt."""
