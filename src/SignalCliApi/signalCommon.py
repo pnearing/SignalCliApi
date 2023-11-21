@@ -155,14 +155,14 @@ class SyncTypes(IntEnum):
     BLOCKS = auto()
     """Sync blocked contacts or groups type."""
 
-#
-# class SentMessageTypes(IntEnum):
-#     """
-#     Enum for different sent message types.
-#     """
-#     SENT_MESSAGE = auto()
-#     GROUP_UPDATE = auto()
 
+class TypingStates(IntEnum):
+    """
+    Enum to represent the two different typing states.
+    """
+    NOT_SET = auto()
+    STARTED = auto()
+    STOPPED = auto()
 
 ####################################
 # Find command helpers:
