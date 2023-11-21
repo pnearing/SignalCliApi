@@ -476,11 +476,13 @@ class ReceivedMessage(Message):
     def parse_mentions(self) -> Optional[str]:
         """
         Parse the mentions.
-        :returns: Optional[str]: The body with the mentions inserted, or None if the body is None.
+        :returns: Optional[str]: The body with the mentions inserted; If 'mentions' is None, then the original
+            body is returned, if body is None, then None is returned.
         """
-        if self.body is not None:
-            return self.mentions.__parse_mentions__(self.body)
-        return None
+        if self.mentions is None:
+            return self.body
+        return self.mentions.__parse_mentions__(self.body)
+
 
     def react(self, emoji: str) -> tuple[bool, Reaction | str]:
         """
