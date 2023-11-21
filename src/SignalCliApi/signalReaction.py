@@ -202,6 +202,15 @@ class Reaction(Message):
         :returns: tuple[bool, str]: True/False for sent status, string for an error message if False, or "SUCCESS"
             if True.
         """
+        # Setup logging:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.send.__name__)
+
+        # Check if this was already sent.
+        if self.is_sent:
+            error_message: str = "reaction already sent."
+            logger.critical("Raising RuntimeError(%s)." % error_message)
+            raise RuntimeError(error_message)
+
         # Create reaction command object and json command string:
         send_reaction_command_obj = {
             "jsonrpc": "2.0",
@@ -221,11 +230,13 @@ class Reaction(Message):
             send_reaction_command_obj['params']['groupId'] = self.recipient.get_id()
         else:
             raise ValueError("recipient type = %s" % str(self.recipient_type))
+
         # Create the JSON command string:
-        json_command_str = json.dumps(send_reaction_command_obj) + '\n'
+        json_command_str: str = json.dumps(send_reaction_command_obj) + '\n'
+
         # Communicate with signal:
         __socket_send__(self._command_socket, json_command_str)
-        response_str = __socket_receive__(self._command_socket)
+        response_str: str = __socket_receive__(self._command_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
@@ -236,11 +247,11 @@ class Reaction(Message):
             return False, error_message
 
         # Parse Response:
-        resultObj: dict[str, Any] = response_obj['result']
-        self.timestamp = Timestamp(timestamp=resultObj['timestamp'])
+        result_obj: dict[str, Any] = response_obj['result']
+        self.timestamp = Timestamp(timestamp=result_obj['timestamp'])
         # Check for delivery error:
-        if resultObj['results'][0]['type'] != 'SUCCESS':
-            return False, resultObj['results'][0]['type']
+        if result_obj['results'][0]['type'] != 'SUCCESS':
+            return False, result_obj['results'][0]['type']
         return True, "SUCCESS"
 
     def remove(self) -> tuple[bool, str]:
@@ -354,3 +365,11 @@ class Reaction(Message):
         if old_value != value:
             self.__update_body__()
         return
+
+    @property
+    def is_sent(self) -> bool:
+        """
+        Is this reaction already sent?
+        :return: bool: True the reaction has been sent, False it has not.
+        """
+        return self.timestamp is not None  # If we have a timestamp, then the reaction was sent.
