@@ -9,7 +9,7 @@ import socket
 import json
 
 from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME
+    __check_response_for_error__, UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates
 from .signalProfile import Profile
 from .signalTimestamp import Timestamp
 from .signalDevices import Devices
@@ -130,7 +130,7 @@ class Contact(object):
         self.color: Optional[str] = color
         """The colour of the contact."""
         self.is_self: bool = False
-        """Is this the self-contact."""
+        """Is this the self-contact?"""
 
         # Parse from dict:
         if from_dict is not None:
@@ -256,6 +256,7 @@ class Contact(object):
         :param from_dict: dict[str, Any]: Load from a dict provided by __to_dict__().
         :return: None
         """
+        # Load basic properties:
         self.name = from_dict['name']
         self.number = from_dict['number']
         self.uuid = from_dict['uuid']
@@ -263,7 +264,9 @@ class Contact(object):
         self.is_typing = from_dict['isTyping']
         self.expiration = from_dict['expiration']
         self.color = from_dict['color']
+
         # Load Profile:
+        self.profile = None
         if from_dict['profile'] is not None:
             if self.number == self._account_id:
                 self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path,
@@ -273,24 +276,21 @@ class Contact(object):
                 self.profile = Profile(sync_socket=self._sync_socket, config_path=self._config_path,
                                        account_id=self._account_id,
                                        contact_id=self.get_id(), from_dict=from_dict['profile'])
-        else:
-            self.profile = None
         # Load Devices:
+        self.devices = None
         if from_dict['devices'] is not None:
             self.devices = Devices(sync_socket=self._sync_socket, account_id=self._account_id,
                                    from_dict=from_dict['devices'])
-        else:
-            self.devices = None
+
         # Load last typing change:
+        self.last_typing_change = None
         if from_dict['lastTypingChange'] is not None:
             self.last_typing_change = Timestamp(from_dict=from_dict['lastTypingChange'])
-        else:
-            self.last_typing_change = None
+
         # Load last seen:
+        self.last_seen = None
         if from_dict['lastSeen'] is not None:
             self.last_seen = Timestamp(from_dict=from_dict['lastSeen'])
-        else:
-            self.last_seen = None
         return
 
     ########################
@@ -379,6 +379,25 @@ class Contact(object):
             self.profile.__update__(other.profile)
         elif self.profile is None and other.profile is not None:
             self.profile = other.profile
+        return
+
+    def __parse_typing_message__(self, message) -> None:
+        """
+        Parse a typing message.
+        :param message: TypingMessage: The message to parse.
+        :return: None
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_typing_message__.__name__)
+        if message.action == TypingStates.STARTED:
+            self.is_typing = True
+        elif message.action == TypingStates.STOPPED:
+            self.is_typing = False
+        else:
+            error_message: str = "invalid TypingMessage, can't parse typing action: %s" % str(message.action)
+            logger.critical("Raising RuntimeError(%s)." % error_message)
+            raise RuntimeError(error_message)
+        self.last_typing_change = message.time_changed
+        self.seen(message.time_changed)
         return
 
     ############################
