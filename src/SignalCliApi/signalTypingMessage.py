@@ -7,7 +7,7 @@ import logging
 from typing import Optional, Any
 import socket
 
-from .signalCommon import RecipientTypes, MessageTypes
+from .signalCommon import RecipientTypes, MessageTypes, TypingStates
 from .signalContacts import Contacts
 from .signalDevice import Device
 from .signalDevices import Devices
@@ -42,8 +42,10 @@ class TypingMessage(Message):
         :param raw_message: Optional[dict[str, Any]]: A dict provided by Signal.
         """
         # Set external properties:
-        self.action: str = "NOT SET"
+        # The typing action:
+        self.action: TypingStates = TypingStates.NOT_SET
         """The action being preformed. Either STARTED or STOPPED."""
+        # The time the typing action changed.
         self.time_changed: Optional[Timestamp] = None
         """The Timestamp of the action change."""
 
@@ -73,7 +75,7 @@ class TypingMessage(Message):
         :return: dict[str, Any]: A dict to provide to __from_dict__().
         """
         typing_message: dict[str, Any] = super().__to_dict__()
-        typing_message['action'] = self.action
+        typing_message['action'] = self.action.value
         if self.time_changed is not None:
             typing_message['timeChanged'] = self.time_changed.__to_dict__()
         else:
@@ -87,11 +89,23 @@ class TypingMessage(Message):
         :return: None
         """
         super().__from_dict__(from_dict)
-        self.action = from_dict['action']
+        self.action = TypingStates(from_dict['action'])
         self.time_changed = None
         if from_dict['timeChanged'] is not None:
             self.time_changed = Timestamp(from_dict=from_dict['timeChanged'])
         return
+
+    def __get_action_string__(self) -> str:
+        """
+        Return the a string for the action.
+        :return: str: The action string.
+        """
+        if self.action == TypingStates.STARTED:
+            return 'started'
+        elif self.action == TypingStates.STOPPED:
+            return 'stopped'
+        else:
+            return 'not set'
 
     def __update_body__(self) -> None:
         """
@@ -104,11 +118,11 @@ class TypingMessage(Message):
                 if self.recipient_type == RecipientTypes.CONTACT:
                     self.body = "At %s, %s %s typing." % (
                         self.time_changed.get_display_time(), self.sender.get_display_name(),
-                        self.action.lower())
+                        self.__get_action_string__())
                 elif self.recipient_type == RecipientTypes.GROUP:
                     self.body = "At %s, %s %s typing in group %s." % (
                         self.time_changed.get_display_time(), self.sender.get_display_name(),
-                        self.action.lower(), self.recipient.get_display_name())
+                        self.__get_action_string__(), self.recipient.get_display_name())
                 else:
                     error_message: str = "invalid recipient_type: %s" % str(self.recipient_type)
                     logger.critical("Raising ValueError(%s)." % error_message)
@@ -116,3 +130,4 @@ class TypingMessage(Message):
         else:
             self.body = "Invalid typing message."
         return
+
