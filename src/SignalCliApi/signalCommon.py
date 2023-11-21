@@ -101,6 +101,16 @@ class ReceiptTypes(IntEnum):
     READ = auto()
     VIEWED = auto()
 
+
+class AttachmentTypes(IntEnum):
+    """
+    Enum for attachment types:
+    """
+    NOT_SET = auto()
+    TEXT = auto()
+    FILE = auto()
+
+
 ####################################
 # Find command helpers:
 ####################################
