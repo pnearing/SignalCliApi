@@ -1,49 +1,50 @@
 #!/usr/bin/env python3
-"""File: signalTextAttachment.py"""
-from typing import Optional
+"""
+File: signalTextAttachment.py
+Store a signal Text Attachment.
+"""
+from typing import Optional, Any
 
 from .signalCommon import __type_error__
-DEBUG: bool = False
 
 
 class TextAttachment(object):
-    """Class to store a 'text attachment' from story messages."""
+    """
+    Class to store a 'text attachment' from story messages.
+    """
     def __init__(self,
-                 from_dict: Optional[dict[str, object]] = None,
-                 raw_attachment: Optional[dict[str, object]] = None,
-                 text: Optional[str] = None,
-                 style: Optional[str] = None,
-                 text_foreground_color: Optional[str] = None,
-                 text_background_color: Optional[str] = None,
-                 background_color: Optional[str] = None,
+                 from_dict: Optional[dict[str, Any]] = None,
+                 raw_attachment: Optional[dict[str, Any]] = None,
+                 # text: Optional[str] = None,
+                 # style: Optional[str] = None,
+                 # text_foreground_color: Optional[str] = None,
+                 # text_background_color: Optional[str] = None,
+                 # background_color: Optional[str] = None,
                  ) -> None:
-        # Argument checks:
-        # Check text:
-        if text is not None and not isinstance(text, str):
-            __type_error__("text", "str", text)
-        # Check style:
-        if style is not None and not isinstance(style, str):
-            __type_error__("style", "str", style)
-        # check text fg colour:
-        if text_foreground_color is not None and not isinstance(text_foreground_color, str):
-            __type_error__("text_foreground_color", "str", text_foreground_color)
-        # Check text bg colour:
-        if text_background_color is not None and not isinstance(text_background_color, str):
-            __type_error__("text_background_color", "str", text_background_color)
-        # Check bg Colour:
-        if background_color is not None and not isinstance(background_color, str):
-            __type_error__("background_color", "str", background_color)
+        """
+        Initialize a text attachment.
+        :param from_dict: Optional[dict[str, Any]]: Load from a dict created by __to_dict__().
+        :param raw_attachment: Optional[dict[str, Any]]: Load from a dict provided by Signal.
+        """
+        # Super:
+        super().__init__()
         # Set external properties
         # Set text:
-        self.text: str = text
+        self.text: str = ''
+        """The text of the attachment."""
         # Set style:
-        self.style: str = style
+        self.style: str = ''
+        """The text style of the attachment."""
         # Set text bg colour:
-        self.text_background_color = text_background_color
+        self.text_background_color: str = ''
+        """The background colour of the text."""
         # Set text fg colour:
-        self.text_foreground_color = text_foreground_color
+        self.text_foreground_color: str = ''
+        """The foreground colour of the text."""
         # Set background colour:
-        self.background_color = background_color
+        self.background_color: str = ''
+        """The background colour."""
+
         # Parse from_dict:
         if from_dict is not None:
             self.__from_dict__(from_dict)
@@ -55,8 +56,12 @@ class TextAttachment(object):
     ####################
     # Init:
     ####################
-    def __from_raw_attachment__(self, raw_attachment: dict[str, object]) -> None:
-        # Load text:
+    def __from_raw_attachment__(self, raw_attachment: dict[str, Any]) -> None:
+        """
+        Load properties from a dict provided by Signal.
+        :param raw_attachment: dict[str, Any]: The dict provided by Signal.
+        :return: None
+        """
         self.text = raw_attachment['text']
         self.style = raw_attachment['style']
         self.text_background_color = raw_attachment['textBackgroundColor']
@@ -67,8 +72,12 @@ class TextAttachment(object):
     ####################
     # To / From dict:
     ####################
-    def __to_dict__(self) -> dict[str, object]:
-        textAttachmentDict = {
+    def __to_dict__(self) -> dict[str, Any]:
+        """
+        Create a JSON friendly dict.
+        :return: dict[str, Any]: The dict to pass to __from_dict__().
+        """
+        textAttachmentDict: dict[str, Any] = {
             'text': self.text,
             'style': self.style,
             'textBackgroundColor': self.text_background_color,
@@ -77,15 +86,15 @@ class TextAttachment(object):
         }
         return textAttachmentDict
 
-    def __from_dict__(self, from_dict: dict[str, object]) -> None:
-        # Load text:
+    def __from_dict__(self, from_dict: dict[str, Any]) -> None:
+        """
+        Load properties from a JSON friendly dict.
+        :param from_dict: dict[str, Any]: The dict created by __to_dict__().
+        :return: None
+        """
         self.text = from_dict['text']
-        # Load style:
         self.style = from_dict['style']
-        # Load text bg colour:
         self.text_background_color = from_dict['textBackgroundColor']
-        # Load text fg colour:
         self.text_foreground_color = from_dict['textForegroundColor']
-        # Load background colour:
         self.background_color = from_dict['backgroundColor']
         return
