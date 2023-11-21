@@ -47,6 +47,8 @@ UNKNOWN_DEVICE_NAME: Final[str] = '<UNKNOWN-DEVICE>'
 PRIMARY_DEVICE_ID: Final[int] = 1
 """The device ID of the primary device for an account."""
 STICKER_MANIFEST_FILENAME: Final[str] = 'manifest.json'
+"""The filename of a sticker manifest file."""
+
 
 ###########################
 # Enum's:
@@ -56,7 +58,9 @@ class CallbackIdx(IntEnum):
     Enum to index the callbacks. (Callable, Optional[list[Any]])
     """
     CALLABLE = 0
+    """Callback callable index."""
     PARAMS = 1
+    """Callback parameters index."""
 
 
 class MessageTypes(IntEnum):
@@ -64,16 +68,27 @@ class MessageTypes(IntEnum):
     Enum for message types:
     """
     NOT_SET = auto()
+    """Message type not set."""
     SENT = auto()
+    """Sent message type."""
     RECEIVED = auto()
+    """Received message type."""
     TYPING = auto()
+    """Typing message type."""
     RECEIPT = auto()
+    """Receipt message type."""
     STORY = auto()
+    """Story message type."""
     PAYMENT = auto()
+    """Payment message type."""
     REACTION = auto()
+    """Reaction message type."""
     GROUP_UPDATE = auto()
+    """Group update message type."""
     SYNC = auto()
+    """Sync message type."""
     CALL = auto()
+    """Call message type."""
 
 
 class RecipientTypes(IntEnum):
@@ -81,7 +96,9 @@ class RecipientTypes(IntEnum):
     Enum to store message recipient types.
     """
     GROUP = auto()
+    """Recipient is a Group."""
     CONTACT = auto()
+    """Recipient is a Contact."""
 
 
 class ConversationTypes(IntEnum):
@@ -89,7 +106,9 @@ class ConversationTypes(IntEnum):
     Enum to store conversation types.
     """
     CONTACT = auto()
+    """Conversation with a contact."""
     GROUP = auto()
+    """Conversation with a group."""
 
 
 class ReceiptTypes(IntEnum):
@@ -97,9 +116,13 @@ class ReceiptTypes(IntEnum):
     Enum to store different receipt types:
     """
     NOT_SET = auto()
+    """Receipt type not set."""
     DELIVER = auto()
+    """Delivery receipt type."""
     READ = auto()
+    """Read message receipt type."""
     VIEWED = auto()
+    """Viewed message receipt type."""
 
 
 class AttachmentTypes(IntEnum):
@@ -107,8 +130,38 @@ class AttachmentTypes(IntEnum):
     Enum for attachment types:
     """
     NOT_SET = auto()
+    """Attachment type not set."""
     TEXT = auto()
+    """Attachment is a TextAttachment."""
     FILE = auto()
+    """Attachment is an Attachment (file)."""
+
+
+class SyncTypes(IntEnum):
+    """
+    Enum for different sync message types:
+    """
+    # Sync message types:
+    NOT_SET = auto()
+    """Sync type not set."""
+    CONTACTS = auto()
+    """Sync Contacts type."""
+    GROUPS = auto()
+    """Sync Groups type."""
+    SENT_MESSAGES = auto()
+    """Sync SentMessages type."""
+    READ_MESSAGES = auto()
+    """Sync read messages type."""
+    BLOCKS = auto()
+    """Sync blocked contacts or groups type."""
+
+#
+# class SentMessageTypes(IntEnum):
+#     """
+#     Enum for different sent message types.
+#     """
+#     SENT_MESSAGE = auto()
+#     GROUP_UPDATE = auto()
 
 
 ####################################
