@@ -200,7 +200,11 @@ class Reactions(object):
         # Otherwise, replace the existing reaction:
         else:
             reaction.is_change = True
+            reaction.previous_emoji = previous_reaction.emoji
             self.__replace_reaction__(previous_reaction, reaction)
+        # Store the reaction:
+        self._reactions.append(reaction)
+        # Mark as parsed
         reaction.is_parsed = True
         return reaction.is_parsed
 
