@@ -489,3 +489,20 @@ class Group(object):
             display_name = display_name[:max_len - 3]
             display_name += '...'
         return display_name
+
+    def seen(self, time_seen: Timestamp) -> None:
+        """
+        Update the last time this contact has been seen.
+        :param time_seen: Timestamp: The time this contact was seen at.
+        :raises: TypeError: If time_seen is not a Timestamp object.
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
+        if not isinstance(time_seen, Timestamp):
+            logger.critical("Raising TypeError:")
+            __type_error__('time_seen', 'Timestamp', time_seen)
+        if self.last_seen is not None:
+            if time_seen > self.last_seen:
+                self.last_seen = time_seen
+        else:
+            self.last_seen = time_seen
+        return
