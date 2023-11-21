@@ -483,7 +483,6 @@ class ReceivedMessage(Message):
             return self.body
         return self.mentions.__parse_mentions__(self.body)
 
-
     def react(self, emoji: str) -> tuple[bool, Reaction | str]:
         """
         Create and send a Reaction to this message.
@@ -497,14 +496,17 @@ class ReceivedMessage(Message):
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.react.__name__)
-        # Argument check:
+        # Type check emoji:
         if not isinstance(emoji, str):
             logger.critical("Raising TypeError:")
             __type_error__('emoji', "str, len = 1|2", emoji)
+
+        # Value check emoji:
         if 1 <= len(emoji) <= 4:
             error_message: str = "emoji must be str of len 1->4"
             logger.critical("Raising ValueError(%s)." % error_message)
             raise ValueError(error_message)
+
         # Create reaction
         reaction: Reaction
         if self.recipient_type == RecipientTypes.CONTACT:
@@ -523,16 +525,20 @@ class ReceivedMessage(Message):
         else:
             error_message: str = "Invalid recipient type."
             return False, error_message
+
         # Send reaction:
         sent, message = reaction.send()
         if not sent:
             return False, message
+
         # Parse reaction:
         parsed: bool = self.reactions.__parse__(reaction)
         if not parsed:
             error_message: str = "failed to parse reaction."
             logger.critical("Raising RuntimeError(%s)." % error_message)
             raise RuntimeError(error_message)
+
+        # Return Success:
         return True, reaction
 
     # TODO: Reply to this message, create a sent message with this as an attached quote.
@@ -543,4 +549,18 @@ class ReceivedMessage(Message):
               sticker: Optional[Sticker] = None,
               preview: Optional[Preview] = None,
               ) -> tuple[tuple[bool, Contact | Group, str | SentMessage], ...]:
+        """
+        Send a reply to this message.
+        :param body: str: The body to reply with.
+        :param attachments: Optional[Iterable[Attachment | str] | Attachment | str]: Any attachments to the message.
+        :param mentions: Optional[Iterable[Mention] | Mentions | Mention]: Any mentions in this message.
+        :param sticker: Optional[Sticker]: The sticker to send as a message.
+        :param preview: Optional[Preview]: Any URL preview for this message.
+        :return: tuple[tuple[bool, Contact | Group, str | SentMessage], ...]: A tuple of tuples. One inner tuple per
+            recipient of the message.
+            The first element of the inner tuple is a bool which is True or False on success or failure.
+            The second element of the inner tuple is the Contact or Group that this message was sent to.
+            The third element of the inner tuple is either the SentMessage object on success or an error message on
+            failure.
+        """
         raise NotImplementedError()
