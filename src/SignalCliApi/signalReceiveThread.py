@@ -9,7 +9,7 @@ import json
 from .signalAccount import Account
 from .signalCallMessage import CallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, \
-    __socket_send__, __type_error__
+    __socket_send__, __type_error__, SyncTypes
 from .signalGroupUpdate import GroupUpdate
 # from .signalMessage import Message
 from .signalReaction import Reaction
@@ -255,25 +255,24 @@ class ReceiveThread(threading.Thread):
                     # Parse the sync message based on sync type:
                     if DEBUG:
                         print("Parsing sync message...", file=sys.stderr)
-                    if (message.sync_type == SyncMessage.TYPE_READ_MESSAGE_SYNC or
-                            message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC):
+                    if message.sync_type == SyncTypes.READ_MESSAGES or message.sync_type == SyncTypes.SENT_MESSAGES:
                         if DEBUG:
                             print("Read messages.", file=sys.stderr)
                         self._account.messages.__parse_sync_message__(message)
-                    elif message.sync_type == SyncMessage.TYPE_CONTACT_SYNC:
+                    elif message.sync_type == SyncTypes.CONTACTS:
                         if DEBUG:
                             print("Contact sync", file=sys.stderr)
                         self._account.contacts.__sync__()
-                    elif message.sync_type == SyncMessage.TYPE_GROUPS_SYNC:
+                    elif message.sync_type == SyncTypes.GROUPS:
                         if DEBUG:
                             print("Group sync", file=sys.stderr)
                         self._account.groups.__sync__()
-                    elif message.sync_type == SyncMessage.TYPE_BLOCKED_SYNC:
+                    elif message.sync_type == SyncTypes.BLOCKS:
                         if DEBUG:
                             print("Blocked sync", file=sys.stderr)
                         self._account.contacts.__parse_sync_message__(message)
                         self._account.groups.__parse_sync_message__(message)
-                    elif message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
+                    elif message.sync_type == SyncTypes.SENT_MESSAGES:
                         if DEBUG:
                             print("Sent message sync", file=sys.stderr)
                         self._account.messages.__parse_sync_message__(message)
