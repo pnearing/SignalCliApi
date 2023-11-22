@@ -38,12 +38,6 @@ class Message(object):
                  device: Optional[Device] = None,
                  timestamp: Optional[Timestamp] = None,
                  message_type: MessageTypes = MessageTypes.NOT_SET,
-                 # is_delivered: bool = False,
-                 # time_delivered: Optional[Timestamp] = None,
-                 # is_read: bool = False,
-                 # time_read: Optional[Timestamp] = None,
-                 # is_viewed: bool = False,
-                 # time_viewed: Optional[Timestamp] = None,
                  ) -> None:
         """
         Initialize a message.
@@ -61,12 +55,6 @@ class Message(object):
         :param device: Optional[Device] = None: The device this message was sent from.
         :param timestamp: Optional[Timestamp] = None: The timestamp object of this message.
         :param message_type: int = TYPE_NOT_SET: The type of message this is.
-        # :param is_delivered: bool = False: If this message was delivered.
-        # :param time_delivered: Optional[Timestamp] = None: The Timestamp object for when this was delivered.
-        # :param is_read: bool = False: If this message was read.
-        # :param time_read: Optional[Timestamp] = None: The Timestamp object for when this message was read.
-        # :param is_viewed: bool = False: If this message was viewed.
-        # :param time_viewed: Optional[Timestamp] = None: The timestamp object for when this message was viewed.
         :returns: None
         """
         # Super:
@@ -118,24 +106,6 @@ class Message(object):
         if not isinstance(message_type, MessageTypes):
             logger.critical("Raising TypeError:")
             __type_error__("message_type", "MessageTypes(enum)", message_type)
-        # if not isinstance(is_delivered, bool):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("is_delivered", "bool", is_delivered)
-        # if time_delivered is not None and not isinstance(time_delivered, Timestamp):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("time_delivered", "Timestamp", time_delivered)
-        # if not isinstance(is_read, bool):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("is_read", "bool", is_read)
-        # if time_read is not None and not isinstance(time_read, Timestamp):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("time_read", "Timestamp", time_read)
-        # if not isinstance(is_viewed, bool):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("is_viewed", "bool", is_viewed)
-        # if time_viewed is not None and not isinstance(time_viewed, Timestamp):
-        #     logger.critical("Raising TypeError:")
-        #     __type_error__("time_viewed", "Timestamp", time_viewed)
 
         # Set internal vars:
         self._command_socket: socket.socket = command_socket
