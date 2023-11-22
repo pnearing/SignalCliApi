@@ -25,8 +25,10 @@ SUCCESS_MESSAGE: Final[str] = "SUCCESS"
 # Non-fatal error codes to ignore while setting properties:
 NON_FATAL_ERROR_CODES: Final[list[int]] = []
 
+
 class Profile(object):
     """Class containing the profile for either a contact or the account."""
+
     def __init__(self,
                  sync_socket: socket.socket,
                  config_path: str,
@@ -275,7 +277,7 @@ class Profile(object):
         # Check if avatar already exists:
         if self.avatar is not None:
             if os.path.exists(self.avatar):
-               return True
+                return True
             else:
                 warning_message: str = "Current avatar points to non-existent file, searching for new avatar."
                 logger.warning(warning_message)
@@ -519,7 +521,7 @@ class Profile(object):
         json_command_str: str = json.dumps(set_emoji_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str : str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check error:
