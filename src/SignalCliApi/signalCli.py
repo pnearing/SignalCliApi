@@ -10,9 +10,9 @@ from typing import Optional, Callable, Any, NoReturn
 
 from .signalAccount import Account
 from .signalAccounts import Accounts
-from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__, __socket_create__, \
-    __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, __type_err_msg__, \
-    CallbackIdx, __parse_signal_response__, __check_response_for_error__
+from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__, \
+    __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, \
+    __type_err_msg__, CallbackIdx, __parse_signal_response__, __check_response_for_error__
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError
@@ -606,7 +606,8 @@ class SignalCli(object):
         # Generate text qrcode:
         text_qr_code: Optional[str] = None
         if self._qrencode_exec_path is not None and gen_text_qr:
-            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1', self._link_request]
+            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1',
+                                       self._link_request]
             logger.debug("Attempting to generate UTF8 QR-Code...")
             try:
                 bytes_text_qr_code: bytes = check_output(command_line)
@@ -712,15 +713,15 @@ class SignalCli(object):
 
     def start_receive(self,
                       account: Account,
-                      all_messages_callback: Optional[Callable] = None,
-                      received_message_callback: Optional[Callable] = None,
-                      receipt_message_callback: Optional[Callable] = None,
-                      sync_message_callback: Optional[Callable] = None,
-                      typing_message_callback: Optional[Callable] = None,
-                      story_message_callback: Optional[Callable] = None,
-                      payment_message_callback: Optional[Callable] = None,
-                      reaction_message_callback: Optional[Callable] = None,
-                      call_message_callback: Optional[Callable] = None,
+                      all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      receipt_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      sync_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      typing_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      story_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                      call_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                       ) -> None:
         """
         Start receiving messages for the given account.
@@ -745,47 +746,6 @@ class SignalCli(object):
             logger.critical("Raising TypeError:")
             logger.critical(__type_err_msg__('account', 'Account', account))
             __type_error__("account", "Account", account)
-        if all_messages_callback is not None and not callable(all_messages_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('all_messages_callback', 'Optional[Callable]', all_messages_callback))
-            __type_error__('all_messages_callback', 'Optional[Callable', all_messages_callback)
-        if received_message_callback is not None and not callable(received_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('received_message_callback', 'Optional[Callable]',
-                                             received_message_callback))
-            __type_error__('received_message_callback', 'Optional[Callable]', received_message_callback)
-        if receipt_message_callback is not None and not callable(receipt_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('receipt_message_callback', 'Optional[Callable',
-                                             receipt_message_callback))
-            __type_error__('receipt_message_callback', 'Optional[Callable]', receipt_message_callback)
-        if sync_message_callback is not None and not callable(sync_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('sync_message_callback', 'Optional[Callable]', sync_message_callback))
-            __type_error__('sync_message_callback', 'Optional[Callable]', sync_message_callback)
-        if typing_message_callback is not None and not callable(typing_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('typing_message_callback', 'Optional[Callable]',
-                                             typing_message_callback))
-            __type_error__('typing_message_callback', 'Optional[Callable]', typing_message_callback)
-        if story_message_callback is not None and not callable(story_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__("story_message_callback", "Optional[Callable]",
-                                             story_message_callback))
-            __type_error__('story_message_callback', 'Optional[Callable]', story_message_callback)
-        if payment_message_callback is not None and not callable(payment_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('payment_message_callback', 'Optional[Callable]',
-                                             payment_message_callback))
-            __type_error__('payment_message_callback', 'Optional[Callable]', payment_message_callback)
-        if reaction_message_callback is not None and not callable(reaction_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('reaction_message_callback', 'Optional[Callable]',
-                                             reaction_message_callback))
-            __type_error__('reaction_message_callback', 'Optional[Callable]', reaction_message_callback)
-        if call_message_callback is not None and not callable(call_message_callback):
-            logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('call_message_callback', 'Optional[Callable]', call_message_callback))
 
         # Start receive:
         thread_id: str = account.number
