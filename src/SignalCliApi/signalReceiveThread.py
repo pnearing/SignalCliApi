@@ -12,7 +12,8 @@ import json
 from .signalAccount import Account
 from .signalCallMessage import CallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, \
-    __socket_send__, __type_error__, SyncTypes, CallbackIdx, __parse_signal_response__, __check_response_for_error__
+    __socket_send__, __type_error__, SyncTypes, CallbackIdx, __parse_signal_response__, __check_response_for_error__, \
+    TypingStates
 from .signalGroupUpdate import GroupUpdate
 from .signalMessage import Message
 from .signalReaction import Reaction
@@ -270,11 +271,13 @@ class ReceiveThread(threading.Thread):
             # Parse reaction and call the reaction callback:
             logger.debug("Got reaction message, parsing and calling reaction callback.")
             self._account.messages.__parse_reaction__(message)
+            message.sender.seen(message.timestamp)
             return self.__call_callback__(self._ract_msg_cb, self._account, message)
         ######################
         # GROUP UPDATES:
         ######################
         else:
+            # TODO: See if there is a better way to do this, this feels and reads pretty hacky.
             is_group_update: bool
             try:
                 if data_message['groupInfo']['type'] == 'UPDATE':
@@ -293,6 +296,7 @@ class ReceiveThread(threading.Thread):
                 logger.debug("Got a group update message, syncing groups and calling sync callback.")
                 message.recipient.__sync__()
                 self._account.messages.append(message)
+                message.sender.seen(message.timestamp)
                 return self.__call_callback__(self._sync_msg_cb, self._account, message)
             ##################################
             # Received Message:
@@ -308,9 +312,23 @@ class ReceiveThread(threading.Thread):
                 )
                 logger.debug("Got a received message, storing and calling received callback.")
                 # Sender is no longer typing:
-                message.sender.is_typing = False
-                # Append the message and call the data message callback:
+                if message.sender.is_typing:
+                    # Create a typing stopped message:
+                    stop_typing_message = TypingMessage(command_socket=self._command_socket,
+                                                        account_id=self._account.get_id(), config_path=self._config_path,
+                                                        contacts=self._account.contacts, groups=self._account.groups,
+                                                        devices=self._account.devices, this_device=self._account.device,
+                                                        sender=message.sender, recipient=message.recipient,
+                                                        device=message.device, timestamp=message.timestamp,
+                                                        action=TypingStates.STOPPED, time_changed=message.timestamp)
+                    # Send the typing message to the sending for parsing:
+                    message.sender.__parse_typing_message__(stop_typing_message)
+                    # Store the typing message.
+                    self._account.messages.append(stop_typing_message)
+                # Store the received message:
                 self._account.messages.append(message)
+                # Mark the sender as seen:
+                message.sender.seen(message.timestamp)
                 return self.__call_callback__(self._recv_msg_cb, self._account, message)
 
     def __parse_receipt_message__(self, envelope_dict: dict[str, Any]) -> Optional[bool]:
@@ -381,7 +399,7 @@ class ReceiveThread(threading.Thread):
             command_socket=self._command_socket, account_id=self._account.number,
             config_path=self._config_path, contacts=self._account.contacts,
             groups=self._account.groups, devices=self._account.devices,
-            this_device=self._account.devices.get_this_device(), raw_message=envelope_dict
+            this_device=self._account.device, raw_message=envelope_dict
         )
         # Parse typing message:
         message.sender.__parse_typing_message__(message)
