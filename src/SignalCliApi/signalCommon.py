@@ -28,7 +28,7 @@ uuid_regex: Final[Pattern] = re.compile(
 )
 """Regex matching a UUID."""
 #########################
-# Strings:
+# Constants:
 #########################
 UUID_FORMAT_STR: Final[str] = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 """UUID format string."""
@@ -161,8 +161,12 @@ class TypingStates(IntEnum):
     Enum to represent the two different typing states.
     """
     NOT_SET = auto()
+    """User typing state not set."""
     STARTED = auto()
+    """User started typing."""
     STOPPED = auto()
+    """User stopped typing."""
+
 
 ####################################
 # Find command helpers:
