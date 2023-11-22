@@ -5,7 +5,7 @@ Common Constants, Vars, and helper functions.
 """
 import json
 from subprocess import check_output, CalledProcessError
-from typing import Pattern, NoReturn, Optional, Any, Final
+from typing import Pattern, NoReturn, Optional, Any, Final, Callable
 import socket
 import select
 import re
@@ -497,3 +497,21 @@ def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
     error_message: str = __type_err_msg__(var_name, valid_type_name, var)
     logger.critical("--> TypeError(%s)." % error_message)
     raise TypeError(error_message)
+
+
+def __type_check_callback__(callback: Optional[tuple[Callable, Optional[list[Any]]]]) -> bool:
+    """
+    Type check a call back.
+    :param callback: The call back to type check.
+    :return: bool: True or False on success or failure.
+    """
+    if callback is not None:
+        if not isinstance(callback, tuple):
+            return False
+        elif len(callback) != 2:
+            return False
+        elif not callable(callback[CallbackIdx.CALLABLE]):
+            return False
+        elif callback[CallbackIdx.PARAMS] is not None and not isinstance(callback[CallbackIdx.PARAMS], list):
+            return False
+    return True

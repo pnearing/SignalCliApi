@@ -13,7 +13,7 @@ from .signalAccount import Account
 from .signalCallMessage import CallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, \
     __socket_send__, __type_error__, SyncTypes, CallbackIdx, __parse_signal_response__, __check_response_for_error__, \
-    TypingStates
+    TypingStates, __type_check_callback__
 from .signalGroupUpdate import GroupUpdate
 from .signalMessage import Message
 from .signalReaction import Reaction
@@ -26,24 +26,6 @@ from .signalTypingMessage import TypingMessage
 from .signalExceptions import CommunicationsError
 
 
-def __type_check_callback__(callback: Optional[tuple[Callable, Optional[list[Any]]]]) -> bool:
-    """
-    Type check a call back.
-    :param callback: The call back to type check.
-    :return: bool: True or False on success or failure.
-    """
-    if callback is not None:
-        if not isinstance(callback, tuple):
-            return False
-        elif len(callback) != 2:
-            return False
-        elif not callable(callback[CallbackIdx.CALLABLE]):
-            return False
-        elif callback[CallbackIdx.PARAMS] is not None and not isinstance(callback[CallbackIdx.PARAMS], list):
-            return False
-    return True
-
-
 class ReceiveThread(threading.Thread):
     """
     The reception thread.
@@ -54,8 +36,8 @@ class ReceiveThread(threading.Thread):
                  config_path: str,
                  sticker_packs: StickerPacks,
                  account: Account,
-                 all_messages_callback: Optional[tuple[Callable, Optional[list[Any, ...]]]] = None,
-                 received_message_callback: Optional[tuple[Callable, Optional[list[Any, ...]]]] = None,
+                 all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                 received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  receipt_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  sync_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  typing_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
