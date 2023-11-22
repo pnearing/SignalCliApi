@@ -240,9 +240,9 @@ class Account(object):
 
             # Load contacts from signal:
             logger.debug("Loading Contacts...")
-            self.contacts = Contacts(sync_socket=self._sync_socket, config_path=self.config_path,
-                                     account_id=self.number, account_path=self._account_path, do_load=True,
-                                     do_sync=True)
+            self.contacts = Contacts(command_socket=command_socket, sync_socket=self._sync_socket,
+                                     config_path=self.config_path, account_id=self.number,
+                                     account_path=self._account_path, do_load=True, do_sync=True)
 
             # Load groups from signal:
             logger.debug("Loading Groups...")
@@ -267,7 +267,7 @@ class Account(object):
             # Merge disk profile and self-contact profile.
             logger.debug("Merging account profiles...")
             self_contact = self.contacts.get_self()
-            if self_contact is not None:
+            if self_contact is not None and self_contact.profile is not None:
                 self.profile.__update__(self_contact.profile)
         else:
             logger.info("Account not registered.")
@@ -483,3 +483,18 @@ class Account(object):
 
         logger.info("Verification successful.")
         return True, "verification successful"
+
+    def get_id(self) -> str:
+        """
+        Get the account's ID.
+        :return: str: Either the account's phone number or UUID if the number doesn't exist for some reason.
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_id.__name__)
+        if self.number is not None:
+            return self.number
+        elif self.uuid is not None:
+            return self.uuid
+        error_message: str = "invalid account, no number and no uuid."
+        logger.critical("Raising RuntimeError(%s)." % error_message)
+        raise RuntimeError(error_message)
+
