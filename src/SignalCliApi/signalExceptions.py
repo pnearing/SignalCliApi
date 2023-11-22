@@ -215,3 +215,28 @@ class LinkNotStarted(Error):
         """
         Error.__init__(self, "Link not started.", None, *args)
         return
+
+
+class CallbackCausedError(Error):
+    """
+    Exception to throw when a callback causes an error.
+    """
+    def __init__(self, callback_name: str, error: Exception, *args) -> None:
+        """
+        Initialize a CallbackCausedError exception.
+        :param callback_name: str: The __name__ of the callback.
+        :param error: Exception: The error the callback caused.
+        :param args: tuple[Any]: Any additional arguments to store in the exception.
+        """
+        message: str = "Callback '%s', caused a %s exception." % (callback_name, str(type(error)))
+        self._callback_name: str = callback_name
+        Error.__init__(self, message, error, *args)
+        return
+
+    @property
+    def callback_name(self) -> str:
+        """
+        The name of the callback that caused the exception.
+        :return: str
+        """
+        return self._callback_name

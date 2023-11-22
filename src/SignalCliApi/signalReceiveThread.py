@@ -23,7 +23,7 @@ from .signalSticker import StickerPacks
 from .signalStoryMessage import StoryMessage
 from .signalSyncMessage import SyncMessage
 from .signalTypingMessage import TypingMessage
-from .signalExceptions import CommunicationsError
+from .signalExceptions import CommunicationsError, CallbackCausedError
 
 
 class ReceiveThread(threading.Thread):
@@ -45,6 +45,7 @@ class ReceiveThread(threading.Thread):
                  payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  call_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
+                 callback_raises_exception: bool = True,
                  do_expunge: bool = True,
                  ) -> None:
         """
@@ -73,6 +74,8 @@ class ReceiveThread(threading.Thread):
         :param reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for reaction
             messages.
         :param call_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for call messages.
+        :param callback_raises_exception: bool: If a callback causes an exception, If True the
+            CallbackCausedError will be raised, if False, then the exception will be suppressed.
         :param do_expunge: bool: True we should automatically expunge expired messages.
         """
         # Run super init:
@@ -164,6 +167,8 @@ class ReceiveThread(threading.Thread):
         """Call back to call on receipt of a reaction message."""
         self._call_msg_cb: Optional[tuple[Callable, Optional[list[Any]]]] = call_message_callback
         """Call back to call on receipt of a call message."""
+        self._callback_raises_exception: bool = callback_raises_exception
+        """Does a callback raise an exception on error?"""
         self._do_expunge: bool = do_expunge
         """Should we expunge on update?"""
 
@@ -207,6 +212,8 @@ class ReceiveThread(threading.Thread):
             error_message: str = "Callback '%s', caused an Exception '%s', with arguments: '%s'" \
                                  % (callback[CallbackIdx.CALLABLE].__name__, str(type(e)), str(e.args))
             logger.critical(error_message)
+            if self._callback_raises_exception:
+                raise CallbackCausedError(callback[CallbackIdx.CALLABLE].__name__, e)
 
         # Call all messages callback:
         all_return_value: Optional[bool] = None
@@ -221,6 +228,8 @@ class ReceiveThread(threading.Thread):
             error_message: str = "Callback '%s', caused an Exception '%s', with arguments: '%s'" \
                                  % (callback[CallbackIdx.CALLABLE].__name__, str(type(e)), str(e.args))
             logger.critical(error_message)
+            if self._callback_raises_exception:
+                raise CallbackCausedError(callback[CallbackIdx.CALLABLE].__name__, e)
 
         # Determine return value:
         if all_return_value is not None:
@@ -297,12 +306,13 @@ class ReceiveThread(threading.Thread):
                 if message.sender.is_typing:
                     # Create a typing stopped message:
                     stop_typing_message = TypingMessage(command_socket=self._command_socket,
-                                                        account_id=self._account.get_id(), config_path=self._config_path,
-                                                        contacts=self._account.contacts, groups=self._account.groups,
-                                                        devices=self._account.devices, this_device=self._account.device,
-                                                        sender=message.sender, recipient=message.recipient,
-                                                        device=message.device, timestamp=message.timestamp,
-                                                        action=TypingStates.STOPPED, time_changed=message.timestamp)
+                                                        account_id=self._account.get_id(),
+                                                        config_path=self._config_path, contacts=self._account.contacts,
+                                                        groups=self._account.groups, devices=self._account.devices,
+                                                        this_device=self._account.device, sender=message.sender,
+                                                        recipient=message.recipient, device=message.device,
+                                                        timestamp=message.timestamp, action=TypingStates.STOPPED,
+                                                        time_changed=message.timestamp)
                     # Send the typing message to the sending for parsing:
                     message.sender.__parse_typing_message__(stop_typing_message)
                     # Store the typing message.
@@ -492,7 +502,7 @@ class ReceiveThread(threading.Thread):
             message_obj: dict[str, Any] = __parse_signal_response__(response_str)
             if 'method' in message_obj.keys() and message_obj['method'] == 'receive':
                 envelope_dict: dict = message_obj['params']['envelope']
-                return_value: Optional[bool] = None
+                return_value: Optional[bool]
                 ##########################
                 # Data Message:
                 ##########################
