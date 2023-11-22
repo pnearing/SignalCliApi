@@ -16,6 +16,7 @@ from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError
+from .signalErrors import LinkError
 
 
 class SignalCli(object):
@@ -269,12 +270,14 @@ class SignalCli(object):
         :raises CommunicationError: On error closing socket.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__close_sockets__.__name__)
-        __socket_close__(self._sync_socket)  # Raises CommunicationsError
-        self._sync_socket = None
-        logger.debug("Sync socket closed.")
-        __socket_close__(self._command_socket)  # Raises CommunicationsError
-        self._command_socket = None
-        logger.debug("Command socket closed.")
+        if self._sync_socket is not None:
+            __socket_close__(self._sync_socket)  # Raises CommunicationsError
+            self._sync_socket = None
+            logger.debug("Sync socket closed.")
+        if self._command_socket is not None:
+            __socket_close__(self._command_socket)  # Raises CommunicationsError
+            self._command_socket = None
+            logger.debug("Command socket closed.")
         return
 
     def __wait_for_signal_socket_file__(self, socket_file_path: str, timeout: float = 10.0) -> None:
@@ -603,11 +606,14 @@ class SignalCli(object):
         # Generate text qrcode:
         text_qr_code: Optional[str] = None
         if self._qrencode_exec_path is not None and gen_text_qr:
-            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', self._link_request]
+            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1', self._link_request]
             logger.debug("Attempting to generate UTF8 QR-Code...")
             try:
                 bytes_text_qr_code: bytes = check_output(command_line)
                 text_qr_code = bytes_text_qr_code.decode('UTF8')
+                # Clean up qr-code:
+                string = '\u2584' * len(text_qr_code.splitlines(keepends=False)[0])
+                text_qr_code = string + '\n' + text_qr_code
                 logger.debug("UTF8 QR-Code successfully created.")
             except CalledProcessError:
                 logger.warning("Failed to generate UTF8 QR-Code.")
@@ -625,7 +631,7 @@ class SignalCli(object):
         logger.info("Link process successfully started.")
         return self._link_request, text_qr_code, png_qr_code_file_path
 
-    def finish_link(self, device_name: Optional[str] = None) -> tuple[bool, Account | str]:
+    def finish_link(self, device_name: Optional[str] = None) -> tuple[bool, Account | LinkError]:
         """
         Finish the linking process after confirming the link on the primary device.
         :param device_name: Optional[str]: The device name to give this link.
@@ -677,12 +683,15 @@ class SignalCli(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)  # Raises Invalid server response
 
         # Check for error:
-        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1, -3])
+        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1, -2, -3])
         if error_occurred:
+            self._link_request = None
             if error_code == -1:  # User already exists:
-                return False, "user already exists"
+                return False, LinkError.USER_EXISTS
+            elif error_code == -2:
+                return False, LinkError.UNKNOWN
             elif error_code == -3:  # Timeout
-                return False, "timeout"
+                return False, LinkError.TIMEOUT
             else:
                 error_message = "Unhandled non-fatal error. Code %i, Message: %s" % (error_code, error_message)
                 raise NotImplementedError(error_message)
