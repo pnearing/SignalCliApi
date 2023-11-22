@@ -16,7 +16,7 @@ from .signalExceptions import CommunicationsError, SignalError, InvalidServerRes
 ###################
 # Version:
 ###################
-VERSION: Final[str] = '0.2.3'
+VERSION: Final[str] = '0.3.0'
 """Version of the library"""
 ########################################
 # Regex:
