@@ -152,7 +152,7 @@ class Contact(object):
 
         # If 'devices' isn't created yet, create empty devices:
         if self.devices is None:
-            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.uuid)
+            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.get_id())
 
         return
 
