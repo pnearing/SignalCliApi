@@ -8,7 +8,7 @@ from typing import TypeVar, Optional, Any
 import socket
 import json
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, __parse_signal_response__, \
     __check_response_for_error__, UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates
 from .signalProfile import Profile
 from .signalTimestamp import Timestamp
@@ -351,7 +351,7 @@ class Contact(object):
         json_command_str = json.dumps(set_name_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
+        response_str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1])
 

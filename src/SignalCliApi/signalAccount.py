@@ -9,7 +9,7 @@ import json
 import socket
 import logging
 
-from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __type_err_msg__, \
+from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __type_err_msg__, \
     __parse_signal_response__, __check_response_for_error__
 from .signalDevice import Device
 from .signalDevices import Devices
@@ -473,7 +473,7 @@ class Account(object):
         json_command_str = json.dumps(verify_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationsError.
-        response_str = __socket_receive__(self._sync_socket)  # Raises CommunicationsError.
+        response_str = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationsError.
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1])
         # TODO: Check for response error codes, usually -1 is a good assumption.

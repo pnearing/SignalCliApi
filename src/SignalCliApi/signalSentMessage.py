@@ -9,7 +9,7 @@ import socket
 from datetime import timedelta
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes,\
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, UNKNOWN_DEVICE_NAME, MessageTypes,\
     RecipientTypes, ReceiptTypes, __parse_signal_response__, __check_response_for_error__
 from .signalContacts import Contacts
 from .signalContact import Contact

@@ -9,7 +9,7 @@ import os
 import json
 import socket
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, __parse_signal_response__, \
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, __parse_signal_response__, \
     __check_response_for_error__
 from .signalTimestamp import Timestamp
 from .signalExceptions import InvalidDataFile
@@ -375,7 +375,7 @@ class Profile(object):
 
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
@@ -423,7 +423,7 @@ class Profile(object):
         json_command_str: str = json.dumps(set_family_name_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
@@ -472,7 +472,7 @@ class Profile(object):
         json_command_str: str = json.dumps(set_about_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
@@ -521,7 +521,7 @@ class Profile(object):
         json_command_str: str = json.dumps(set_emoji_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check error:
@@ -571,7 +571,7 @@ class Profile(object):
 
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
@@ -621,7 +621,7 @@ class Profile(object):
 
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str: str = __socket_receive__(self._sync_socket)
+        response_str: str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:

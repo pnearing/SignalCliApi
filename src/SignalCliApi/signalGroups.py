@@ -8,7 +8,7 @@ from typing import Optional, Iterator, Any
 import socket
 import json
 
-from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __parse_signal_response__, \
+from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
     __check_response_for_error__, UNKNOWN_GROUP_NAME
 from .signalGroup import Group
 from .signalContacts import Contacts
@@ -156,7 +156,7 @@ class Groups(object):
         json_command_str = json.dumps(list_groups_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationsError.
-        response_str: str = __socket_receive__(self._sync_socket)  # Raises CommunicationsError.
+        response_str: str = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationsError.
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)  # Raises InvalidServerResponse.
         __check_response_for_error__(response_obj)  # Raises SignalError.
 

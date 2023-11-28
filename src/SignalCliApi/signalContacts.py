@@ -9,7 +9,7 @@ import json
 import socket
 import logging
 
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, phone_number_regex, uuid_regex, \
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, phone_number_regex, uuid_regex, \
     NUMBER_FORMAT_STR, UUID_FORMAT_STR, SELF_CONTACT_NAME, __parse_signal_response__, __check_response_for_error__, \
     UNKNOWN_CONTACT_NAME
 from .signalContact import Contact
@@ -297,7 +297,7 @@ class Contacts(object):
         json_command_str = json.dumps(list_contacts_command_obj) + '\n'
         # Communicate with signal-cli:
         __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationError
-        response_str = __socket_receive__(self._sync_socket)  # Raises CommunicationError
+        response_str = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationError
         response_obj = __parse_signal_response__(response_str)
         __check_response_for_error__(response_obj)  # Raises Signal Error on all signal errors.
 
@@ -639,7 +639,7 @@ class Contacts(object):
 
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
+        response_str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1, ])
 

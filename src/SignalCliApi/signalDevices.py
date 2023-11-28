@@ -8,7 +8,7 @@ import json
 import socket
 import logging
 
-from .signalCommon import __socket_receive__, __socket_send__, __type_error__, __parse_signal_response__, \
+from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
     __check_response_for_error__, UNKNOWN_DEVICE_NAME
 from .signalDevice import Device
 from .signalTimestamp import Timestamp
@@ -153,7 +153,7 @@ class Devices(object):
 
         # Communicate with the socket:
         __socket_send__(self._sync_socket, json_command)  # Raises CommunicationsError.
-        response_string = __socket_receive__(self._sync_socket)  # Raises CommunicationsError.
+        response_string = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationsError.
         response_obj: dict[str, Any] = __parse_signal_response__(response_string)  # Raises InvalidServerResponse
         __check_response_for_error__(response_obj)  # Raises Signal Error on any error
 

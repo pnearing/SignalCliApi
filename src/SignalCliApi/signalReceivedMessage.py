@@ -11,7 +11,7 @@ from datetime import timedelta, datetime
 import pytz
 
 from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive__, __socket_send__, MessageTypes, RecipientTypes, \
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, RecipientTypes, \
     ReceiptTypes, __parse_signal_response__, __check_response_for_error__
 from .signalContact import Contact
 from .signalContacts import Contacts
@@ -318,7 +318,7 @@ class ReceivedMessage(Message):
 
         # Communicate with signal:
         __socket_send__(self._command_socket, json_command_str)
-        response_str: str = __socket_receive__(self._command_socket)
+        response_str: str = __socket_receive_blocking__(self._command_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:

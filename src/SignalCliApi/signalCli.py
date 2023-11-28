@@ -3,19 +3,22 @@ import logging
 import json
 import os
 import socket
-from warnings import warn
 from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
 from time import sleep
 from typing import Optional, Callable, Any, NoReturn
 
 from .signalAccount import Account
 from .signalAccounts import Accounts
+from . import signalCommon
 from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__, \
-    __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, __socket_send__, phone_number_regex, \
-    __type_err_msg__, CallbackIdx, __parse_signal_response__, __check_response_for_error__
+    __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, __socket_send__, phone_number_regex, \
+    __type_err_msg__, __parse_signal_response__, __check_response_for_error__
+from .runCallback import __run_callback__, __type_check_callback__
+from .runCallback import set_suppress_error as set_callback_suppress_error
+from .runCallback import type_string as callback_type_string
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
-from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError
+from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError, CallbackCausedError
 from .signalErrors import LinkError
 
 
@@ -29,7 +32,8 @@ class SignalCli(object):
                  log_file_path: Optional[str] = None,
                  start_signal: bool = True,
                  callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
-                 debug: bool = False
+                 callback_raises_error: bool = True,
+                 debug: bool = False,
                  ) -> None:
         """
         Initialize signal-cli, starting the process if required.
@@ -42,6 +46,9 @@ class SignalCli(object):
         :param callback: Optional[tuple[Callable, Optional[list[Any]]]]: The call back as a tuple, the first element
             being the callable, and the second element; If not None, is a list of any parameters to provide to the
             callback.  The callback signature is: (status: str, *params)
+        :param callback_raises_error: bool: Should we suppress exceptions caused by callbacks? True, callback exceptions
+            will only be logged to the logging facility. False, the exception CallbackCausedError is raised with
+            the information and Exception object of what went wrong.
         :param debug: Bool: Produce debug output on stdout.
         :raises TypeError: If a parameter is of invalid type.
         :raises FileNotFoundError: If a file / directory doesn't exist when it should.
@@ -59,26 +66,26 @@ class SignalCli(object):
         # Check signal config path:
         if signal_config_path is not None:
             if not isinstance(signal_config_path, str):
-                logger.critical("TypeError:")
+                logger.critical("Raising TypeError:")
                 __type_error__("signal_config_path", "str", signal_config_path)
             elif not os.path.exists(signal_config_path) and not start_signal:
                 error_message = "signal_config_path '%s' doesn't exist." % signal_config_path
-                logger.critical("FileNotFoundError: %s" % error_message)
+                logger.critical("Raising FileNotFoundError: %s" % error_message)
                 raise FileNotFoundError(error_message)
 
         # Check signal exec path:
         if signal_exec_path is not None:
             if not isinstance(signal_exec_path, str):
-                logger.critical("TypeError:")
+                logger.critical("Raising TypeError:")
                 __type_error__("signal_exec_path", "str", signal_exec_path)
             elif not os.path.exists(signal_exec_path) and start_signal:
                 error_message = "signal_exec_path '%s' does not exist." % signal_exec_path
-                logger.critical("FileNotFoundError: %s" % error_message)
+                logger.critical("Raising FileNotFoundError: %s" % error_message)
                 raise FileNotFoundError(error_message)
 
         # Check start signal:
         if not isinstance(start_signal, bool):
-            logger.critical("TypeError:")
+            logger.critical("Raising TypeError:")
             __type_error__("start_signal", "bool", start_signal)
 
         # Check the server address:
@@ -89,10 +96,10 @@ class SignalCli(object):
                     logger.critical("Raising ValueError(%s)" % error_message)
                     raise ValueError(error_message)
                 elif not isinstance(server_address[0], str):
-                    logger.critical("TypeError:")
+                    logger.critical("Raising TypeError:")
                     __type_error__("server_address[0]", "str", server_address[0])
                 elif not isinstance(server_address[1], int):
-                    logger.critical("TypeError:")
+                    logger.critical("Raising TypeError:")
                     __type_error__("server_address[1]", "int", server_address[1])
             elif isinstance(server_address, str):
                 if os.path.exists(server_address) and start_signal:
@@ -106,37 +113,38 @@ class SignalCli(object):
                     logger.critical("Raising FileNotFoundError(%s)." % error_message)
                     raise FileNotFoundError(error_message)
             else:
-                logger.critical("TypeError:")
+                logger.critical("Raising TypeError:")
                 __type_error__('server_address', 'list[str, int] | tuple[str, int] | str', server_address)
 
         # Check the log file path:
         if log_file_path is not None:
             if not isinstance(log_file_path, str):
-                logger.critical("TypeError:")
+                logger.critical("Raising TypeError:")
                 __type_error__("log_file_path", "str", log_file_path)
 
         # Check callback:
-        if callback is not None:
-            if not isinstance(callback, tuple):
-                logger.critical("TypeError:")
-                __type_error__('callback', 'Optional[tuple[Callable, Optional[list[Any]]]]', callback)
-            elif len(callback) != 2:
-                error_message: str = "callback must be 2 elements long."
-                logger.critical("ValueError: %s" % error_message)
-                raise ValueError(error_message)
-            elif not callable(callback[CallbackIdx.CALLABLE]):
-                logger.critical("TypeError:")
-                __type_error__('callback[0]', 'Callable', callback[CallbackIdx.CALLABLE])
-            elif callback[CallbackIdx.PARAMS] is not None and not isinstance(callback[CallbackIdx.PARAMS], list):
-                logger.critical("TypeError:")
-                __type_error__('callback[1]', 'Optional[list[Any]]', callback[CallbackIdx.PARAMS])
+        if not __type_check_callback__(callback):
+            logger.critical("Raising TypeError:")
+            __type_error__('callback', callback_type_string(), callback)
+
+        # Check suppress_cb_error:
+        if not isinstance(callback_raises_error, bool):
+            logger.critical("Raising TypeError:")
+            __type_error__("suppress_cb_error", "bool", callback_raises_error)
 
         # Check debug:
         if not isinstance(debug, bool):
-            logger.critical("TypeError:")
+            logger.critical("Raising TypeError:")
             __type_error__('debug', 'bool', debug)
 
         # Set internal vars:
+        # Set _CALLBACK_RAISES_ERROR value:
+        signalCommon.CALLBACK_RAISES_ERROR = callback_raises_error
+        if callback_raises_error:
+            set_callback_suppress_error(False)
+        else:
+            set_callback_suppress_error(True)
+
         # Set the config path:
         self.config_path: str
         """The full path to the signal config directory."""
@@ -173,7 +181,7 @@ class SignalCli(object):
         logger.debug("Server address: %s" % str(self._server_address))
 
         # Store debug:
-        self._debug: bool = debug
+        signalCommon.DEBUG = debug
         """True if we should produce debugging output."""
         # Store log file path:
         self._log_file_path: Optional[str] = log_file_path
@@ -181,6 +189,8 @@ class SignalCli(object):
         # Store callback:
         self._callback: Optional[tuple[Callable, Optional[list[Any]]]] = callback
         """The start up call back."""
+        self._suppress_cb_error: bool = callback_raises_error
+        """Should we suppress callback errors?"""
         # set var to hold the main signal process
         self._signal_process: Optional[Popen] = None
         """The main signal-cli process."""
@@ -191,7 +201,7 @@ class SignalCli(object):
         self._command_socket: Optional[socket.socket] = None
         """The socket to preform command operations with."""
         # Set var to hold the link request:
-        self._link_request: Optional[str] = None
+        self._link_uri: Optional[str] = None
         """The signal-cli request for linking a new account."""
         # Set qrencode exec path:
         self._qrencode_exec_path: Optional[str] = __find_qrencode__()
@@ -206,29 +216,29 @@ class SignalCli(object):
         # Start signal-cli if requested:
         if start_signal:
             logger.info("Starting signal-cli.")
-            self.__run_callback__('starting signal-cli')
+            __run_callback__(self._callback, 'starting signal-cli')
             signal_command_line: list[str] = self.__build_signal_command_line__()
             response: bool | CalledProcessError = self.__start_signal__(signal_command_line)
             if response is not True:
                 __parse_signal_return_code__(response.returncode, signal_command_line, response.output)  # NoReturn
             logger.info("signal-cli started.")
-            self.__run_callback__("signal-cli started")
+            __run_callback__(self._callback, "signal-cli started")
 
         # Wait for the socket to appear:
         if isinstance(self._server_address, str):
             if start_signal:
                 logger.debug("server_address is a socket, and we're starting signal, wait for socket to appear.")
-                self.__run_callback__("start waiting for socket")
+                __run_callback__(self._callback, "start waiting for socket")
                 self.__wait_for_signal_socket_file__(self._server_address)
                 logger.debug("socket found.")
-                self.__run_callback__('socket found')
+                __run_callback__(self._callback, 'socket found')
 
         # Create sockets and connect to them:
         logger.info("Connecting to sockets.")
-        self.__run_callback__('connecting to sockets')
+        __run_callback__(self._callback, 'connecting to sockets')
         self.__connect_to_sockets__()
         logger.info("Connected to sockets.")
-        self.__run_callback__('connected to sockets')
+        __run_callback__(self._callback, 'connected to sockets')
 
         # Load stickers:
         logger.info("Loading sticker packs.")
@@ -255,9 +265,11 @@ class SignalCli(object):
         :raises CommunicationsError: On error creating or connecting to a socket.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__connect_to_sockets__.__name__)
+        logger.debug("Creating and connecting to command socket.")
         self._command_socket = __socket_create__(self._server_address)  # Raises CommunicationsError
         __socket_connect__(self._command_socket, self._server_address)  # Raises CommunicationsError
         logger.debug("Connected to command socket.")
+        logger.debug("Creating and connecting to sync socket.")
         self._sync_socket = __socket_create__(self._server_address)  # Raises CommunicationsError
         __socket_connect__(self._sync_socket, self._server_address)  # Raises CommunicationsError
         logger.debug("Connected to sync socket.")
@@ -271,10 +283,12 @@ class SignalCli(object):
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__close_sockets__.__name__)
         if self._sync_socket is not None:
+            logger.debug("Closing sync socket.")
             __socket_close__(self._sync_socket)  # Raises CommunicationsError
             self._sync_socket = None
             logger.debug("Sync socket closed.")
         if self._command_socket is not None:
+            logger.debug("Closing command socket.")
             __socket_close__(self._command_socket)  # Raises CommunicationsError
             self._command_socket = None
             logger.debug("Command socket closed.")
@@ -292,7 +306,7 @@ class SignalCli(object):
         current_time: float = 0.0
         while not os.path.exists(socket_file_path):
             logger.debug("Waiting for socket...")
-            self.__run_callback__('waiting for socket')
+            __run_callback__(self._callback, 'waiting for socket')
             sleep(0.5)
             current_time += 0.5
             if current_time >= timeout:
@@ -327,47 +341,29 @@ class SignalCli(object):
         # Log start:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__start_signal__.__name__)
         logger.info("Starting signal-cli.")
-        # Run signal-cli in daemon mode:
+
+        # Run signal-cli:
         try:
-            if self._debug:
+            if signalCommon.DEBUG:
                 self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE)
             else:
                 self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE, stderr=PIPE)
         except CalledProcessError as e:
             logger.critical("Failed to start signal-cli.")
-            self.__run_callback__("failed to start signal-cli")
+            __run_callback__(self._callback, "failed to start signal-cli")
             return e
-
         logger.info("signal-cli started.")
-        self.__run_callback__("signal-cli started.")
+        __run_callback__(self._callback, "signal-cli started.")
 
         # Give signal 5 seconds to start
-        self.__run_callback__("Waiting for signal-cli to initialize.")
+        __run_callback__(self._callback, "Waiting for signal-cli to initialize.")
         sleep(5)
-        self.__run_callback__('signal-cli initialized.')
+        __run_callback__(self._callback, 'signal-cli initialized.')
         return True
 
     #################################
     # Internal methods:
     #################################
-    def __run_callback__(self, status: str) -> None:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__run_callback__.__name__)
-        if self._callback is None:
-            logger.debug("Callback not defined, skipping.")
-            return
-        callback_name: str = self._callback[CallbackIdx.CALLABLE].__name__
-        logger.debug("Running callback '%s' with status: '%s'." % (callback_name, status))
-        try:
-            if self._callback[CallbackIdx.PARAMS] is not None:
-                self._callback[CallbackIdx.CALLABLE](status, *self._callback[CallbackIdx.PARAMS])
-            elif self._callback[CallbackIdx.PARAMS] is None:
-                self._callback[CallbackIdx.CALLABLE](status)
-        except Exception as e:
-            logger.warning("'%s' Exception while running callback: '%s': '%s'"
-                           % (str(type(e)), callback_name, str(e.args)))
-            warn("Callback raised an exception: %s" % str(type(e)), RuntimeWarning)
-        return
-
     def __remove_socket_file__(self) -> bool:
         """
         Remove the signal socket file.
@@ -409,17 +405,22 @@ class SignalCli(object):
         :raises CommunicationsError: On error closing a socket.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.stop_signal.__name__)
+
+        for thread_id in self._receive_threads.keys():
+            if self._receive_threads[thread_id] is not None:
+                self._receive_threads[thread_id].stop()
+
         # Close the sockets:
         logger.debug("Closing sockets.")
-        self.__run_callback__("closing sockets")
+        __run_callback__(self._callback, "closing sockets")
         self.__close_sockets__()
         logger.debug("Sockets closed.")
-        self.__run_callback__("sockets closed")
+        __run_callback__(self._callback, "sockets closed")
 
         # Terminate process:
         if self._signal_process is not None:
             logger.info("Stopping signal-cli.")
-            self.__run_callback__("stopping signal-cli")
+            __run_callback__(self._callback, "stopping signal-cli")
             self._signal_process.terminate()  # Kill the process (Sends SigTerm)
             logger.debug("Flushing pipes.")
             stdout, stderr = self._signal_process.communicate()  # Flush the pipes.
@@ -427,7 +428,7 @@ class SignalCli(object):
             logger.debug("STDERR: %s" % str(stderr))
             self._signal_process = None  # Clear the process.
             logger.info("signal-cli stopped.")
-            self.__run_callback__("signal-cli stopped")
+            __run_callback__(self._callback, "signal-cli stopped")
 
         # Remove socket file:
         if isinstance(self._server_address, str):
@@ -506,7 +507,7 @@ class SignalCli(object):
         json_command_str = json.dumps(register_account_command_obj) + '\n'
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)
-        response_str = __socket_receive__(self._sync_socket)
+        response_str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         # TODO: Fix error checking:
         # Check for error:
@@ -524,7 +525,7 @@ class SignalCli(object):
             json_command_str = json.dumps(delete_local_data_command_obj) + '\n'
             # Communicate with signal:
             __socket_send__(self._sync_socket, json_command_str)
-            response_str = __socket_receive__(self._sync_socket)  # output unused, we don't care if it failed.
+            response_str = __socket_receive_blocking__(self._sync_socket)  # output unused, we don't care if it failed.
             # TODO: Error check delete request response and at least warn about it.
             logger.debug("Delete account response: %s" % response_str)
             error_message = "Signal error, code: %i, message: %s" \
@@ -544,15 +545,16 @@ class SignalCli(object):
 
     def start_link(self,
                    gen_text_qr: bool = True,
-                   png_qr_code_file_path: Optional[str] = None,
+                   png_qr_file_path: Optional[str] = None,
                    ) -> tuple[str, Optional[str], Optional[str]]:
         """
         Start the link process for linking an existing account.
         :param gen_text_qr: bool: True, generate text qr-code, False, do not.
-        :param png_qr_code_file_path: Optional[str]: The file path to generate the png qr code at, if None, the qr code
+        :param png_qr_file_path: Optional[str]: The file path to generate the png qr code at, if None, the qr code
             is not generated.
         :returns: tuple[str, str, str]: The first element is the link url generated by signal.
-            The second element is a text QR code string, or an empty string if qrencode is not installed.
+            The second element is a text QR code string, or an empty string if qrencode is not installed, or
+            'gen_text_qr' is set to False.
             The third element is a path to a generated png qrencode, or an empty string if qrencode is not installed.
         :raises: TypeError: If name is not a string or None.
         :raises: LinkInProgress: If a link is already in progress when start_link_account is called a second time and
@@ -568,13 +570,13 @@ class SignalCli(object):
             logger.critical(__type_err_msg__('gen_text_qr', 'bool', gen_text_qr))
             __type_error__('gen_text_qr', 'bool', gen_text_qr)
 
-        if png_qr_code_file_path is not None and not isinstance(png_qr_code_file_path, str):
+        if png_qr_file_path is not None and not isinstance(png_qr_file_path, str):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__("png_qr_code_file_path", 'Optional[str]', png_qr_code_file_path))
-            __type_error__('png_qr_code_file_path', 'Optional[str]', png_qr_code_file_path)
+            logger.critical(__type_err_msg__("png_qr_code_file_path", 'Optional[str]', png_qr_file_path))
+            __type_error__('png_qr_code_file_path', 'Optional[str]', png_qr_file_path)
 
         # Check for a running link request:
-        if self._link_request is not None:
+        if self._link_uri is not None:
             logger.critical("Raising LinkInProgressError().")
             raise LinkInProgress()
 
@@ -592,47 +594,48 @@ class SignalCli(object):
         }
 
         # Create json command string:
-        json_command_str = json.dumps(link_request_command_obj) + '\n'
+        json_command_str: str = json.dumps(link_request_command_obj) + '\n'
 
         # Communicate with signal:
         __socket_send__(self._command_socket, json_command_str)
-        response_str: str = __socket_receive__(self._command_socket)
+        response_str: str = __socket_receive_blocking__(self._command_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         __check_response_for_error__(response_obj)
 
         # Gather the link from response obj:
-        self._link_request = response_obj['result']['deviceLinkUri']
+        self._link_uri = response_obj['result']['deviceLinkUri']
 
         # Generate text qrcode:
-        text_qr_code: Optional[str] = None
+        text_qr_code: str = ''
         if self._qrencode_exec_path is not None and gen_text_qr:
-            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1',
-                                       self._link_request]
+            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1', self._link_uri]
             logger.debug("Attempting to generate UTF8 QR-Code...")
             try:
-                bytes_text_qr_code: bytes = check_output(command_line)
-                text_qr_code = bytes_text_qr_code.decode('UTF8')
-                # Clean up qr-code:
-                string = '\u2584' * len(text_qr_code.splitlines(keepends=False)[0])
-                text_qr_code = string + '\n' + text_qr_code
+                bytes_qr_code: bytes = check_output(command_line)
+                text_qr_code: str = bytes_qr_code.decode('UTF8')
+                # Clean up qr-code by adding missing top border:
+                border_string: str = '\u2584' * len(text_qr_code.splitlines(keepends=False)[0])
+                text_qr_code = border_string + '\n' + text_qr_code
                 logger.debug("UTF8 QR-Code successfully created.")
             except CalledProcessError:
                 logger.warning("Failed to generate UTF8 QR-Code.")
 
         # Generate png qrcode:
-        if self._qrencode_exec_path is not None and png_qr_code_file_path is not None:
+        if self._qrencode_exec_path is not None and png_qr_file_path is not None:
             logger.debug("Attempting to generate png QR-Code...")
             try:
-                check_call([self._qrencode_exec_path, '-o', png_qr_code_file_path, self._link_request])
+                check_call([self._qrencode_exec_path, '-o', png_qr_file_path, self._link_uri])
                 logger.debug("png QR-Code successfully generated.")
             except CalledProcessError:
                 logger.warning("Failed to generate png QR-Code.")
 
         # Linking started successfully:
         logger.info("Link process successfully started.")
-        return self._link_request, text_qr_code, png_qr_code_file_path
+        return self._link_uri, text_qr_code, png_qr_file_path
 
-    def finish_link(self, device_name: Optional[str] = None) -> tuple[bool, Account | LinkError]:
+    def finish_link(self,
+                    device_name: Optional[str] = None,
+                    ) -> tuple[bool, Account | LinkError]:
         """
         Finish the linking process after confirming the link on the primary device.
         :param device_name: Optional[str]: The device name to give this link.
@@ -653,15 +656,15 @@ class SignalCli(object):
             __type_error__("device_name", "Optional[str]", device_name)
 
         # Check for a link process:
-        if self._link_request is None:
+        if self._link_uri is None:
             logger.critical("Raising LinkNotStarted().")
             raise LinkNotStarted()
 
         # Check for running signal-cli:
         if self._signal_process is None:
-            error_message: str = "signal-cli not running"
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
+            signal_message: str = "signal-cli not running"
+            logger.critical("Raising RuntimeError(%s)." % signal_message)
+            raise RuntimeError(signal_message)
 
         # Generate the finishLink command object:
         link_finish_command_obj: dict[str, Any] = {
@@ -669,7 +672,7 @@ class SignalCli(object):
             "id": 0,
             "method": "finishLink",
             "params": {
-                "deviceLinkUri": self._link_request,
+                "deviceLinkUri": self._link_uri,
             }
         }
         if device_name is not None:
@@ -680,22 +683,19 @@ class SignalCli(object):
 
         # Communicate with signal:
         __socket_send__(self._command_socket, json_command_str)
-        response_str: str = __socket_receive__(self._command_socket)
+        response_str: str = __socket_receive_blocking__(self._command_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)  # Raises Invalid server response
 
         # Check for error:
-        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1, -2, -3])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [-1, -2, -3])
         if error_occurred:
-            self._link_request = None
-            if error_code == -1:  # User already exists:
+            self._link_uri = None
+            if signal_code == -1:  # User already exists:
                 return False, LinkError.USER_EXISTS
-            elif error_code == -2:
+            elif signal_code == -2:  # TODO: FIND OUT THIS ERROR.
                 return False, LinkError.UNKNOWN
-            elif error_code == -3:  # Timeout
+            elif signal_code == -3:  # Timeout
                 return False, LinkError.TIMEOUT
-            else:
-                error_message = "Unhandled non-fatal error. Code %i, Message: %s" % (error_code, error_message)
-                raise NotImplementedError(error_message)
 
         # Gather linked number from response:
         linked_number: str = response_obj['result']['number']
@@ -705,10 +705,10 @@ class SignalCli(object):
         logger.debug("Syncing accounts with disk.")
         new_accounts = self.accounts.__sync__()
         if len(new_accounts) == 0:
-            error_message: str = "Failed to locate new account."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
-        self._link_request = None
+            signal_message: str = "Failed to locate new account."
+            logger.critical("Raising RuntimeError(%s)." % signal_message)
+            raise RuntimeError(signal_message)
+        self._link_uri = None
         return True, new_accounts[0]
 
     def start_receive(self,

@@ -11,9 +11,11 @@ import json
 
 from .signalAccount import Account
 from .signalCallMessage import CallMessage
-from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive__, \
-    __socket_send__, __type_error__, SyncTypes, CallbackIdx, __parse_signal_response__, __check_response_for_error__, \
-    TypingStates, __type_check_callback__
+from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, \
+    __socket_send__, __type_error__, SyncTypes, __parse_signal_response__, __check_response_for_error__, \
+    TypingStates
+from . import runCallback
+from .runCallback import __run_callback__, __type_check_callback__
 from .signalGroupUpdate import GroupUpdate
 from .signalMessage import Message
 from .signalReaction import Reaction
@@ -23,7 +25,7 @@ from .signalSticker import StickerPacks
 from .signalStoryMessage import StoryMessage
 from .signalSyncMessage import SyncMessage
 from .signalTypingMessage import TypingMessage
-from .signalExceptions import CommunicationsError, CallbackCausedError
+from .signalExceptions import CommunicationsError
 
 
 class ReceiveThread(threading.Thread):
@@ -45,7 +47,7 @@ class ReceiveThread(threading.Thread):
                  payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  call_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
-                 callback_raises_exception: bool = True,
+                 suppress_callback_error: bool = False,
                  do_expunge: bool = True,
                  ) -> None:
         """
@@ -53,10 +55,10 @@ class ReceiveThread(threading.Thread):
         Callbacks must have the signature of:
             callback(account: Account, message: Message, *additional_params) where the first element passed is the
             Account object for the message received, and the second element is the message that was received.
-        The return value of callback can be True, False, or None. If the all_messages_callback returns a boolean, it is
-            returned, if the all_messages_callback returns None, then the return value of the specific callback is
-            returned.  If True is returned, Reception is stopped. If False, or None are returned, reception continues.
-            All other values are assumed to be False.
+        The return value of callback can be True, False, or None. If the specific callback returns a boolean, it is
+            returned; If the specific callback returns None, then the return value of the all messages callback is
+            returned.  If True is returned, Reception is stopped. If anything else is returned, then reception
+            continues.
         :param server_address: tuple[str, int] | str: The server address to connect the reception socket to.
         :param command_socket: socket.socket: The socket to run commands through.
         :param config_path: str: The full path to the signal-cli config directory.
@@ -74,9 +76,8 @@ class ReceiveThread(threading.Thread):
         :param reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for reaction
             messages.
         :param call_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for call messages.
-        :param callback_raises_exception: bool: If a callback causes an exception, If True the
-            CallbackCausedError will be raised, if False, then the exception will be suppressed.
-        :param do_expunge: bool: True we should automatically expunge expired messages.
+        :param suppress_callback_error: bool: Should we supress callback errors? Defaults to False.
+        :param do_expunge: bool: True, we should automatically expunge expired messages.
         """
         # Run super init:
         super().__init__(None)
@@ -87,7 +88,7 @@ class ReceiveThread(threading.Thread):
         # Argument checks:
         if not isinstance(server_address, tuple) and not isinstance(server_address, str):
             logger.critical("Raising TypeError:")
-            __type_error__("server_address", "tuple | str", server_address)
+            __type_error__("server_address", "tuple[str, int] | str", server_address)
         if not isinstance(command_socket, socket.socket):
             logger.critical("Raising TypeError:")
             __type_error__("command_socket", "socket.socket", command_socket)
@@ -100,45 +101,51 @@ class ReceiveThread(threading.Thread):
         if not isinstance(account, Account):
             logger.critical("Raising TypeError:")
             __type_error__("account", "Account", account)
-        if not __type_check_callback__(all_messages_callback):
+        if not __type_check_callback__(all_messages_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("all_messages_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            all_messages_callback)
-        if not __type_check_callback__(received_message_callback):
+        if not __type_check_callback__(received_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("received_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            received_message_callback)
-        if not __type_check_callback__(receipt_message_callback):
+        if not __type_check_callback__(receipt_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("receipt_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            receipt_message_callback)
-        if not __type_check_callback__(sync_message_callback):
+        if not __type_check_callback__(sync_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("sync_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            sync_message_callback)
-        if not __type_check_callback__(typing_message_callback):
+        if not __type_check_callback__(typing_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("typing_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            typing_message_callback)
-        if not __type_check_callback__(story_message_callback):
+        if not __type_check_callback__(story_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("story_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            story_message_callback)
-        if not __type_check_callback__(payment_message_callback):
+        if not __type_check_callback__(payment_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("payment_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            payment_message_callback)
-        if not __type_check_callback__(reaction_message_callback):
+        if not __type_check_callback__(reaction_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("reaction_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            reaction_message_callback)
-        if not __type_check_callback__(call_message_callback):
+        if not __type_check_callback__(call_message_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("call_message_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
                            call_message_callback)
+        if not isinstance(suppress_callback_error, bool):
+            logger.critical("Raising TypeError:")
+            __type_error__('suppress_callback_error', 'bool', suppress_callback_error)
         if not isinstance(do_expunge, bool):
             logger.critical("Raising TypeError:")
             __type_error__("do_expunge", "bool", do_expunge)
+
+        # Set suppress callback error.
+        runCallback.set_suppress_error(suppress_callback_error)
 
         # Set internal variables:
         self._command_socket: socket.socket = command_socket
@@ -167,8 +174,6 @@ class ReceiveThread(threading.Thread):
         """Call back to call on receipt of a reaction message."""
         self._call_msg_cb: Optional[tuple[Callable, Optional[list[Any]]]] = call_message_callback
         """Call back to call on receipt of a call message."""
-        self._callback_raises_exception: bool = callback_raises_exception
-        """Does a callback raise an exception on error?"""
         self._do_expunge: bool = do_expunge
         """Should we expunge on update?"""
 
@@ -193,47 +198,22 @@ class ReceiveThread(threading.Thread):
             pass to it, if None the callback is not executed.
         :param account: Account: The account we're receiving for.
         :param message: Message: The message we've received.
-        :return: Optional[bool]: If True is returned the callback stops the reception thread, If False or None are
-            returned then reception continues.
+        :return: Optional[bool]: If True is returned, the callback stops the reception thread, If False or None are
+             returned, then reception continues.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__call_callback__.__name__)
-
-        # Return if callback is None:
-        cb_return_value: Optional[bool] = None
         # Call specified call back:
-        try:
-            logger.debug("Calling callback: '%s'" % callback[CallbackIdx.CALLABLE].__name__)
-            if callback[CallbackIdx.PARAMS] is not None:
-                cb_return_value = callback[CallbackIdx.CALLABLE](account, message, *callback[CallbackIdx.PARAMS])
-            else:
-                cb_return_value = callback[CallbackIdx.CALLABLE](account, message)
-        except Exception as e:
-            error_message: str = "Callback '%s', caused an Exception '%s', with arguments: '%s'" \
-                                 % (callback[CallbackIdx.CALLABLE].__name__, str(type(e)), str(e.args))
-            logger.critical(error_message)
-            if self._callback_raises_exception:
-                raise CallbackCausedError(callback[CallbackIdx.CALLABLE].__name__, e)
-
+        logger.debug("Calling specific callback for: %s" % str(type(message)))
+        cb_return_value: Optional[bool] = __run_callback__(callback, account, message)
         # Call all messages callback:
-        all_return_value: Optional[bool] = None
-        try:
-            logger.debug("Calling callback: '%s'." % self._all_msg_cb[CallbackIdx.CALLABLE].__name__)
-            if self._all_msg_cb[CallbackIdx.PARAMS] is not None:
-                all_return_value = self._all_msg_cb[CallbackIdx.CALLABLE](account, message,
-                                                                          *self._all_msg_cb[CallbackIdx.PARAMS])
-            else:
-                all_return_value = self._all_msg_cb[CallbackIdx.CALLABLE](account, message)
-        except Exception as e:
-            error_message: str = "Callback '%s', caused an Exception '%s', with arguments: '%s'" \
-                                 % (callback[CallbackIdx.CALLABLE].__name__, str(type(e)), str(e.args))
-            logger.critical(error_message)
-            if self._callback_raises_exception:
-                raise CallbackCausedError(callback[CallbackIdx.CALLABLE].__name__, e)
-
+        logger.debug("Calling all message callback.")
+        all_return_value: Optional[bool] = __run_callback__(self._all_msg_cb, account, message)
         # Determine return value:
-        if all_return_value is not None:
+        if cb_return_value is None:
+            logger.debug("Returning all message callback return value.")
             return all_return_value
+        logger.debug("Returning specific message callback return value.")
         return cb_return_value
 
     def __parse_data_message__(self, envelope_dict: dict[str, Any]) -> Optional[bool]:
@@ -450,7 +430,7 @@ class ReceiveThread(threading.Thread):
 
             # Communicate with Signal:
             __socket_send__(self._receive_socket, json_command_str)
-            response_str = __socket_receive__(self._receive_socket)
+            response_str = __socket_receive_blocking__(self._receive_socket)
             response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
             error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
@@ -460,7 +440,7 @@ class ReceiveThread(threading.Thread):
                 logger.warning(error_message)
 
         # Create receive object and json command string:
-        start_receive_command_object = {
+        start_receive_command_object: dict[str, Any] = {
             "jsonrpc": "2.0",
             "id": 1,
             "method": "subscribeReceive",
@@ -472,7 +452,7 @@ class ReceiveThread(threading.Thread):
 
         # Communicate start receive with signal:
         __socket_send__(self._receive_socket, json_command_str)
-        response_str = __socket_receive__(self._receive_socket)
+        response_str = __socket_receive_blocking__(self._receive_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
         if error_occurred:
@@ -488,7 +468,7 @@ class ReceiveThread(threading.Thread):
         while self._subscription_id is not None:
             # Blocks until a message received:
             try:
-                response_str: str = __socket_receive__(self._receive_socket)
+                response_str: str = __socket_receive_blocking__(self._receive_socket)
             except CommunicationsError as e:
                 logger.critical("Failed to receive, got CommunicationsError(%s)." % str(e.args))
                 break
@@ -570,6 +550,23 @@ class ReceiveThread(threading.Thread):
         Stops the reception.
         :returns: None
         """
+        if self._subscription_id is None:
+            return
+        stop_receive_command_object: dict[str, Any] = {
+            "jsonrpc": '2.0',
+            "id": 2,
+            "method": "unsubscribeReceive",
+            "params": {
+                "subscription": self._subscription_id,
+            }
+        }
+
+        json_command_str: str = json.dumps(stop_receive_command_object) + '\n'
+        __socket_send__(self._receive_socket, json_command_str)
+        response_str: str = __socket_receive_blocking__(self._receive_socket)
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+        __check_response_for_error__(response_obj, [])
+
         self._subscription_id = None
         __socket_close__(self._receive_socket)
         return

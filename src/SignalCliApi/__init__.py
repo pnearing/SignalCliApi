@@ -28,3 +28,4 @@ from .signalTextAttachment import TextAttachment
 from .signalThumbnail import Thumbnail
 from .signalTimestamp import Timestamp
 from .signalTypingMessage import TypingMessage
+

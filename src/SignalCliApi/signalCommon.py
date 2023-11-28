@@ -10,8 +10,8 @@ import socket
 import select
 import re
 import logging
-from enum import IntEnum, auto
-from .signalExceptions import CommunicationsError, SignalError, InvalidServerResponse
+from enum import IntEnum, auto, Enum
+from .signalExceptions import CommunicationsError, SignalError, InvalidServerResponse, CallbackCausedError
 
 ###################
 # Version:
@@ -49,18 +49,42 @@ PRIMARY_DEVICE_ID: Final[int] = 1
 STICKER_MANIFEST_FILENAME: Final[str] = 'manifest.json'
 """The filename of a sticker manifest file."""
 
+###########################
+# Vars:
+###########################
+DEBUG: bool = False
+"""Preform debug actions."""
+CALLBACK_RAISES_ERROR: bool = False
+"""Does a callback raise an exception?"""
+
 
 ###########################
 # Enum's:
 ###########################
-class CallbackIdx(IntEnum):
+class LinkAccountCallbackStates(Enum):
     """
-    Enum to index the callbacks. (Callable, Optional[list[Any]])
+    The link message state messages.
     """
-    CALLABLE = 0
-    """Callback callable index."""
-    PARAMS = 1
-    """Callback parameters index."""
+    GENERATE_URI_START = 'generating link uri'
+    """Generating link uri start message."""
+    GENERATE_URI_STOP = 'link uri generated'
+    """Generating link uri stop message."""
+    GENERATE_QR_START = 'generating qr-code'
+    """Generating qr-code start message."""
+    GENERATE_QR_STOP = 'qr-code generated'
+    """Generating qr-code stop message."""
+    FINISH_START = 'finish link started'
+    """Finish link started."""
+    LINK_SUCCESS = 'link success'
+    """Link was successful."""
+    LINK_EXISTS_ERROR = 'account already linked'
+    """Link failed, account exists."""
+    LINK_TIMEOUT_ERROR = 'link process time-out'
+    """Link failed, time out."""
+    LINK_UNKNOWN_ERROR = 'an unknown error occurred'  # TODO: FIND OUT THIS ERROR.
+    """Link failed, -2 error code."""
+    LINK_WAITING = 'waiting for response from signal.'
+    """Link waiting on response from signal."""
 
 
 class MessageTypes(IntEnum):
@@ -374,18 +398,18 @@ def __socket_send__(sock: socket.socket, message: str) -> int:
     return bytes_sent
 
 
-def __socket_receive__(sock: socket.socket) -> str:
+def __socket_receive_blocking__(sock: socket.socket) -> str:
     """
     Read a string from a socket; Blocks until msg read.
     :param sock: socket.socket: The socket to read from.
     :return: str: The read message.
     :raises CommunicationsError: On failure to read from the socket.
     """
-    logger_name: str = __name__ + '.' + __socket_receive__.__name__
+    logger_name: str = __name__ + '.' + __socket_receive_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
         while True:
-            readable, _, _ = select.select([sock], [], [], 0.5)
+            readable, _, erred = select.select([sock], [], [], 0.5)
             if len(readable) > 0:
                 message = b''
                 byte_count: int = 0
@@ -405,6 +429,40 @@ def __socket_receive__(sock: socket.socket) -> str:
         error_message = "Failed to read from socket: %s" % (str(e.args))
         logger.critical("socket.error: %s" % error_message)
         raise CommunicationsError(error_message, e)
+
+
+def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.5) -> Optional[str]:
+    """
+    Read a string from a socket; Blocks until msg read.
+    :param sock: socket.socket: The socket to read from.
+    :param wait_time: float: The waiting time in seconds for a message to appear.
+    :return: Optional[str]: The read message, or None if wait_time elapsed.
+    :raises CommunicationsError: On failure to read from the socket.
+    """
+    logger_name: str = __name__ + '.' + __socket_receive_blocking__.__name__
+    logger: logging.Logger = logging.getLogger(logger_name)
+    try:
+        readable, _, erred = select.select([sock], [], [], wait_time)
+        if len(readable) > 0:
+            message = b''
+            byte_count: int = 0
+            while True:
+                data = sock.recv(1)
+                message += data
+                byte_count += 1
+                try:
+                    if data.decode() == '\n':
+                        logger.debug("Received %i bytes." % byte_count)
+                        break
+                except UnicodeDecodeError:
+                    pass
+            logger.debug("Returning message: %s" % message.decode())
+            return message.decode()
+    except socket.error as e:
+        error_message = "Failed to read from socket: %s" % (str(e.args))
+        logger.critical("socket.error: %s" % error_message)
+        raise CommunicationsError(error_message, e)
+    return None
 
 
 def __socket_close__(sock: socket.socket) -> None:
@@ -497,21 +555,3 @@ def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
     error_message: str = __type_err_msg__(var_name, valid_type_name, var)
     logger.critical("--> TypeError(%s)." % error_message)
     raise TypeError(error_message)
-
-
-def __type_check_callback__(callback: Optional[tuple[Callable, Optional[list[Any]]]]) -> bool:
-    """
-    Type check a call back.
-    :param callback: The call back to type check.
-    :return: bool: True or False on success or failure.
-    """
-    if callback is not None:
-        if not isinstance(callback, tuple):
-            return False
-        elif len(callback) != 2:
-            return False
-        elif not callable(callback[CallbackIdx.CALLABLE]):
-            return False
-        elif callback[CallbackIdx.PARAMS] is not None and not isinstance(callback[CallbackIdx.PARAMS], list):
-            return False
-    return True

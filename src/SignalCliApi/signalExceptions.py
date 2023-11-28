@@ -5,7 +5,7 @@ Collection of Exceptions to throw.
 """
 import json
 import socket
-from typing import Optional
+from typing import Optional, Any
 
 
 class Error(Exception):
@@ -221,14 +221,15 @@ class CallbackCausedError(Error):
     """
     Exception to throw when a callback causes an error.
     """
-    def __init__(self, callback_name: str, error: Exception, *args) -> None:
+    def __init__(self, callback_name: str, params: tuple[Any, ...], error: Exception,  *args) -> None:
         """
         Initialize a CallbackCausedError exception.
         :param callback_name: str: The __name__ of the callback.
         :param error: Exception: The error the callback caused.
         :param args: tuple[Any]: Any additional arguments to store in the exception.
         """
-        message: str = "Callback '%s', caused a %s exception." % (callback_name, str(type(error)))
+        message: str = "Callback: '%s', caused an exception of type: '%s', with arguments: '%s'." \
+                       % (callback_name, str(type(error)), str(error.args))
         self._callback_name: str = callback_name
         Error.__init__(self, message, error, *args)
         return
