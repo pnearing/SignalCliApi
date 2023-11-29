@@ -16,6 +16,7 @@ from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __
 from .runCallback import __run_callback__, __type_check_callback__
 from .runCallback import set_suppress_error as set_callback_suppress_error
 from .runCallback import type_string as callback_type_string
+from .signalLinkThread import LinkThread
 from .signalReceiveThread import ReceiveThread
 from .signalSticker import StickerPacks
 from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError, CallbackCausedError
@@ -795,3 +796,19 @@ class SignalCli(object):
         self._receive_threads[thread_id] = None
         logger.info("Reception stopped.")
         return True
+
+    def generate_link_thread(self, callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]) -> LinkThread:
+        """
+        Create and return the signal link thread.
+        :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The callback to call with the status
+        updates, with a signature of:
+            some_callback(status:str, data:Optional[tuple[Optional[str], Optional[str]] | str | Account) -> bool
+            If the callback returns True, then the link process is canceled, and the socket is closed.
+        :return: LinkThread: The running link thread.
+        """
+        link_thread: LinkThread = LinkThread(
+            server_address=self._server_address,
+            accounts=self.accounts,
+            callback=callback,
+        )
+        return link_thread
