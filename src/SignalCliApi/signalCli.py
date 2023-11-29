@@ -797,18 +797,32 @@ class SignalCli(object):
         logger.info("Reception stopped.")
         return True
 
-    def generate_link_thread(self, callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]) -> LinkThread:
+    def generate_link_thread(self,
+                             callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]],
+                             gen_text_qr: bool = True,
+                             png_qr_file_path: Optional[str] = None,
+                             device_name: Optional[str] = None,
+                             wait_time: float = 0.25,
+                             ) -> LinkThread:
         """
         Create and return the signal link thread.
         :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The callback to call with the status
         updates, with a signature of:
             some_callback(status:str, data:Optional[tuple[Optional[str], Optional[str]] | str | Account) -> bool
             If the callback returns True, then the link process is canceled, and the socket is closed.
+        :param gen_text_qr: bool: Should we generate a text qr-code?
+        :param png_qr_file_path: Optional[str]: Path to the png qr-code file. If None, the qr-code is not generated.
+        :param device_name: Optional[str]: The device name. If None, the default set by signal-cli is used.
+        :param wait_time: float: The amount of time to give the socket to respond.
         :return: LinkThread: The running link thread.
         """
         link_thread: LinkThread = LinkThread(
             server_address=self._server_address,
             accounts=self.accounts,
             callback=callback,
+            gen_text_qr=gen_text_qr,
+            png_qr_file_path=png_qr_file_path,
+            device_name=device_name,
+            wait_time=wait_time
         )
         return link_thread

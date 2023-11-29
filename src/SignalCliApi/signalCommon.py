@@ -85,6 +85,8 @@ class LinkAccountCallbackStates(Enum):
     """Link failed, -2 error code."""
     LINK_WAITING = 'waiting for response from signal.'
     """Link waiting on response from signal."""
+    LINK_CANCELED = 'the link process has been canceled'
+    """Link process has been canceled."""
 
 
 class MessageTypes(IntEnum):
