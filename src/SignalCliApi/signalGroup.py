@@ -9,22 +9,23 @@ import socket
 import json
 
 from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_GROUP_NAME
-from .signalContacts import Contacts
-from .signalContact import Contact
-from .signalTimestamp import Timestamp
+    __check_response_for_error__, UNKNOWN_GROUP_NAME, RecipientTypes
+from .signalContacts import SignalContacts
+from .signalContact import SignalContact
+from .signalRecipient import SignalRecipient
+from .signalTimestamp import SignalTimestamp
 
-Self = TypeVar("Self", bound="Group")
+Self = TypeVar("Self", bound="SignalGroup")
 
 
-class Group(object):
+class SignalGroup(SignalRecipient):
     """An object containing a single group."""
     def __init__(self,
                  sync_socket: socket.socket,
                  command_socket: socket.socket,
                  config_path: str,
                  account_id: str,
-                 account_contacts: Contacts,
+                 account_contacts: SignalContacts,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_group: Optional[dict[str, Any]] = None,
                  group_id: Optional[str] = None,
@@ -34,22 +35,22 @@ class Group(object):
                  is_member: bool = False,
                  expiration: Optional[int] = None,
                  link: Optional[str] = None,
-                 members: list[Contact] = [],
-                 pending_members: list[Contact] = [],
-                 requesting_members: list[Contact] = [],
-                 admins: list[Contact] = [],
-                 banned: list[Contact] = [],
+                 members: list[SignalContact] = [],
+                 pending_members: list[SignalContact] = [],
+                 requesting_members: list[SignalContact] = [],
+                 admins: list[SignalContact] = [],
+                 banned: list[SignalContact] = [],
                  permission_add_member: Optional[str] = None,
                  permission_edit_details: Optional[str] = None,
                  permission_send_message: Optional[str] = None,
-                 last_seen: Optional[Timestamp] = None,
+                 last_seen: Optional[SignalTimestamp] = None,
                  ) -> None:
         """
-        Initialize a Group.
+        Initialize a SignalGroup.
         :param sync_socket: socket.socket: The socket to run sync commands on.
         :param config_path: str: The path to the signal-cli config directory.
         :param account_id: str: This account ID.
-        :param account_contacts: The account's Contacts object.
+        :param account_contacts: The account's SignalContacts object.
         :param from_dict: dict[str, Any]: Load from a dict provided by __to_dict__()
         :param raw_group: dict[str, Any]: Load from a dict provided by signal.
         :param group_id: Optional[str]: The group ID.
@@ -59,18 +60,18 @@ class Group(object):
         :param is_member: bool: If this account is a member of the group.
         :param expiration: Optional[int]: The expiration time of the group.
         :param link: Optional[str]: The join link of the group.
-        :param members: list[Contact]: Existing members.
-        :param pending_members: list[Contact]: Pending members.
-        :param requesting_members: list[Contact] Requesting members.
-        :param admins: list[Contact]: Admin members.
-        :param banned: list[Contact]: Banned members.
+        :param members: list[SignalContact]: Existing members.
+        :param pending_members: list[SignalContact]: Pending members.
+        :param requesting_members: list[SignalContact] Requesting members.
+        :param admins: list[SignalContact]: Admin members.
+        :param banned: list[SignalContact]: Banned members.
         :param permission_add_member: Optional[str]: Add member permissions.
         :param permission_edit_details: Optional[str]: Edit details permissions.
         :param permission_send_message: Optional[str]: Permission to send messages.
-        :param last_seen: Optional[Timestamp]: The time this group was last seen.
+        :param last_seen: Optional[SignalTimestamp]: The time this group was last seen.
         """
         # Super:
-        object.__init__(self)
+        super().__init__(recipient_type=RecipientTypes.GROUP)
 
         # Set up logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -88,9 +89,9 @@ class Group(object):
         if not isinstance(account_id, str):
             logger.critical("Raising TypeError:")
             __type_error__("account_id", "str", account_id)
-        if not isinstance(account_contacts, Contacts):
+        if not isinstance(account_contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("account_contacts", "Contacts", account_contacts)
+            __type_error__("account_contacts", "SignalContacts", account_contacts)
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError:")
             __type_error__("from_dict", "Optional[dict]", from_dict)
@@ -120,44 +121,44 @@ class Group(object):
             __type_error__("link", "Optional[str]", link)
         if members is not None and not isinstance(members, list):
             logger.critical("Raising TypeError:")
-            __type_error__("members", "Optional[list[Contact]]", members)
+            __type_error__("members", "Optional[list[SignalContact]]", members)
         elif members is not None:
             for i, member in enumerate(members):
-                if not isinstance(member, Contact):
+                if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("members[%i]" % i, "Contact", member)
+                    __type_error__("members[%i]" % i, "SignalContact", member)
         if pending_members is not None and not isinstance(pending_members, list):
             logger.critical("Raising TypeError:")
-            __type_error__("pending_members", "Optional[list[Contact]]", pending_members)
+            __type_error__("pending_members", "Optional[list[SignalContact]]", pending_members)
         elif pending_members is not None:
             for i, member in enumerate(pending_members):
-                if not isinstance(member, Contact):
+                if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("pending_members[%i]" % i, "Contact", member)
+                    __type_error__("pending_members[%i]" % i, "SignalContact", member)
         if requesting_members is not None and not isinstance(requesting_members, list):
             logger.critical("Raising TypeError:")
-            __type_error__("requesting_members", "Optional[list[Contact]]", requesting_members)
+            __type_error__("requesting_members", "Optional[list[SignalContact]]", requesting_members)
         elif requesting_members is not None:
             for i, member in enumerate(requesting_members):
-                if not isinstance(member, Contact):
+                if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("requesting_members[%i]" % i, "Contact", member)
+                    __type_error__("requesting_members[%i]" % i, "SignalContact", member)
         if admins is not None and not isinstance(admins, list):
             logger.critical("Raising TypeError:")
             __type_error__("admins", "Optional[list[str]]", admins)
         elif admins is not None:
             for i, admin in enumerate(admins):
-                if not isinstance(admin, Contact):
+                if not isinstance(admin, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("admins[%i]" % i, "Contact", admin)
+                    __type_error__("admins[%i]" % i, "SignalContact", admin)
         if banned is not None and not isinstance(banned, list):
             logger.critical("Raising TypeError:")
-            __type_error__("banned", "Optional[list[Contact]]", banned)
+            __type_error__("banned", "Optional[list[SignalContact]]", banned)
         elif banned is not None:
             for i, contact in enumerate(banned):
-                if not isinstance(contact, Contact):
+                if not isinstance(contact, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("banned[%i]", "Contact", contact)
+                    __type_error__("banned[%i]", "SignalContact", contact)
         if permission_add_member is not None and not isinstance(permission_add_member, str):
             logger.critical("Raising TypeError:")
             __type_error__("permission_add_member", "Optional[str]", permission_add_member)
@@ -167,9 +168,9 @@ class Group(object):
         if permission_send_message is not None and not isinstance(permission_send_message, str):
             logger.critical("Raising TypeError:")
             __type_error__("permission_send_message", "Optional[str]", permission_send_message)
-        if last_seen is not None and not isinstance(last_seen, Timestamp):
+        if last_seen is not None and not isinstance(last_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("last_seen", "Optional[Timestamp]", last_seen)
+            __type_error__("last_seen", "Optional[SignalTimestamp]", last_seen)
 
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
@@ -180,8 +181,8 @@ class Group(object):
         """The full path to the signal-cli config directory."""
         self._account_id: str = account_id
         """This account ID."""
-        self._contacts: Contacts = account_contacts
-        """This account's Contacts object."""
+        self._contacts: SignalContacts = account_contacts
+        """This account's SignalContacts object."""
         self._is_valid: bool = True
         """Is this group valid?"""
 
@@ -200,15 +201,15 @@ class Group(object):
         """The expiration time of this group in seconds."""
         self.link: Optional[str] = link
         """The join link of this group."""
-        self.members: list[Contact] = members
+        self.members: list[SignalContact] = members
         """The current members of this group."""
-        self.pending: list[Contact] = pending_members
+        self.pending: list[SignalContact] = pending_members
         """The pending members of this group."""
-        self.requesting: list[Contact] = requesting_members
+        self.requesting: list[SignalContact] = requesting_members
         """The requesting members of the group."""
-        self.admins: list[Contact] = admins
+        self.admins: list[SignalContact] = admins
         """The admins of the group."""
-        self.banned: list[Contact] = banned
+        self.banned: list[SignalContact] = banned
         """The banned members of the group."""
         self.permission_add_member: str = permission_add_member
         """The permissions to add a member."""
@@ -216,8 +217,10 @@ class Group(object):
         """The permission to edit group details."""
         self.permission_send_message: str = permission_send_message
         """The permissions to send a message to the group."""
-        self.last_seen: Optional[Timestamp] = last_seen
+        self.last_seen: Optional[SignalTimestamp] = last_seen
         """The date / time this was last seen."""
+        self.typing_members: list[SignalContact] = []
+        """List of contact typing in this group."""
 
         # Parse from_dict:
         if from_dict is not None:
@@ -227,7 +230,7 @@ class Group(object):
         elif raw_group is not None:
             logger.debug("Loading from raw group.")
             self.__from_raw_group__(raw_group)
-        # Group object was created without raw_group or from_dict, see if we can get details from signal:
+        # SignalGroup object was created without raw_group or from_dict, see if we can get details from signal:
         else:
             if self.id is not None:
                 self.__sync__()
@@ -299,17 +302,18 @@ class Group(object):
     def __eq__(self, other: Self) -> bool:
         """
         Generate equality.
-        :param other: Group: The group to compare to.
+        :param other: SignalGroup: The group to compare to.
         :return: bool: True the groups are equal, False they are not.
-        :raises TypeError: If other is not a Group object.
+        :raises TypeError: If other is not a SignalGroup object.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
-        if isinstance(other, Group):
+        if super().__eq__(other):
+            self.__update__(other)
+            return True
+        if isinstance(other, SignalGroup):
             if self.id == other.id:
-                return True
-        error_message: str = "Can only compare equality to another Group object."
-        logger.critical("Raising TypeError(%s)." % error_message)
-        raise TypeError(error_message)
+                self.__update__(other)
+            return True
+        return False
 
     ###################################
     # To / From Dict:
@@ -335,6 +339,7 @@ class Group(object):
             'requesting': [],
             'admins': [],
             'banned': [],
+            'lastSeen': None,
         }
         for contact in self.members:
             group_dict['members'].append(contact.get_id())
@@ -346,6 +351,12 @@ class Group(object):
             group_dict['admins'].append(contact.get_id())
         for contact in self.banned:
             group_dict['banned'].append(contact.get_id())
+        if self.last_seen is not None:
+            group_dict['lastSeen'] = self.last_seen.__to_dict__()
+        # Add the parent keys
+        recipient_dict = super().__to_dict__()
+        for key in recipient_dict:
+            group_dict[key] = recipient_dict[key]
         return group_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -354,6 +365,7 @@ class Group(object):
         :param from_dict: dict[str, Any]: The dict provided by __to_dict__().
         :return: None
         """
+        super().__from_dict__(from_dict)
         self.id = from_dict['id']
         self.name = from_dict['name']
         self.description = from_dict['description']
@@ -389,6 +401,10 @@ class Group(object):
         for contact_id in from_dict['banned']:
             _, contact = self._contacts.__get_or_add__(contact_id=contact_id)
             self.banned.append(contact)
+        # Parse last seen:
+        self.last_seen = None
+        if from_dict['lastSeen'] is not None:
+            self.last_seen = SignalTimestamp(from_dict=from_dict['lastSeen'])
         return
 
     #################
@@ -397,9 +413,10 @@ class Group(object):
     def __update__(self, other: Self) -> None:
         """
         Overwrite properties with an update from signal.
-        :param other: Group: The most recent copy of the group.
+        :param other: SignalGroup: The most recent copy of the group.
         :return: None
         """
+        super().__update__(other)
         self.name = other.name
         self.description = other.description
         self.is_blocked = other.is_blocked
@@ -417,6 +434,8 @@ class Group(object):
         if self.last_seen is not None and other.last_seen is not None:
             if other.last_seen > self.last_seen:
                 self.last_seen = other.last_seen
+        elif self.last_seen is None and other.last_seen is not None:
+            self.last_seen = other.last_seen
         return
 
     ########################
@@ -480,29 +499,38 @@ class Group(object):
             raise ValueError(error_message)
         display_name = ''
         if self.name is not None and self.name != '' and self.name != UNKNOWN_GROUP_NAME:
+            # logger.debug("Group.name: %s" % self.name)
             display_name = self.name
         else:
             for contact in self.members:
                 display_name = display_name + contact.get_display_name() + ', '
             display_name = display_name[:-2]
+            # logger.debug("Built name: %s" % display_name)
         if max_len is not None and len(display_name) > max_len:
             display_name = display_name[:max_len - 3]
             display_name += '...'
         return display_name
 
-    def seen(self, time_seen: Timestamp) -> None:
+    def __seen__(self, time_seen: SignalTimestamp) -> None:
         """
         Update the last time this contact has been seen.
-        :param time_seen: Timestamp: The time this contact was seen at.
-        :raises: TypeError: If time_seen is not a Timestamp object.
+        :param time_seen: SignalTimestamp: The time this contact was seen at.
+        :raises: TypeError: If time_seen is not a SignalTimestamp object.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
-        if not isinstance(time_seen, Timestamp):
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__seen__.__name__)
+        if not isinstance(time_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__('time_seen', 'Timestamp', time_seen)
+            __type_error__('time_seen', 'SignalTimestamp', time_seen)
         if self.last_seen is not None:
             if time_seen > self.last_seen:
                 self.last_seen = time_seen
         else:
             self.last_seen = time_seen
         return
+
+####################################################
+# Properties:
+####################################################
+    @property
+    def is_typing(self) -> bool:
+        return len(self.typing_members) > 0

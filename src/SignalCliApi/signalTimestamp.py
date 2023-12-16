@@ -10,14 +10,14 @@ import sys
 import pytz
 from tzlocal import get_localzone
 
-from .signalCommon import __type_error__
+from .signalCommon import __type_error__, STRINGS
 from .signalExceptions import ParameterError
 
-Self = TypeVar("Self", bound="Timestamp")
+Self = TypeVar("Self", bound="SignalTimestamp")
 DEBUG: bool = False
 
 
-class Timestamp(object):
+class SignalTimestamp(object):
     """Time stamp object."""
 
     def __init__(self,
@@ -53,13 +53,13 @@ class Timestamp(object):
             __type_error__("now", "bool", now)
 
         # Set vars:
-        self.timestamp: int = timestamp  # Int
+        self._timestamp: int = timestamp  # Int
         """The integer timestamp."""
-        self.datetime: Optional[datetime.datetime] = None  # Python tz aware date_time object.
+        self._datetime: Optional[datetime.datetime] = None  # Python tz aware date_time object.
         """The tz aware datetime object."""
 
         # Load from INT timestamp:
-        if self.timestamp is not None:
+        if self._timestamp is not None:
             self.__set_date_time__()
         # Load from dict:
         elif from_dict is not None:
@@ -81,7 +81,7 @@ class Timestamp(object):
         :return: dict[str, Any]: The dict to pass to __from_dict__()
         """
         timestamp_dict = {
-            'timestamp': self.datetime.timestamp()
+            'timestamp': self._datetime.timestamp()
         }
         return timestamp_dict
 
@@ -91,8 +91,8 @@ class Timestamp(object):
         :param from_dict: dict[str, Any]: The dict created by __to_dict__()
         :return: None
         """
-        self.datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(from_dict['timestamp']))
-        self.timestamp = int(from_dict['timestamp'] * 1000)
+        self._datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(from_dict['timestamp']))
+        self._timestamp = int(from_dict['timestamp'] * 1000)
         return
 
     def __from_now__(self) -> None:
@@ -100,9 +100,9 @@ class Timestamp(object):
         Generate properties from now.
         :return: None
         """
-        self.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        seconds = self.datetime.timestamp()
-        self.timestamp = int(seconds * 1000)
+        self._datetime = pytz.utc.localize(datetime.datetime.utcnow())
+        seconds = int(self._datetime.timestamp())
+        self._timestamp = seconds * 1000
         return
 
     def __from_date_time__(self, date_time: datetime.datetime) -> None:
@@ -112,11 +112,11 @@ class Timestamp(object):
         :return: None
         """
         try:
-            self.datetime = pytz.utc.localize(date_time)
+            self._datetime = pytz.utc.localize(date_time)
         except ValueError:
-            self.datetime = date_time
-        seconds = self.datetime.timestamp()
-        self.timestamp = int(seconds * 1000)
+            self._datetime = date_time
+        seconds = self._datetime.timestamp()
+        self._timestamp = int(seconds * 1000)
         return
 
     def __set_date_time__(self) -> None:
@@ -124,10 +124,10 @@ class Timestamp(object):
         Calculate the datetime property from the timestamp.
         :return: None
         """
-        seconds = int(self.timestamp // 1000)
-        microseconds = int((((self.timestamp / 1000) - seconds) * 1000) * 1000)
-        self.datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(seconds))
-        self.datetime = self.datetime.replace(microsecond=microseconds)
+        seconds = int(self._timestamp // 1000)
+        microseconds = int((((self._timestamp / 1000) - seconds) * 1000) * 1000)
+        self._datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(seconds))
+        self._datetime = self._datetime.replace(microsecond=microseconds)
         return
 
     ##########################################
@@ -138,61 +138,61 @@ class Timestamp(object):
         Represent as an int.
         :return: int
         """
-        return self.timestamp
+        return self._timestamp
 
     def __float__(self) -> float:
         """
         Represent as a float.
         :return: float
         """
-        return self.datetime.timestamp()
+        return self._datetime.timestamp()
 
     def __str__(self) -> str:
         """
         Represent as a string.
         :return: str: A formatted string with timestamp int, and datetime in iso format.
         """
-        return_str: str = "%s<%i>" % (self.datetime.isoformat(), self.timestamp)
+        return_str: str = "%s<%i>" % (self._datetime.isoformat(), self._timestamp)
         return return_str
 
     def __eq__(self, other: Self | int) -> bool:
         """
         Calculate equality.
-        :param other: Timestamp | int: The object to compare to.
+        :param other: SignalTimestamp | int: The object to compare to.
         :return: bool
-        :raises TypeError: If other is not a Timestamp or int.
+        :raises TypeError: If other is not a SignalTimestamp or int.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
-        if isinstance(other, Timestamp):
-            return self.datetime == other.datetime
+        if isinstance(other, SignalTimestamp):
+            return self._datetime == other._datetime
         elif isinstance(other, int):
-            return self.timestamp == other
-        error_message: str = "Can only compare equality to Timestamp or int."
+            return self._timestamp == other
+        error_message: str = "Can only compare equality to SignalTimestamp or int."
         logging.critical("Raising TypeError(%s)." % error_message)
         raise TypeError(error_message)
 
     def __lt__(self, other: Self | int) -> bool:
         """
         Compare less than.
-        :param other: Timestamp or int: The object to compare to.
+        :param other: SignalTimestamp or int: The object to compare to.
         :return: bool
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__lt__.__name__)
-        if isinstance(other, Timestamp):
-            return self.datetime < other.datetime
+        if isinstance(other, SignalTimestamp):
+            return self._datetime < other._datetime
         elif isinstance(other, int):
-            return self.timestamp < other
-        error_message: str = "Can only compare less than to Timestamp or int."
+            return self._timestamp < other
+        error_message: str = "Can only compare less than to SignalTimestamp or int."
         logger.critical("Raising TypeError(%s)." % error_message)
         raise TypeError(error_message)
 
     def __gt__(self, other: Self | int) -> bool:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__gt__.__name__)
-        if isinstance(other, Timestamp):
-            return self.datetime > other.datetime
+        if isinstance(other, SignalTimestamp):
+            return self._datetime > other._datetime
         elif isinstance(other, int):
-            return self.timestamp > other
-        error_message: str = "Can only compare greater than to Timestamp or int."
+            return self._timestamp > other
+        error_message: str = "Can only compare greater than to SignalTimestamp or int."
         logger.critical("Raising TypeError(%s)." % error_message)
         raise TypeError(error_message)
 
@@ -202,9 +202,9 @@ class Timestamp(object):
     def get_timestamp(self) -> int:
         """
         Get the timestamp int.
-        :returns: int: Timestamp integer.
+        :returns: int: SignalTimestamp integer.
         """
-        return self.timestamp
+        return self._timestamp
 
     def get_display_time(self, local_time: bool = True) -> str:
         """
@@ -217,17 +217,39 @@ class Timestamp(object):
         if not isinstance(local_time, bool):
             logger.critical("Raising TypeError:")
             __type_error__("local_time", "bool", local_time)
-        if local_time:
-            return self.get_local_time().isoformat()
-        else:
-            return self.datetime.isoformat()
 
-    def get_local_time(self) -> datetime.datetime:
+        t_delta = self._datetime - pytz.utc.localize(datetime.datetime.utcnow())
+        if t_delta.total_seconds() == 0:
+            return STRINGS['lessThanASecond'] + '.'
+        elif 0 < t_delta.total_seconds() < 2:
+            return str(t_delta.total_seconds()) + ' ' + STRINGS['secondAgo'] + '.'
+        if 2 <= t_delta.total_seconds() < 60:
+            return str(t_delta.total_seconds()) + ' ' + STRINGS['secondsAgo'] + '.'
+        elif 60 <= t_delta.total_seconds() < 61:
+            return str(self.get_minutes_ago()) + ' ' + STRINGS['minuteAgo'] + '.'
+        elif 61 <= t_delta.total_seconds() < 3600:
+            return str(self.get_minutes_ago()) + ' ' + STRINGS['minutesAgo'] + '.'
+        elif 3600 <= t_delta.total_seconds() < 7200:
+            return str(self.get_hours_ago()) + ' ' + STRINGS['hourAgo'] + '.'
+        elif 7200 <= t_delta.total_seconds() < 86400:
+            return str(self.get_hours_ago()) + ' ' + STRINGS['hoursAgo'] + '.'
+        elif 86400 <= t_delta.total_seconds() < 172800:
+            return str(self.get_days_ago()) + ' ' + STRINGS['dayAgo'] + '.'
+        elif 172800 <= t_delta.total_seconds() < 604800:
+            return str(self.get_days_ago()) + ' ' + STRINGS['daysAgo'] + '.'
+
+        if local_time:
+            return self.get_local_time(include_micros=False).isoformat()
+        else:
+            return self.get_datetime(include_micros=False).isoformat()
+
+    def get_local_time(self, include_micros: bool = True) -> datetime.datetime:
         """
         Get a datetime.datetime object that has been localized to the system timezone.
         :returns: datetime.datetime object representing the timestamp in local time.
         """
-        return self.datetime.astimezone(get_localzone())
+        date_time_obj = self.get_datetime(include_micros)
+        return date_time_obj.astimezone(get_localzone())
 
     def get_seconds_ago(self) -> int:
         """
@@ -235,7 +257,7 @@ class Timestamp(object):
         :return: int: The number of seconds.
         """
         now: datetime.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        t_delta: datetime.timedelta = now - self.datetime
+        t_delta: datetime.timedelta = now - self._datetime
         return int(t_delta.total_seconds())
 
     def get_minutes_ago(self) -> int:
@@ -244,7 +266,7 @@ class Timestamp(object):
         :return: int: The number of minutes.
         """
         now: datetime.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        t_delta: datetime.timedelta = now - self.datetime
+        t_delta: datetime.timedelta = now - self._datetime
         return int(t_delta.total_seconds() / 60)
 
     def get_hours_ago(self) -> int:
@@ -253,7 +275,7 @@ class Timestamp(object):
         :return: int: The number of hours.
         """
         now: datetime.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        t_delta: datetime.timedelta = now - self.datetime
+        t_delta: datetime.timedelta = now - self._datetime
         return int(t_delta.total_seconds() / 3600)
 
     def get_days_ago(self) -> int:
@@ -262,7 +284,7 @@ class Timestamp(object):
         :return: int: The number of days.
         """
         now: datetime.datetime = pytz.utc.localize(datetime.datetime.utcnow())
-        t_delta: datetime.timedelta = now - self.datetime
+        t_delta: datetime.timedelta = now - self._datetime
         return int(t_delta.total_seconds() / 86400)
 
     def get_weeks_ago(self) -> int:
@@ -277,13 +299,71 @@ class Timestamp(object):
         Get the date portion of this timestamp.
         :return: datetime.date: The date portion.
         """
-        return datetime.date(self.datetime.year, self.datetime.month, self.datetime.year)
+        return datetime.date(self.year, self.month, self.day)
 
-    def get_time(self) -> datetime.time:
+    def get_time(self, include_micros: bool = False) -> datetime.time:
         """
         Get the time portion of the datetime.
+        :param include_micros: bool: Include the microsecond portion. Defaults to False.
         :return: datetime.time: The time portion.
         """
-        return datetime.time(self.datetime.hour, self.datetime.minute, self.datetime.second,
-                             self.datetime.microsecond, tzinfo=self.datetime.tzinfo)
+        if include_micros:
+            return datetime.time(self.hour, self.minute, self.second, self.microsecond, tzinfo=self.tz_info)
+        else:
+            return datetime.time(self.hour, self.minute, self.second, tzinfo=self.tz_info)
 
+    def get_datetime(self, include_micros: bool) -> datetime.datetime:
+        """
+        Get a datetime object for this timestamp:
+        :param include_micros: bool: True, include the microseconds in the time portion.
+        :return: datetime.datetime: The new datetime object.
+        """
+        if include_micros:
+            return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute, self.second,
+                                     self.microsecond, self.tz_info)
+        else:
+            return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute, self.second,
+                                     tzinfo=self.tz_info)
+
+#################################
+# Properties:
+#################################
+    @property
+    def timestamp(self) -> int:
+        return self._timestamp
+
+    @property
+    def datetime_obj(self) -> datetime.datetime:
+        return self._datetime
+
+    @property
+    def year(self) -> int:
+        return self._datetime.year
+
+    @property
+    def month(self):
+        return self._datetime.month
+
+    @property
+    def day(self):
+        return self._datetime.day
+
+    @property
+    def hour(self):
+        return self._datetime.hour
+
+    @property
+    def minute(self):
+        return self._datetime.minute
+
+    @property
+    def second(self):
+        return self._datetime.second
+
+    @property
+    def microsecond(self):
+        return self._datetime.microsecond
+
+    @property
+    def tz_info(self):
+        return self._datetime.tzinfo

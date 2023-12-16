@@ -7,14 +7,14 @@ from typing import Optional
 import socket
 
 from .signalCommon import MessageTypes
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroups import Groups
-from .signalMessage import Message
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
 
 
-class GroupUpdate(Message):
+class SignalGroupUpdate(SignalMessage):
     """
     Class for a group update message.
     """
@@ -22,10 +22,10 @@ class GroupUpdate(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict] = None,
                  raw_message: Optional[dict] = None,
                  ) -> None:

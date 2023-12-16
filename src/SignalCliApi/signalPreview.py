@@ -11,7 +11,7 @@ import hashlib
 import os
 import shutil
 import sys
-from .signalAttachment import Attachment
+from .signalAttachment import SignalAttachment
 from .signalCommon import __type_error__
 from .signalExceptions import ParameterError
 
@@ -24,7 +24,7 @@ except ModuleNotFoundError:
     CAN_PREVIEW = False
 
 
-class Preview(object):
+class SignalPreview(object):
     """Class containing a preview of a link."""
 
     def __init__(self,
@@ -35,7 +35,7 @@ class Preview(object):
                  url: Optional[str] = None,
                  title: Optional[str] = None,
                  description: Optional[str] = None,
-                 image: Optional[Attachment | str] = None,
+                 image: Optional[SignalAttachment | str] = None,
                  ) -> None:
         """
         Initialize the preview.
@@ -49,7 +49,7 @@ class Preview(object):
         :param url: Optional[str]: The URL this preview, well, previews.
         :param title: Optional[str]: The title.
         :param description: Optional[str]: The description.
-        :param image: Optional[Attachment | str]: The preview image, either an Attachment object pointing to a local
+        :param image: Optional[SignalAttachment | str]: The preview image, either an SignalAttachment object pointing to a local
             file, or a str witch is the full path to the image file.
         :raises RuntimeError: If generate_preview is True and linkpreview is not installed.
         :raises RuntimeError: If we're not able to make the directory where we store the preview images we generate.
@@ -90,9 +90,9 @@ class Preview(object):
             logger.critical("Raising TypeError:")
             __type_error__("description", "str", description)
         # Check image:
-        if image is not None and not isinstance(image, Attachment) and not isinstance(image, str):
+        if image is not None and not isinstance(image, SignalAttachment) and not isinstance(image, str):
             logger.critical("Raising TypeError:")
-            __type_error__("image", "Attachment | str", image)
+            __type_error__("image", "SignalAttachment | str", image)
 
         # Parameter checks:
         if generate_preview and url is None:
@@ -114,12 +114,12 @@ class Preview(object):
         """The title of the page."""
         self.description: Optional[str] = description
         """The description of the page."""
-        self.image: Optional[Attachment] = None
+        self.image: Optional[SignalAttachment] = None
         """The preview image."""
-        if isinstance(image, Attachment):
+        if isinstance(image, SignalAttachment):
             self.image = image
         elif isinstance(image, str):
-            self.image = Attachment(config_path=config_path, local_path=image)
+            self.image = SignalAttachment(config_path=config_path, local_path=image)
 
         # Create the directory to store preview images if it doesn't exist:
         self._preview_path: str = os.path.join(self._config_path, 'previews')
@@ -162,7 +162,7 @@ class Preview(object):
         self.image = None
         if raw_preview['image'] is not None:
             raw_attachment: dict[str, object] = raw_preview['image']
-            self.image = Attachment(self._config_path, raw_attachment=raw_attachment)
+            self.image = SignalAttachment(self._config_path, raw_attachment=raw_attachment)
         return
 
     def __generate_preview__(self) -> None:
@@ -188,7 +188,7 @@ class Preview(object):
 
         # Check if the file exists and create the attachment if it does:
         if os.path.exists(preview_image_file_path):
-            self.image = Attachment(self._config_path, local_path=preview_image_file_path)
+            self.image = SignalAttachment(self._config_path, local_path=preview_image_file_path)
             return
         # Download the image:
         # Try to open the url:
@@ -217,7 +217,7 @@ class Preview(object):
         shutil.copyfileobj(response, fileHandle)
         fileHandle.close()
         # Create the attachment:
-        self.image = Attachment(config_path=self._config_path, local_path=preview_image_file_path)
+        self.image = SignalAttachment(config_path=self._config_path, local_path=preview_image_file_path)
         return
 
     ######################
@@ -250,5 +250,5 @@ class Preview(object):
         self.image = None
         if from_dict['image'] is not None:
             image_dict: dict[str, Any] = from_dict['image']
-            self.image = Attachment(config_path=self._config_path, from_dict=image_dict)
+            self.image = SignalAttachment(config_path=self._config_path, from_dict=image_dict)
         return

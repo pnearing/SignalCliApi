@@ -9,26 +9,26 @@ import socket
 import threading
 import json
 
-from .signalAccount import Account
-from .signalCallMessage import CallMessage
+from .signalAccount import SignalAccount
+from .signalCallMessage import SignalCallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, \
     __socket_send__, __type_error__, SyncTypes, __parse_signal_response__, __check_response_for_error__, \
-    TypingStates
+    TypingStates, __socket_receive_non_blocking__
 from . import runCallback
 from .runCallback import __run_callback__, __type_check_callback__
-from .signalGroupUpdate import GroupUpdate
-from .signalMessage import Message
-from .signalReaction import Reaction
-from .signalReceipt import Receipt
-from .signalReceivedMessage import ReceivedMessage
-from .signalSticker import StickerPacks
-from .signalStoryMessage import StoryMessage
-from .signalSyncMessage import SyncMessage
-from .signalTypingMessage import TypingMessage
+from .signalGroupUpdate import SignalGroupUpdate
+from .signalMessage import SignalMessage
+from .signalReaction import SignalReaction
+from .signalReceipt import SignalReceipt
+from .signalReceivedMessage import SignalReceivedMessage
+from .signalSticker import SignalStickerPacks
+from .signalStoryMessage import SignalStoryMessage
+from .signalSyncMessage import SignalSyncMessage
+from .signalTypingMessage import SignalTypingMessage
 from .signalExceptions import CommunicationsError
 
 
-class ReceiveThread(threading.Thread):
+class SignalReceiveThread(threading.Thread):
     """
     The reception thread.
     """
@@ -36,8 +36,8 @@ class ReceiveThread(threading.Thread):
                  server_address: tuple[str, int] | str,
                  command_socket: socket.socket,
                  config_path: str,
-                 sticker_packs: StickerPacks,
-                 account: Account,
+                 sticker_packs: SignalStickerPacks,
+                 account: SignalAccount,
                  all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                  receipt_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
@@ -53,8 +53,8 @@ class ReceiveThread(threading.Thread):
         """
         Create the reception thread.
         Callbacks must have the signature of:
-            callback(account: Account, message: Message, *additional_params) where the first element passed is the
-            Account object for the message received, and the second element is the message that was received.
+            callback(account: SignalAccount, message: SignalMessage, *additional_params) where the first element passed is the
+            SignalAccount object for the message received, and the second element is the message that was received.
         The return value of callback can be True, False, or None. If the specific callback returns a boolean, it is
             returned; If the specific callback returns None, then the return value of the all messages callback is
             returned.  If True is returned, Reception is stopped. If anything else is returned, then reception
@@ -62,8 +62,8 @@ class ReceiveThread(threading.Thread):
         :param server_address: tuple[str, int] | str: The server address to connect the reception socket to.
         :param command_socket: socket.socket: The socket to run commands through.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param sticker_packs: StickerPacks: The loaded StickerPacks object.
-        :param account: Account: The account to receive for.
+        :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
+        :param account: SignalAccount: The account to receive for.
         :param all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for ALL messages.
         :param received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for received
             messages.
@@ -95,12 +95,12 @@ class ReceiveThread(threading.Thread):
         if not isinstance(config_path, str):
             logger.critical("Raising TypeError:")
             __type_error__("config_path", "str", config_path)
-        if not isinstance(sticker_packs, StickerPacks):
+        if not isinstance(sticker_packs, SignalStickerPacks):
             logger.critical("Raising TypeError:")
-            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
-        if not isinstance(account, Account):
+            __type_error__("sticker_packs", "SignalStickerPacks", sticker_packs)
+        if not isinstance(account, SignalAccount):
             logger.critical("Raising TypeError:")
-            __type_error__("account", "Account", account)
+            __type_error__("account", "SignalAccount", account)
         if not __type_check_callback__(all_messages_callback)[0]:
             logger.critical("Raising TypeError:")
             __type_error__("all_messages_callback", "Optional[tuple[Callable, Optional[list[Any]]]]",
@@ -152,10 +152,12 @@ class ReceiveThread(threading.Thread):
         """The socket to run command operations on."""
         self._config_path: str = config_path
         """The full path to the signal-cli config directory."""
-        self._account: Account = account
+        self._account: SignalAccount = account
         """The account we're receiving for."""
-        self._sticker_packs: StickerPacks = sticker_packs
+        self._sticker_packs: SignalStickerPacks = sticker_packs
         """The loaded sticker packs object."""
+
+        # Set callbacks:
         self._all_msg_cb: Optional[tuple[Callable, Optional[list[Any]]]] = all_messages_callback
         """Call back to call on receipt of ALL messages."""
         self._recv_msg_cb: Optional[tuple[Callable, Optional[list[Any]]]] = received_message_callback
@@ -174,10 +176,12 @@ class ReceiveThread(threading.Thread):
         """Call back to call on receipt of a reaction message."""
         self._call_msg_cb: Optional[tuple[Callable, Optional[list[Any]]]] = call_message_callback
         """Call back to call on receipt of a call message."""
+
+        # Set other internal properties:
         self._do_expunge: bool = do_expunge
         """Should we expunge on update?"""
-
-        # Set internal properties:
+        self._receiving: bool = False
+        """Are we receiving?"""
         self._subscription_id: Optional[int] = None
         """The subscription ID provided by Signal."""
         # Create and connect the socket.
@@ -187,8 +191,8 @@ class ReceiveThread(threading.Thread):
 
     def __call_callback__(self,
                           callback: Optional[tuple[Callable, Optional[list[Any]]]],
-                          account: Account,
-                          message: Message,
+                          account: SignalAccount,
+                          message: SignalMessage,
                           ) -> Optional[bool]:
         """
         Execute a callback and return True for stopping reception, False for do not stop reception; The order of
@@ -196,8 +200,8 @@ class ReceiveThread(threading.Thread):
         the return value of the specified callback is returned.
         :param callback: Optional[tuple[Callable, Optional[list[Any]]]]: The callback to call, and any parameters to
             pass to it, if None the callback is not executed.
-        :param account: Account: The account we're receiving for.
-        :param message: Message: The message we've received.
+        :param account: SignalAccount: The account we're receiving for.
+        :param message: SignalMessage: The message we've received.
         :return: Optional[bool]: If True is returned, the callback stops the reception thread, If False or None are
              returned, then reception continues.
         """
@@ -233,7 +237,7 @@ class ReceiveThread(threading.Thread):
         #######################
         if 'reaction' in data_message.keys():
             # Create reaction Message:
-            message = Reaction(
+            reaction = SignalReaction(
                 command_socket=self._command_socket, account_id=self._account.number,
                 config_path=self._config_path, contacts=self._account.contacts,
                 groups=self._account.groups, devices=self._account.devices,
@@ -241,9 +245,9 @@ class ReceiveThread(threading.Thread):
             )
             # Parse reaction and call the reaction callback:
             logger.debug("Got reaction message, parsing and calling reaction callback.")
-            self._account.messages.__parse_reaction__(message)
-            message.sender.seen(message.timestamp)
-            return self.__call_callback__(self._ract_msg_cb, self._account, message)
+            self._account.messages.__parse_reaction__(reaction)
+            reaction.sender.__seen__(reaction.timestamp)
+            return self.__call_callback__(self._ract_msg_cb, self._account, reaction)
         ######################
         # GROUP UPDATES:
         ######################
@@ -258,7 +262,7 @@ class ReceiveThread(threading.Thread):
             except KeyError:
                 is_group_update = False
             if is_group_update:
-                message = GroupUpdate(
+                message = SignalGroupUpdate(
                     command_socket=self._command_socket, account_id=self._account.number,
                     config_path=self._config_path, contacts=self._account.contacts,
                     groups=self._account.groups, devices=self._account.devices,
@@ -267,14 +271,14 @@ class ReceiveThread(threading.Thread):
                 logger.debug("Got a group update message, syncing groups and calling sync callback.")
                 message.recipient.__sync__()
                 self._account.messages.append(message)
-                message.sender.seen(message.timestamp)
+                message.sender.__seen__(message.timestamp)
                 return self.__call_callback__(self._sync_msg_cb, self._account, message)
             ##################################
             # Received Message:
             ##################################
             else:
                 # Create a Received message:
-                message = ReceivedMessage(
+                message = SignalReceivedMessage(
                     command_socket=self._command_socket, account_id=self._account.number,
                     config_path=self._config_path, contacts=self._account.contacts,
                     groups=self._account.groups, devices=self._account.devices,
@@ -285,14 +289,14 @@ class ReceiveThread(threading.Thread):
                 # Sender is no longer typing:
                 if message.sender.is_typing:
                     # Create a typing stopped message:
-                    stop_typing_message = TypingMessage(command_socket=self._command_socket,
-                                                        account_id=self._account.get_id(),
-                                                        config_path=self._config_path, contacts=self._account.contacts,
-                                                        groups=self._account.groups, devices=self._account.devices,
-                                                        this_device=self._account.device, sender=message.sender,
-                                                        recipient=message.recipient, device=message.device,
-                                                        timestamp=message.timestamp, action=TypingStates.STOPPED,
-                                                        time_changed=message.timestamp)
+                    stop_typing_message = SignalTypingMessage(command_socket=self._command_socket,
+                                                              account_id=self._account.get_id(),
+                                                              config_path=self._config_path, contacts=self._account.contacts,
+                                                              groups=self._account.groups, devices=self._account.devices,
+                                                              this_device=self._account.device, sender=message.sender,
+                                                              recipient=message.recipient, device=message.device,
+                                                              timestamp=message.timestamp, action=TypingStates.STOPPED,
+                                                              time_changed=message.timestamp)
                     # Send the typing message to the sending for parsing:
                     message.sender.__parse_typing_message__(stop_typing_message)
                     # Store the typing message.
@@ -300,7 +304,7 @@ class ReceiveThread(threading.Thread):
                 # Store the received message:
                 self._account.messages.append(message)
                 # Mark the sender as seen:
-                message.sender.seen(message.timestamp)
+                message.sender.__seen__(message.timestamp)
                 return self.__call_callback__(self._recv_msg_cb, self._account, message)
 
     def __parse_receipt_message__(self, envelope_dict: dict[str, Any]) -> Optional[bool]:
@@ -309,7 +313,7 @@ class ReceiveThread(threading.Thread):
         :param envelope_dict: dict[str, Any]: The incoming message.
         :return: Optional[bool]: The return value of the callbacks.
         """
-        message = Receipt(
+        message = SignalReceipt(
             command_socket=self._command_socket, account_id=self._account.number,
             config_path=self._config_path, contacts=self._account.contacts,
             groups=self._account.groups, devices=self._account.devices,
@@ -330,11 +334,11 @@ class ReceiveThread(threading.Thread):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
 
         # Check to see if this is an empty sync message:
-        if envelope_dict['sync_message'] == {}:
+        if envelope_dict['syncMessage'] == {}:
             logger.warning("Got empty sync message, skipping.")
             return None
-        # Create the SyncMessage object:
-        message = SyncMessage(
+        # Create the SignalSyncMessage object:
+        message = SignalSyncMessage(
             command_socket=self._command_socket, account_id=self._account.number,
             config_path=self._config_path, contacts=self._account.contacts,
             groups=self._account.groups, devices=self._account.devices,
@@ -367,7 +371,7 @@ class ReceiveThread(threading.Thread):
         :param envelope_dict: dict[str, Any]: The incoming message.
         :return: Optional[bool]: The return value of the callbacks.
         """
-        message = TypingMessage(
+        message = SignalTypingMessage(
             command_socket=self._command_socket, account_id=self._account.number,
             config_path=self._config_path, contacts=self._account.contacts,
             groups=self._account.groups, devices=self._account.devices,
@@ -386,7 +390,7 @@ class ReceiveThread(threading.Thread):
         :param envelope_dict: dict[str, Any]: The incoming message.
         :return: Optional[bool]: The return value of the callbacks.
         """
-        message = StoryMessage(
+        message = SignalStoryMessage(
             command_socket=self._command_socket, account_id=self._account.number,
             config_path=self._config_path, contacts=self._account.contacts,
             groups=self._account.groups, devices=self._account.devices,
@@ -401,12 +405,15 @@ class ReceiveThread(threading.Thread):
         :param envelope_dict: dict[str, Any]: The incoming message.
         :return: Optional[bool]: The callbacks return value.
         """
-        message = CallMessage(command_socket=self._command_socket, account_id=self._account.number,
-                              config_path=self._config_path, contacts=self._account.contacts,
-                              groups=self._account.groups, devices=self._account.devices,
-                              this_device=self._account.device, raw_message=envelope_dict)
+        message = SignalCallMessage(command_socket=self._command_socket, account_id=self._account.number,
+                                    config_path=self._config_path, contacts=self._account.contacts,
+                                    groups=self._account.groups, devices=self._account.devices,
+                                    this_device=self._account.device, raw_message=envelope_dict)
         return self.__call_callback__(self._call_msg_cb, self._account, message)
 
+    #############################
+    # Run:
+    #############################
     def run(self) -> None:
         """
         Thread override.
@@ -432,12 +439,8 @@ class ReceiveThread(threading.Thread):
             __socket_send__(self._receive_socket, json_command_str)
             response_str = __socket_receive_blocking__(self._receive_socket)
             response_obj: dict[str, Any] = __parse_signal_response__(response_str)
-
-            error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
-            if error_occurred:
-                error_message: str = "signal error while sending sync request. Code %i, Message: %s" \
-                                     % (signal_code, signal_message)
-                logger.warning(error_message)
+            # There are no non fatal errors during reception:
+            __check_response_for_error__(response_obj, [])
 
         # Create receive object and json command string:
         start_receive_command_object: dict[str, Any] = {
@@ -461,112 +464,151 @@ class ReceiveThread(threading.Thread):
             logger.critical("Raising RuntimeError(%s)." % error_message)
             raise RuntimeError(error_message)
 
-        # Set subscription ID.
+        # Set subscription ID, and start receiving:
         self._subscription_id = response_obj['result']
-
+        self._receiving = True
         # START RECEIVE LOOP:
-        while self._subscription_id is not None:
-            # Blocks until a message received:
+        while self._receiving:
             try:
-                response_str: str = __socket_receive_blocking__(self._receive_socket)
+                response_str: Optional[str] = __socket_receive_non_blocking__(self._receive_socket, 0.01)
             except CommunicationsError as e:
-                logger.critical("Failed to receive, got CommunicationsError(%s)." % str(e.args))
-                break
+                if self._receiving is False:
+                    break
+                raise e
+            if response_str is None:
+                continue
             # Delay processing until messages are finished sending:
             if self._account.messages.sending:
                 logger.debug("Message received while sending a message, delaying processing until complete.")
             while self._account.messages.sending:
                 pass
 
-            # Parse incoming message:
+            # Create msg object, and check the incoming message for an error, NOTE: There are no non-fatal errors
+            # during reception:
             message_obj: dict[str, Any] = __parse_signal_response__(response_str)
-            if 'method' in message_obj.keys() and message_obj['method'] == 'receive':
-                envelope_dict: dict = message_obj['params']['envelope']
-                return_value: Optional[bool]
-                ##########################
-                # Data Message:
-                ##########################
-                if 'dataMessage' in envelope_dict.keys():
-                    return_value = self.__parse_data_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                ##########################
-                # Receipt Message:
-                ##########################
-                elif 'receiptMessage' in envelope_dict.keys():
-                    return_value = self.__parse_receipt_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                #############################
-                # Sync Message:
-                #############################
-                elif 'sync_message' in envelope_dict.keys():
-                    return_value = self.__parse_sync_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                ###############################
-                # Typing Message:
-                ###############################
-                elif 'typingMessage' in envelope_dict.keys():
-                    return_value = self.__parse_typing_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                ###############################
-                # Story Message:
-                ###############################
-                elif 'storyMessage' in envelope_dict.keys():
-                    return_value = self.__parse_story_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                ##############################
-                # Call message:
-                ##############################
-                elif 'callMessage' in envelope_dict.keys():
-                    return_value = self.__parse_call_message__(envelope_dict)
-                    if return_value is True:
-                        break  # Stop receiving.
-                ##############################
-                # Unrecognized message:
-                ##############################
-                else:
-                    logger.warning("Unrecognized incoming envelope. Perhaps a payment message.")
-                    logger.debug("envelope_dict.keys() = %s" % str(envelope_dict.keys()))
-                    logger.debug("envelope_dict = %s" % str(envelope_dict))
-                    continue
+            __check_response_for_error__(response_obj, [])
+
+            # Make sure there is a method in the response:
+            if 'method' not in message_obj.keys():
+                logger.warning("Message received with no method.")
+                logger.debug("message_obj = %s" % str(message_obj))
+                continue
+
+            # Make sure that method is 'receive':
+            if message_obj['method'] != 'receive':
+                logger.warning("Message received with method other than 'receive': method = %s" % message_obj['method'])
+                logger.debug('message_obj = %s' % str(message_obj))
+                continue
+
+            # Make sure there are 'params' in the response:
+            if 'params' not in message_obj.keys():
+                logger.warning("Message has no 'params'.")
+                logger.debug("message_obj = %s" % str(message_obj))
+                continue
+
+            # Make sure there are 'result' in the 'params':
+            if 'result' not in message_obj['params'].keys():
+                logger.warning("Message doesn't have a result.")
+                logger.debug("message_obj = %s" % str(message_obj))
+                continue
+
+            # Make sure there is an 'envelope' in the message 'result':
+            if 'envelope' not in message_obj['params']['result'].keys():
+                logger.warning("Message with no envelope received.")
+                logger.debug("message_obj = %s" % str(message_obj))
+                continue
+
+            # Grab the envelope dict and type return_value:
+            envelope_dict: dict = message_obj['params']['result']['envelope']
+            return_value: Optional[bool]
+            ##########################
+            # Data Message:
+            ##########################
+            if 'dataMessage' in envelope_dict.keys():
+                return_value = self.__parse_data_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            ##########################
+            # Receipt Message:
+            ##########################
+            elif 'receiptMessage' in envelope_dict.keys():
+                return_value = self.__parse_receipt_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            #############################
+            # Sync Message:
+            #############################
+            elif 'syncMessage' in envelope_dict.keys():
+                return_value = self.__parse_sync_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            ###############################
+            # Typing Message:
+            ###############################
+            elif 'typingMessage' in envelope_dict.keys():
+                return_value = self.__parse_typing_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            ###############################
+            # Story Message:
+            ###############################
+            elif 'storyMessage' in envelope_dict.keys():
+                return_value = self.__parse_story_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            ##############################
+            # Call message:
+            ##############################
+            elif 'callMessage' in envelope_dict.keys():
+                return_value = self.__parse_call_message__(envelope_dict)
+                if return_value is True:
+                    break  # Stop receiving.
+            ##############################
+            # Unrecognized message:
+            ##############################
             else:
-                error_message: str = "Incoming data that's not a message. DATA = %s" % response_str
-                logger.critical("Raising NotImplemented(%s)." % error_message)
-                raise NotImplemented(error_message)
+                logger.warning("Unrecognized incoming envelope. Perhaps a payment message.")
+                logger.debug("envelope_dict.keys() = %s" % str(envelope_dict.keys()))
+                logger.debug("envelope_dict = %s" % str(envelope_dict))
+                continue
+
             ###############################
             # Check for expired messages:
             ###############################
             self._account.messages.__check_expiries__()
             if self._do_expunge:
                 self._account.messages.__do_expunge__()
-        return
+        # #####################################
+        # # Reception halted:
+        # #####################################
+        # stop_receive_command_object: dict[str, Any] = {
+        #     "jsonrpc": '2.0',
+        #     "id": 2,
+        #     "method": "unsubscribeReceive",
+        #     "params": {
+        #         "subscription": self._subscription_id,
+        #     }
+        # }
+        #
+        # json_command_str: str = json.dumps(stop_receive_command_object) + '\n'
+        # __socket_send__(self._receive_socket, json_command_str)
+        # response_str: str = __socket_receive_blocking__(self._receive_socket)
+        # response_obj: dict[str, Any] = __parse_signal_response__(response_str)
+        # __check_response_for_error__(response_obj, [])
+        #
+        # self._subscription_id = None
+        # __socket_close__(self._receive_socket)
+        # return
 
     def stop(self) -> None:
         """
         Stops the reception.
         :returns: None
         """
-        if self._subscription_id is None:
-            return
-        stop_receive_command_object: dict[str, Any] = {
-            "jsonrpc": '2.0',
-            "id": 2,
-            "method": "unsubscribeReceive",
-            "params": {
-                "subscription": self._subscription_id,
-            }
-        }
-
-        json_command_str: str = json.dumps(stop_receive_command_object) + '\n'
-        __socket_send__(self._receive_socket, json_command_str)
-        response_str: str = __socket_receive_blocking__(self._receive_socket)
-        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
-        __check_response_for_error__(response_obj, [])
-
-        self._subscription_id = None
+        self._receiving = False
         __socket_close__(self._receive_socket)
         return
+
+    @property
+    def subscription_id(self) -> Optional[int]:
+        return self._subscription_id

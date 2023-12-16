@@ -12,7 +12,7 @@ from .signalExceptions import ParameterError
 from .signalCommon import __type_error__, __find_xdgopen__
 
 
-class Thumbnail(object):
+class SignalThumbnail(object):
     """Class to store a thumbnail."""
     def __init__(self,
                  config_path: str,
@@ -21,7 +21,7 @@ class Thumbnail(object):
                  local_path: Optional[str] = None,
                  ) -> None:
         """
-        Initialize a Thumbnail.
+        Initialize a SignalThumbnail.
         :param config_path: str: The full path to the signal-cli config directory.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
         :param raw_thumbnail: Optional[dict[str, Any]]: The raw dict provided by signal.

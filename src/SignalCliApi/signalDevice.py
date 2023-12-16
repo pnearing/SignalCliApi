@@ -7,12 +7,12 @@ import logging
 from typing import TypeVar, Optional, Any
 import socket
 
-from .signalTimestamp import Timestamp
+from .signalTimestamp import SignalTimestamp
 from .signalCommon import __type_error__, PRIMARY_DEVICE_ID
-Self = TypeVar("Self", bound="Device")
+Self = TypeVar("Self", bound="SignalDevice")
 
 
-class Device(object):
+class SignalDevice(object):
     """
     Class to store a device.
     """
@@ -24,8 +24,8 @@ class Device(object):
                  from_dict: Optional[dict[str, Any]] = None,
                  device_id: Optional[int] = None,
                  name: Optional[str] = None,
-                 created: Optional[Timestamp] = None,
-                 last_seen: Optional[Timestamp] = None,
+                 created: Optional[SignalTimestamp] = None,
+                 last_seen: Optional[SignalTimestamp] = None,
                  ) -> None:
         """
         Initialize a device:
@@ -36,8 +36,8 @@ class Device(object):
         :param from_dict: Optional[dict[str, Any]]: Load this device from a dict created by __to_dict__().
         :param device_id: Optional[int]: The device ID of this device.
         :param name: Optional[str]: The name of this device.
-        :param created: Optional[Timestamp]: When this device was created.
-        :param last_seen: Optional[Timestamp]: When this device was last seen.
+        :param created: Optional[SignalTimestamp]: When this device was created.
+        :param last_seen: Optional[SignalTimestamp]: When this device was last seen.
         :raises RuntimeError: On invalid final device configuration.
         """
         # Super:
@@ -66,12 +66,12 @@ class Device(object):
         if name is not None and not isinstance(name, str):
             logger.critical("Raising TypeError:")
             __type_error__("name", "Optional[str]", name)
-        if created is not None and not isinstance(created, Timestamp):
+        if created is not None and not isinstance(created, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("created", "Optional[Timestamp]", created)
-        if last_seen is not None and not isinstance(last_seen, Timestamp):
+            __type_error__("created", "Optional[SignalTimestamp]", created)
+        if last_seen is not None and not isinstance(last_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("last_seen", "Optional[Timestamp]", last_seen)
+            __type_error__("last_seen", "Optional[SignalTimestamp]", last_seen)
 
         # Set internal vars:
         self._sync_socket: socket.socket = sync_socket
@@ -84,10 +84,10 @@ class Device(object):
         """The device ID."""
         self.name: Optional[str] = name
         """The name of the device."""
-        self.created: Optional[Timestamp] = created
-        """The Timestamp of when this device was created."""
-        self.last_seen: Optional[Timestamp] = last_seen
-        """The Timestamp of when this device was last seen."""
+        self.created: Optional[SignalTimestamp] = created
+        """The SignalTimestamp of when this device was created."""
+        self.last_seen: Optional[SignalTimestamp] = last_seen
+        """The SignalTimestamp of when this device was last seen."""
         self.is_this_device: Optional[bool] = None
         """Is this device the device we're using?"""
         self.is_primary_device: Optional[bool] = None
@@ -126,11 +126,11 @@ class Device(object):
         self.id = raw_device['id']
         self.name = raw_device['name']
         if raw_device['createdTimestamp'] is not None:
-            self.created = Timestamp(timestamp=raw_device['createdTimestamp'])
+            self.created = SignalTimestamp(timestamp=raw_device['createdTimestamp'])
         else:
             self.created = None
         if raw_device['lastSeenTimestamp'] is not None:
-            self.last_seen = Timestamp(timestamp=raw_device['lastSeenTimestamp'])
+            self.last_seen = SignalTimestamp(timestamp=raw_device['lastSeenTimestamp'])
         else:
             self.last_seen = None
         return
@@ -138,7 +138,7 @@ class Device(object):
     def __merge__(self, other: Self) -> None:
         """
         Merge two devices, assuming the passed in device is the most up to date.
-        :param other: Device: The other device to merge with.
+        :param other: SignalDevice: The other device to merge with.
         :return: None
         """
         if self.name is None:
@@ -183,11 +183,11 @@ class Device(object):
         self.id = from_dict['id']
         self.name = from_dict['name']
         if from_dict['created'] is not None:
-            self.created = Timestamp(from_dict=from_dict['created'])
+            self.created = SignalTimestamp(from_dict=from_dict['created'])
         else:
             self.created = None
         if from_dict['lastSeen'] is not None:
-            self.last_seen = Timestamp(from_dict=from_dict['lastSeen'])
+            self.last_seen = SignalTimestamp(from_dict=from_dict['lastSeen'])
         else:
             self.last_seen = None
         self.is_this_device = from_dict['isAccountDevice']
@@ -200,15 +200,12 @@ class Device(object):
     def __eq__(self, other: Self) -> bool:
         """
         Compare equality against another device.
-        :param other: Device: The device to compare to.
+        :param other: SignalDevice: The device to compare to.
         :return: bool: True if the devices are equal, False if not.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
-        if isinstance(other, Device):
+        if isinstance(other, SignalDevice):
             return self.id == other.id
-        error_message: str = "Can only compare equality to another Device object."
-        logger.critical("Raising TypeError(%s)." % error_message)
-        raise TypeError(error_message)
+        return False
 
     def __str__(self) -> str:
         """
@@ -220,16 +217,16 @@ class Device(object):
     ########################
     # Methods:
     ########################
-    def seen(self, time_seen: Timestamp) -> None:
+    def seen(self, time_seen: SignalTimestamp) -> None:
         """
         Update the last time this device has been seen.
-        :param time_seen: Timestamp: The time this device was seen at.
-        :raises TypeError: If time_seen not a Timestamp.
+        :param time_seen: SignalTimestamp: The time this device was seen at.
+        :raises TypeError: If time_seen not a SignalTimestamp.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
-        if not isinstance(time_seen, Timestamp):
+        if not isinstance(time_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("time_seen", "Timestamp", time_seen)
+            __type_error__("time_seen", "SignalTimestamp", time_seen)
         if self.last_seen is not None:
             if self.last_seen < time_seen:
                 self.last_seen = time_seen

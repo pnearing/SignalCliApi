@@ -1,24 +1,24 @@
 #! /usr/bin/env python3
 """
 File: signalReactions.py
-Store and manage a list of Reactions.
+Store and manage a list of SignalReactions.
 """
 import logging
 from typing import Optional, Iterable, Iterator, Any
 import socket
 
-from .signalTimestamp import Timestamp
+from .signalTimestamp import SignalTimestamp
 from .signalCommon import __type_error__
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalReaction import Reaction
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalReaction import SignalReaction
 
 
-class Reactions(object):
+class SignalReactions(object):
     """
     Class to store reactions to a message.
     """
@@ -26,24 +26,24 @@ class Reactions(object):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
-                 reactions: Optional[Iterable[Reaction]] = None,
+                 reactions: Optional[Iterable[SignalReaction]] = None,
                  ) -> None:
         """
-        Initialize a Reactions object.
+        Initialize a SignalReactions object.
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This accounts' ID.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The Device object for the device we're using.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object for the device we're using.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
-        :param reactions: Optional[Iterable[Reaction]]: A list of reaction objects to store in the object.
+        :param reactions: Optional[Iterable[SignalReaction]]: A list of reaction objects to store in the object.
         """
         # Super:
         super().__init__()
@@ -61,24 +61,24 @@ class Reactions(object):
         if not isinstance(config_path, str):
             logger.critical("Raising TypeError:")
             __type_error__('config_path', 'str', config_path)
-        if not isinstance(contacts, Contacts):
+        if not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("contacts", "Contacts", contacts)
-        if not isinstance(groups, Groups):
+            __type_error__("contacts", "SignalContacts", contacts)
+        if not isinstance(groups, SignalGroups):
             logger.critical("Raising TypeError:")
-            __type_error__("groups", "Groups", groups)
-        if not isinstance(devices, Devices):
+            __type_error__("groups", "SignalGroups", groups)
+        if not isinstance(devices, SignalDevices):
             logger.critical("Raising TypeError:")
-            __type_error__("devices", "Devices", devices)
-        if not isinstance(this_device, Device):
+            __type_error__("devices", "SignalDevices", devices)
+        if not isinstance(this_device, SignalDevice):
             logger.critical("Raising TypeError:")
-            __type_error__("this_device", "Device", this_device)
+            __type_error__("this_device", "SignalDevice", this_device)
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError:")
             __type_error__("from_dict", "dict", from_dict)
         if reactions is not None and not isinstance(reactions, Iterable):
             logger.critical("Raising TypeError:")
-            __type_error__("reactions", "Optional[Iterable[Reaction]]", reactions)
+            __type_error__("reactions", "Optional[Iterable[SignalReaction]]", reactions)
 
         # Set internal vars:
         self._command_socket: socket.socket = command_socket
@@ -87,33 +87,33 @@ class Reactions(object):
         """This accounts' ID."""
         self._config_path: str = config_path
         """The full path to the signal-cli config directory."""
-        self._contacts: Contacts = contacts
-        """This accounts' Contacts object."""
-        self._groups: Groups = groups
-        """This accounts' Groups object."""
-        self._devices: Devices = devices
-        """This accounts' Devices object."""
-        self._this_device: Device = this_device
-        """The Device object for the device we're currently using."""
-        self._reactions: list[Reaction] = []
+        self._contacts: SignalContacts = contacts
+        """This accounts' SignalContacts object."""
+        self._groups: SignalGroups = groups
+        """This accounts' SignalGroups object."""
+        self._devices: SignalDevices = devices
+        """This accounts' SignalDevices object."""
+        self._this_device: SignalDevice = this_device
+        """The SignalDevice object for the device we're currently using."""
+        self._reactions: list[SignalReaction] = []
         """The list of reactions."""
 
         # Parse reactions parameter:
         if reactions is not None:
             for i, reaction in enumerate(reactions):
-                if not isinstance(reaction, Reaction):
+                if not isinstance(reaction, SignalReaction):
                     logger.critical("Raising TypeError:")
-                    __type_error__("reactions[%i]" % i, "Reaction", reaction)
+                    __type_error__("reactions[%i]" % i, "SignalReaction", reaction)
                 self._reactions.append(reaction)
         return
 
     ############################
     # Overrides:
     ############################
-    def __iter__(self) -> Iterator[Reaction]:
+    def __iter__(self) -> Iterator[SignalReaction]:
         """
-        Iterate over the Reactions.
-        :return: Iterator[Reaction]: The iterator.
+        Iterate over the SignalReactions.
+        :return: Iterator[SignalReaction]: The iterator.
         """
         return iter(self._reactions)
 
@@ -124,11 +124,11 @@ class Reactions(object):
         """
         return len(self._reactions)
 
-    def __getitem__(self, index: int) -> Reaction:
+    def __getitem__(self, index: int) -> SignalReaction:
         """
         Index reactions with square brackets.
         :param index: int: The index; Indexes as a list, raising IndexError if out of range.
-        :return: Reaction: The reaction at the index.
+        :return: SignalReaction: The reaction at the index.
         :raises IndexError: If the index is out of range.
         :raises TypeError: If the index isn't an int.
         """
@@ -161,29 +161,29 @@ class Reactions(object):
         """
         self._reactions = []
         for reaction_dict in from_dict['reactions']:
-            reaction = Reaction(command_socket=self._command_socket, account_id=self._account_id,
-                                config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                devices=self._devices, this_device=self._this_device, from_dict=reaction_dict
-                                )
+            reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
+                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device, from_dict=reaction_dict
+                                      )
             self._reactions.append(reaction)
         return
 
     ####################
     # Methods:
     ####################
-    def __parse__(self, reaction: Reaction) -> bool:
+    def __parse__(self, reaction: SignalReaction) -> bool:
         """
-        Parse a Reaction.
-        :param reaction: Reaction: The Reaction object to parse.
+        Parse a SignalReaction.
+        :param reaction: SignalReaction: The SignalReaction object to parse.
         :return: bool: True = reaction parsed, False = reaction not parsed.
         :raises RuntimeError: If the reaction has already been parsed.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse__.__name__)
         # Type check reaction:
-        if not isinstance(reaction, Reaction):
+        if not isinstance(reaction, SignalReaction):
             logger.critical("Raising TypeError:")
-            __type_error__('reaction', 'Reaction', reaction)
+            __type_error__('reaction', 'SignalReaction', reaction)
         # Check if the reaction already parsed:
         if reaction.is_parsed:
             error_message: str = "trying to parse a reaction that has already been parsed"
@@ -208,20 +208,20 @@ class Reactions(object):
         reaction.is_parsed = True
         return reaction.is_parsed
 
-    def __add_reaction__(self, new_reaction: Reaction) -> None:
+    def __add_reaction__(self, new_reaction: SignalReaction) -> None:
         """
         Add a new reaction to the reaction list.
-        :param new_reaction: Reaction: The new reaction to add.
+        :param new_reaction: SignalReaction: The new reaction to add.
         :return: None
-        :raises TypeError: If new_reaction is not of type Reaction.
+        :raises TypeError: If new_reaction is not of type SignalReaction.
         :raises RuntimeError: If the reaction is already in the list.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__add_reaction__.__name__)
         # Type check param:
-        if not isinstance(new_reaction, Reaction):
+        if not isinstance(new_reaction, SignalReaction):
             logger.critical("Raising TypeError:")
-            __type_error__("new_reaction", "Reaction", new_reaction)
+            __type_error__("new_reaction", "SignalReaction", new_reaction)
         # Search for reaction in the reactions, and if it exists, raise RuntimeError:
         if new_reaction in self._reactions:
             error_message: str = "reaction already in reactions."
@@ -231,20 +231,20 @@ class Reactions(object):
         self._reactions.append(new_reaction)
         return
 
-    def __remove_reaction__(self, target_reaction: Reaction) -> None:
+    def __remove_reaction__(self, target_reaction: SignalReaction) -> None:
         """
         Remove a reaction from the reaction list.
-        :param target_reaction: Reaction: The reaction to remove.
+        :param target_reaction: SignalReaction: The reaction to remove.
         :return: None
-        :raises TypeError: If reaction is not a Reaction object.
+        :raises TypeError: If reaction is not a SignalReaction object.
         :raises RuntimeError: If the reaction is not in the list.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__remove_reaction__.__name__)
         # Type check param:
-        if not isinstance(target_reaction, Reaction):
+        if not isinstance(target_reaction, SignalReaction):
             logger.critical("Raising TypeError:")
-            __type_error__("target_reaction", "Reaction", target_reaction)
+            __type_error__("target_reaction", "SignalReaction", target_reaction)
         # Remove the reaction:
         try:
             self._reactions.remove(target_reaction)
@@ -252,48 +252,48 @@ class Reactions(object):
             raise RuntimeError("target_reaction not found in reactions.")
         return
 
-    def __replace_reaction__(self, old_reaction: Reaction, new_reaction: Reaction) -> None:
+    def __replace_reaction__(self, old_reaction: SignalReaction, new_reaction: SignalReaction) -> None:
         """
         Replace a reaction with another.
-        :param old_reaction: Reaction: The reaction to replace.
-        :param new_reaction: Reaction: The reaction to replace with.
+        :param old_reaction: SignalReaction: The reaction to replace.
+        :param new_reaction: SignalReaction: The reaction to replace with.
         :return: None:
         :raises RuntimeError: If old_reaction not in reaction list.
         :raises RuntimeError: If new_reaction already in reaction list.
-        :raises TypeError: If either new_reaction or old_reaction is not of type Reaction.
+        :raises TypeError: If either new_reaction or old_reaction is not of type SignalReaction.
         """
         self.__remove_reaction__(old_reaction)
         self.__add_reaction__(new_reaction)
         return
 
-    def reaction_in(self, target_reaction: Reaction) -> bool:
+    def reaction_in(self, target_reaction: SignalReaction) -> bool:
         """
         Return True if a given reaction is in the reaction list.
-        :param target_reaction: Reaction: Reaction to search for.
+        :param target_reaction: SignalReaction: SignalReaction to search for.
         :returns: bool: True if reaction in the reaction list.
         :raises TypeError: If target_reaction is not a reaction object.
         """
-        if not isinstance(target_reaction, Reaction):
-            __type_error__("target_reaction", "Reaction", target_reaction)
+        if not isinstance(target_reaction, SignalReaction):
+            __type_error__("target_reaction", "SignalReaction", target_reaction)
         return target_reaction in self._reactions
 
     ###########################
     # Getters:
     ###########################
 
-    def get_by_sender(self, contact: Contact) -> Optional[Reaction]:
+    def get_by_sender(self, contact: SignalContact) -> Optional[SignalReaction]:
         """
         Get by sender contact
         :param: str: contact: The contact to search by.
-        :returns: Optional[Reaction]: The Reaction found or None if not found.
-        :raises TypeError if contact is not a Contact object.
+        :returns: Optional[SignalReaction]: The SignalReaction found or None if not found.
+        :raises TypeError if contact is not a SignalContact object.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_sender.__name__)
         # Type check contact:
-        if not isinstance(contact, Contact):
+        if not isinstance(contact, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("contact", "Contact | str", contact)
+            __type_error__("contact", "SignalContact | str", contact)
         # Search for and return the reaction:
         for reaction in self._reactions:
             if reaction.sender == contact:
@@ -301,11 +301,11 @@ class Reactions(object):
         # The Reaction was not found:
         return None
 
-    def get_by_emoji(self, emoji: str) -> list[Reaction]:
+    def get_by_emoji(self, emoji: str) -> list[SignalReaction]:
         """
         Get by emoji
         :param: str: emoji: The emoji to search for.
-        :returns: list[Reaction]: The reactions found; An list tuple if not found.
+        :returns: list[SignalReaction]: The reactions found; An list tuple if not found.
         :raises TypeError: If emoji is not a string.
         :raises
         """
@@ -321,18 +321,18 @@ class Reactions(object):
         # Search for reactions:
         return [reaction for reaction in self._reactions if reaction.emoji == emoji]
 
-    def get_by_recipient(self, recipient: Contact | Group) -> list[Reaction]:
+    def get_by_recipient(self, recipient: SignalContact | SignalGroup) -> list[SignalReaction]:
         """
         Get by recipient
-        :param: Contact | Group: The recipient to search for.
-        :returns: list[Reaction]: The reactions found, or an empty list if not found.
-        :raises: TypeError: If recipient is not a Contact object.
+        :param: SignalContact | SignalGroup: The recipient to search for.
+        :returns: list[SignalReaction]: The reactions found, or an empty list if not found.
+        :raises: TypeError: If recipient is not a SignalContact object.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_recipient.__name__)
         # Type check recipient:
-        if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
+        if not isinstance(recipient, SignalContact) and not isinstance(recipient, SignalGroup):
             logger.critical("Raising TypeError:")
-            __type_error__("recipient", "Contact | Group", recipient)
+            __type_error__("recipient", "SignalContact | SignalGroup", recipient)
         # Search for and return reactions:
         return [reaction for reaction in self._reactions if reaction.recipient == recipient]

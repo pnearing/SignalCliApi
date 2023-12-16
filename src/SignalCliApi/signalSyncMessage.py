@@ -7,19 +7,19 @@ import logging
 from typing import Optional, Any
 import socket
 
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroups import Groups
-from .signalMessage import Message
-from .signalSticker import StickerPacks
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
+from .signalSticker import SignalStickerPacks
+from .signalTimestamp import SignalTimestamp
 from .signalCommon import __type_error__, MessageTypes, SyncTypes
 
 
 # noinspection GrazieInspection
-class SyncMessage(Message):
+class SignalSyncMessage(SignalMessage):
     """
     Class to store the different type of sync messages.
     """
@@ -27,11 +27,11 @@ class SyncMessage(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
-                 sticker_packs: StickerPacks,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
+                 sticker_packs: SignalStickerPacks,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
                  ) -> None:
@@ -40,11 +40,11 @@ class SyncMessage(Message):
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This accounts' ID.
         :param config_path: str: The full path to signal-cli directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The device object representing the device we're on.
-        :param sticker_packs: StickerPacks: The loaded sticker packs.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The device object representing the device we're on.
+        :param sticker_packs: SignalStickerPacks: The loaded sticker packs.
         :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided by __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided by Signal.
         """
@@ -52,25 +52,25 @@ class SyncMessage(Message):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
         # Argument checks:
-        if not isinstance(sticker_packs, StickerPacks):
+        if not isinstance(sticker_packs, SignalStickerPacks):
             logger.critical("Raising TypeError:")
-            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
+            __type_error__("sticker_packs", "SignalStickerPacks", sticker_packs)
 
         # Set internal properties:
         # Set sticker packs:
-        self._sticker_packs: StickerPacks = sticker_packs
-        """The loaded StickerPacks object."""
+        self._sticker_packs: SignalStickerPacks = sticker_packs
+        """The loaded SignalStickerPacks object."""
 
         # Set external properties:
         # Set sync type:
-        self.sync_type: SyncTypes = SyncTypes.NOT_SET
+        self._sync_type: SyncTypes = SyncTypes.NOT_SET
         """The type of sync this message represents."""
         # Set sent message properties:
         # TODO: Why am I doing this?
         self.raw_sent_message: Optional[dict[str, Any]] = None
         """The raw dict of a sent message.???"""
         # Set read messages list:
-        self.read_messages: list[tuple[Contact, Timestamp]] = []
+        self.read_messages: list[tuple[SignalContact, SignalTimestamp]] = []
         """Read message sync list."""
         # Set blocked Contacts and group lists:
         self.blocked_contacts: list[str] = []
@@ -101,21 +101,21 @@ class SyncMessage(Message):
         # Run super:
         super().__from_raw_message__(raw_message)
         # Fetch sync message data:
-        raw_sync_message: dict[str, Any] = raw_message['sync_message']
+        raw_sync_message: dict[str, Any] = raw_message['syncMessage']
         # Parse Data:
         # Read messages:
-        if 'read_messages' in raw_sync_message.keys():
+        if 'readMessages' in raw_sync_message.keys():
             # print(rawSyncMessage['read_messages'])
             self.sync_type = SyncTypes.READ_MESSAGES
-            read_message_list: list[dict[str, Any]] = raw_sync_message['read_messages']
-            self.read_messages: list[tuple[Contact, Timestamp]] = []
+            read_message_list: list[dict[str, Any]] = raw_sync_message['readMessages']
+            self.read_messages: list[tuple[SignalContact, SignalTimestamp]] = []
             for read_message_dict in read_message_list:
                 _, contact = self._contacts.__get_or_add__(contact_id=read_message_dict['sender'])
-                timestamp = Timestamp(timestamp=read_message_dict['timestamp'])
+                timestamp = SignalTimestamp(timestamp=read_message_dict['timestamp'])
                 self.read_messages.append((contact, timestamp))
         # Sent message:
         elif 'sentMessage' in raw_sync_message.keys():
-            print(raw_sync_message['sentMessage'])
+            # print(raw_sync_message['sentMessage'])
             self.sync_type = SyncTypes.SENT_MESSAGES
             self.raw_sent_message = raw_message  # TODO: Follow this.
         # Blocked Numbers / Groups:
@@ -133,21 +133,22 @@ class SyncMessage(Message):
             # Group sync:
             if raw_sync_message['type'] == "GROUPS_SYNC":
                 self.sync_type = SyncTypes.GROUPS
-                # TODO: What do I do now?
-                logger.debug("...NOT IMPLEMENTED: GROUPS SYNC HERE...")
-                logger.debug("str(raw_sync_message) = %s" % str(raw_sync_message))
+                # The rest is handled by SignalGroups.
             # Contacts sync:
             elif raw_sync_message['type'] == "CONTACTS_SYNC":
                 self.sync_type = SyncTypes.CONTACTS
-                # TODO: What do I do now?
-                logger.debug("...NOT IMPLEMENTED: CONTACTS SYNC HERE...")
-                logger.debug("str(raw_sync_message) = %s" % str(raw_sync_message))
+                # The rest is handled by SignalContacts.
             else:
                 error_message: str = "unhandled sync 'type': '%s'." % raw_sync_message['type']
                 logger.critical("Raising NotImplemented(%s)")
                 logger.debug("raw_sync_message['type'] = %s" % raw_sync_message['type'])
                 logger.debug("str(raw_sync_message) = %s" % str(raw_sync_message))
-                raise NotImplemented(error_message)
+                raise NotImplementedError(error_message)
+        else:
+            logger.critical("Unhandled sync type.")
+            logger.debug("raw_sync_message = %s" % str(raw_sync_message))
+            logger.critical("Raising NotImplementedError.")
+            raise NotImplementedError("Unhandled sync type.")
         return
 
     ###########################
@@ -190,10 +191,35 @@ class SyncMessage(Message):
         self.read_messages = []
         for (contact_id, timestamp_dict) in from_dict['readMessages']:
             added, contact = self._contacts.__get_or_add__(contact_id=contact_id)
-            timestamp = Timestamp(from_dict=timestamp_dict)
+            timestamp = SignalTimestamp(from_dict=timestamp_dict)
             self.read_messages.append((contact, timestamp))
         # Set blocked groups and contacts:
         self.blocked_contacts = from_dict['blockedContacts']
         self.blocked_groups = from_dict['blockedGroups']
 
+        return
+
+################################################
+# Properties:
+################################################
+    @property
+    def sync_type(self) -> SyncTypes:
+        """
+        Get the sync type of this message.
+        :return: SyncTypes: One of the SyncTypes Enum.
+        """
+        return self._sync_type
+
+    @sync_type.setter
+    def sync_type(self, value: SyncTypes | int) -> None:
+        """
+        Set the sync type of this message.
+        :param value: SyncTypes | int: The SyncType to set to.
+        :return: None
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.sync_type.Setter')
+        if not isinstance(value, (SyncTypes, int)):
+            logger.critical("Raising TypeError:")
+            __type_error__('value', 'SyncTypes | int', value)
+        self._sync_type = SyncTypes(value)
         return

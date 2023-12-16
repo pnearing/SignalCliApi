@@ -12,9 +12,9 @@ from .signalExceptions import InvalidDataFile
 
 
 #############################################################################################
-class Sticker(object):
+class SignalSticker(object):
     """
-    Sticker object.
+    SignalSticker object.
     """
     def __init__(self,
                  pack_id: str,
@@ -23,7 +23,7 @@ class Sticker(object):
                  from_manifest: Optional[dict[str, str | int]] = None,
                  ) -> None:
         """
-        Initialize a Sticker object.
+        Initialize a SignalSticker object.
         :param pack_id: str: The pack ID.
         :param pack_path: str: The full path to the pack directory.
         :param from_dict: Optional[dict[str, Any]]: Load this sticker from a dict provided by __to_dict__().
@@ -114,19 +114,14 @@ class Sticker(object):
     def __eq__(self, other) -> bool:
         """
         Compare equality between two stickers.
-        :param other: Sticker: The sticker to compare to.
+        :param other: SignalSticker: The sticker to compare to.
         :return: bool: True if equal, False if not.
-        :raises TypeError: If 'other' is not a Sticker object.
+        :raises TypeError: If 'other' is not a SignalSticker object.
         """
-        # Setup logging:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
         if isinstance(other, type(self)):
             if self.id == other.id:
                 return True
-            return False
-        error_message: str = "can only compare equality to another Sticker object, not '%s' type." % str(type(other))
-        logger.critical("Raising TypeError(%s)." % error_message)
-        raise TypeError(error_message)
+        return False
 
     def __str__(self) -> str:
         """
@@ -177,9 +172,9 @@ class Sticker(object):
     
     
 #############################################################################################
-class StickerPack(object):
+class SignalStickerPack(object):
     """
-    Sticker Pack object.
+    SignalSticker Pack object.
     """
     def __init__(self,
                  pack_id: str,
@@ -188,7 +183,7 @@ class StickerPack(object):
                  from_manifest: Optional[dict[str, Any]] = None,
                  ) -> None:
         """
-        Initialize a StickerPack object.
+        Initialize a SignalStickerPack object.
         :param pack_id: str: The pack ID.
         :param pack_path: st: The full path to the pack directory.
         :param from_dict: Optional[dict[str, Any]]: Load properties from a dict created by __to_dict__().
@@ -200,10 +195,10 @@ class StickerPack(object):
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Argument checks:
-        if isinstance(pack_id, str):
+        if not isinstance(pack_id, str):
             logger.critical("Raising TypeError:")
             __type_error__("pack_id", "str", pack_id)
-        if isinstance(pack_path, str):
+        if not isinstance(pack_path, str):
             logger.critical("Raising TypeError:")
             __type_error__("pack_path", "str", pack_path)
         if from_dict is not None and not isinstance(from_dict, dict):
@@ -224,9 +219,9 @@ class StickerPack(object):
         """The title of this pack."""
         self.author: str = ''
         """The author of the sticker pack."""
-        self.cover: Optional[Sticker] = None
-        """The cover Sticker object."""
-        self.stickers: list[Sticker] = []
+        self.cover: Optional[SignalSticker] = None
+        """The cover SignalSticker object."""
+        self.stickers: list[SignalSticker] = []
 
         # Parse from_dict:
         if from_dict is not None:
@@ -249,7 +244,7 @@ class StickerPack(object):
         self.author = manifest_dict['author']
         self.stickers = []
         for sticker_manifest in manifest_dict['stickers']:
-            sticker = Sticker(pack_id=self.pack_id, pack_path=self._pack_path, from_manifest=sticker_manifest)
+            sticker = SignalSticker(pack_id=self.pack_id, pack_path=self._pack_path, from_manifest=sticker_manifest)
             self.stickers.append(sticker)
         self.cover = self.get_by_id(manifest_dict['cover']['id'])
         return
@@ -257,14 +252,14 @@ class StickerPack(object):
     #####################
     # Overrides:
     #####################
-    def __getitem__(self, index: str | int) -> Sticker:
+    def __getitem__(self, index: str | int) -> SignalSticker:
         """
-        Index the StickerPack with square brackets.
+        Index the SignalStickerPack with square brackets.
         :param index: int | str: If index is of type str, then the emoji property is searched, otherwise if index is of
-            type int, then the StickerPack is index as a list.
+            type int, then the SignalStickerPack is index as a list.
         :raises IndexError: If index is of type str, then the emoji was not found, otherwise, if index is of type int,
             the index is out of range.
-        :return: Sticker: The sicker found.
+        :return: SignalSticker: The sicker found.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__getitem__.__name__)
@@ -282,10 +277,10 @@ class StickerPack(object):
         logger.critical("Raising TypeError(%s)." % error_message)
         raise TypeError(error_message)
 
-    def __iter__(self) -> Iterator[Sticker]:
+    def __iter__(self) -> Iterator[SignalSticker]:
         """
         Iterate over the stickers.
-        :return: Iterator[Sticker]: The iterator.
+        :return: Iterator[SignalSticker]: The iterator.
         """
         return iter(self.stickers)
 
@@ -328,7 +323,7 @@ class StickerPack(object):
         self.author = from_dict['author']
         self.stickers = []
         for stickerDict in from_dict['stickers']:
-            self.stickers.append(Sticker(pack_id=self.pack_id, pack_path=self._pack_path, from_dict=stickerDict))
+            self.stickers.append(SignalSticker(pack_id=self.pack_id, pack_path=self._pack_path, from_dict=stickerDict))
         if from_dict['cover'] is not None:
             self.cover = self.get_by_id(from_dict['cover'])
         return
@@ -336,11 +331,11 @@ class StickerPack(object):
     #######################
     # Getters:
     #######################
-    def get_by_id(self, sticker_id: int) -> Optional[Sticker]:
+    def get_by_id(self, sticker_id: int) -> Optional[SignalSticker]:
         """
         Get a sticker given the sticker id.
         :param sticker_id: int: The sticker id to get.
-        :returns: Optional[Sticker]: The sticker, or None if not found.
+        :returns: Optional[SignalSticker]: The sticker, or None if not found.
         :raises: TypeError: If sticker_id not an int.
         """
         # Setup logging:
@@ -358,7 +353,7 @@ class StickerPack(object):
 
 
 #############################################################################################
-class StickerPacks(object):
+class SignalStickerPacks(object):
     """
     Object for storing multiple sticker packs.
     """
@@ -366,7 +361,7 @@ class StickerPacks(object):
                  config_path: str,
                  ) -> None:
         """
-        Initialize the StickerPacks object.
+        Initialize the SignalStickerPacks object.
         :param config_path: str: The full path to the signal-cli config directory.
         """
         # Run super:
@@ -385,8 +380,8 @@ class StickerPacks(object):
         """The full path to the stickers directory."""
 
         # Set external properties:
-        self.packs: list[StickerPack] = []
-        """A list of known StickerPacks."""
+        self.packs: list[SignalStickerPack] = []
+        """A list of known SignalStickerPacks."""
 
         # Load Known sticker packs:
         self.__load__()
@@ -409,7 +404,7 @@ class StickerPacks(object):
 
         # Verify stickers' path exists:
         if not os.path.exists(self._stickers_path):
-            warning_message: str = "Sticker path '%s', does not exist." % self._stickers_path
+            warning_message: str = "SignalSticker path '%s', does not exist." % self._stickers_path
             logger.warning(warning_message)
             return False, warning_message
 
@@ -485,7 +480,7 @@ class StickerPacks(object):
                 continue
 
             # Create the pack, and store it:
-            pack = StickerPack(pack_id=pack_id, pack_path=pack_path, from_manifest=manifest_dict)
+            pack = SignalStickerPack(pack_id=pack_id, pack_path=pack_path, from_manifest=manifest_dict)
             self.packs.append(pack)
         return True
 
@@ -494,7 +489,7 @@ class StickerPacks(object):
     ###########################
     def __update__(self) -> bool:
         """
-        Update the Sticker Packs from disk.
+        Update the SignalSticker Packs from disk.
         :return: bool: True, new sticker packs were loaded, False no new sticker packs.
         """
         # Setup logging:
@@ -534,18 +529,18 @@ class StickerPacks(object):
                     raise InvalidDataFile(error_message, e, manifest_path)
 
                 # Load the pack and store it:
-                pack = StickerPack(pack_id=pack_id, pack_path=pack_path, from_manifest=manifest_dict)
+                pack = SignalStickerPack(pack_id=pack_id, pack_path=pack_path, from_manifest=manifest_dict)
                 self.packs.append(pack)
         return True
 
     ########################
     # Getters:
     ########################
-    def get_pack_by_name(self, name: str) -> Optional[StickerPack]:
+    def get_pack_by_name(self, name: str) -> Optional[SignalStickerPack]:
         """
         Get sticker pack by name.
         :param: str: name: The name to search for.
-        :returns: Optional[StickerPack]: The sticker pack, or None if not found.
+        :returns: Optional[SignalStickerPack]: The sticker pack, or None if not found.
         :raises: TypeError: If name not a string.
         """
         # Setup logging:
@@ -564,11 +559,11 @@ class StickerPacks(object):
         # The pack wasn't found:
         return None
 
-    def get_pack_by_id(self, pack_id: str) -> Optional[StickerPack]:
+    def get_pack_by_id(self, pack_id: str) -> Optional[SignalStickerPack]:
         """
         Get sticker pack by pack id.
         :param: str: pack_id: The pack id to search for.
-        :returns: Optional[StickerPack]
+        :returns: Optional[SignalStickerPack]
         :raises: TypeError: If pack_id is not a string.
         """
         # Setup logging:
@@ -587,12 +582,12 @@ class StickerPacks(object):
         # The pack wasn't found:
         return None
 
-    def get_sticker(self, pack_id: str, sticker_id: int) -> Optional[Sticker]:
+    def get_sticker(self, pack_id: str, sticker_id: int) -> Optional[SignalSticker]:
         """
         Get a sticker, given pack id, and sticker id.
         :param: str: pack_id: The pack id of the sticker.
         :param: int: sticker_id: The sticker id of the sticker.
-        :returns: Optional[Sticker]: The sticker, or None if not found.
+        :returns: Optional[SignalSticker]: The sticker, or None if not found.
         :raises: TypeError: If pack_id is not a string, or if sticker_id is not an int.
         """
         # Setup logging:

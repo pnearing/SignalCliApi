@@ -8,52 +8,52 @@ from typing import Optional, Any
 import socket
 
 from .signalCommon import RecipientTypes, MessageTypes, TypingStates, __type_error__
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMessage import Message
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
+from .signalTimestamp import SignalTimestamp
 
 
-class TypingMessage(Message):
+class SignalTypingMessage(SignalMessage):
     """Class to store a typing message."""
     def __init__(self,
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
-                 sender: Optional[Contact] = None,
-                 recipient: Optional[Contact | Group] = None,
-                 device: Optional[Device] = None,
-                 timestamp: Optional[Timestamp] = None,
+                 sender: Optional[SignalContact] = None,
+                 recipient: Optional[SignalContact | SignalGroup] = None,
+                 device: Optional[SignalDevice] = None,
+                 timestamp: Optional[SignalTimestamp] = None,
                  action: TypingStates = TypingStates.NOT_SET,
-                 time_changed: Optional[Timestamp] = None
+                 time_changed: Optional[SignalTimestamp] = None
                  ) -> None:
         """
         Initialize a Typing Message.
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This accounts' ID.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The Device object that represents the device we're on.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object that represents the device we're on.
         :param from_dict: Optional[dict[str, Any]]: The dict created to __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: A dict provided by Signal.
-        :param sender: Optional[Contact]: The sender of this message.
-        :param recipient: Optional[Contact | Group]: The recipient of the message.
-        :param device: Optional[Device]: The device that generated this message.
-        :param timestamp: Optional[Timestamp]: The timestamp of this message.
+        :param sender: Optional[SignalContact]: The sender of this message.
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of the message.
+        :param device: Optional[SignalDevice]: The device that generated this message.
+        :param timestamp: Optional[SignalTimestamp]: The timestamp of this message.
         :param action: TypingStates: The typing state, either started or stopped.
-        :param time_changed: Optional[Timestamp]: The time the typing state changed.
+        :param time_changed: Optional[SignalTimestamp]: The time the typing state changed.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -63,17 +63,17 @@ class TypingMessage(Message):
             logger.critical("Raising TypeError:")
             __type_error__('action', 'TypingStates', action)
 
-        if time_changed is not None and not isinstance(time_changed, Timestamp):
+        if time_changed is not None and not isinstance(time_changed, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__('time_changed', 'Optional[Timestamp]', time_changed)
+            __type_error__('time_changed', 'Optional[SignalTimestamp]', time_changed)
 
         # Set external properties:
         # The typing action:
-        self.action: TypingStates = action
+        self._action: TypingStates = action
         """The action being preformed. Either STARTED or STOPPED."""
         # The time the typing action changed.
-        self.time_changed: Optional[Timestamp] = time_changed
-        """The Timestamp of the action change."""
+        self.time_changed: Optional[SignalTimestamp] = time_changed
+        """The SignalTimestamp of the action change."""
 
         # Run super:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
@@ -97,8 +97,13 @@ class TypingMessage(Message):
         """
         super().__from_raw_message__(raw_message)
         typing_dict: dict[str, Any] = raw_message['typingMessage']
-        self.action = typing_dict['action']
-        self.time_changed = Timestamp(timestamp=typing_dict['timestamp'])
+        if typing_dict['action'] == 'STARTED':
+            self.action = TypingStates.STARTED
+        elif typing_dict['action'] == 'STOPPED':
+            self.action = TypingStates.STOPPED
+        else:
+            self.action = TypingStates.NOT_SET
+        self.time_changed = SignalTimestamp(timestamp=typing_dict['timestamp'])
         return
 
     def __to_dict__(self) -> dict[str, Any]:
@@ -124,12 +129,12 @@ class TypingMessage(Message):
         self.action = TypingStates(from_dict['action'])
         self.time_changed = None
         if from_dict['timeChanged'] is not None:
-            self.time_changed = Timestamp(from_dict=from_dict['timeChanged'])
+            self.time_changed = SignalTimestamp(from_dict=from_dict['timeChanged'])
         return
 
     def __get_action_string__(self) -> str:
         """
-        Return the a string for the action.
+        Return a string for the action.
         :return: str: The action string.
         """
         if self.action == TypingStates.STARTED:
@@ -163,3 +168,28 @@ class TypingMessage(Message):
             self.body = "Invalid typing message."
         return
 
+#################################################
+# Properties:
+#################################################
+    @property
+    def action(self) -> TypingStates:
+        """
+        Get the action this typing message represents.
+        :return: TypingStates: The typing state.
+        """
+        return self._action
+
+    @action.setter
+    def action(self, value: TypingStates | int) -> None:
+        """
+        Set the action this typing message represents.
+        :param value: TypingStates | int: The value to set it to.
+        :return: None
+        :raises ValueError: If value out of range.
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.action.Setter')
+        if not isinstance(value, (TypingStates, int)):
+            logger.critical("Raising TypeError:")
+            __type_error__('value', 'TypingStates | int', value)
+        self._action = TypingStates(value)
+        return

@@ -10,12 +10,12 @@ import logging
 
 from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
     __check_response_for_error__, UNKNOWN_DEVICE_NAME
-from .signalDevice import Device
-from .signalTimestamp import Timestamp
+from .signalDevice import SignalDevice
+from .signalTimestamp import SignalTimestamp
 from .signalExceptions import SignalError
 
 
-class Devices(object):
+class SignalDevices(object):
     """An object containing the devices list."""
     def __init__(self,
                  sync_socket: socket.socket,
@@ -59,7 +59,7 @@ class Devices(object):
         """This account id."""
         self._this_device: int = this_device
         """The device we're currently using."""
-        self._devices: list[Device] = []
+        self._devices: list[SignalDevice] = []
         """The list of devices."""
 
         # Parse from dict:
@@ -106,12 +106,12 @@ class Devices(object):
         for device in self._devices:
             devices_dict['devices'].append(device.__to_dict__())
             device_count += 1
-        logger.debug("Added %i devices to dict." % device_count)
+        # logger.debug("Added %i devices to dict." % device_count)
         return devices_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         """
-        Load Devices from a JSON friendly dict.
+        Load SignalDevices from a JSON friendly dict.
         :param from_dict: dict[str, Any]: The dict created by __to_dict__()
         :return: None
         """
@@ -119,8 +119,8 @@ class Devices(object):
         self._devices = []
         device_count: int = 0
         for device_dict in from_dict['devices']:
-            device = Device(sync_socket=self._sync_socket, account_id=self._account_id,
-                            this_device=self._this_device, from_dict=device_dict)
+            device = SignalDevice(sync_socket=self._sync_socket, account_id=self._account_id,
+                                  this_device=self._this_device, from_dict=device_dict)
             self._devices.append(device)
             device_count += 1
         logger.debug("Loaded %i devices from dict." % device_count)
@@ -159,9 +159,9 @@ class Devices(object):
 
         # Parse devices response:
         for raw_device in response_obj['result']:
-            new_device = Device(sync_socket=self._sync_socket, account_id=self._account_id,
-                                this_device=self._this_device,
-                                raw_device=raw_device)
+            new_device = SignalDevice(sync_socket=self._sync_socket, account_id=self._account_id,
+                                      this_device=self._this_device,
+                                      raw_device=raw_device)
             # Check for an existing device:
             device_found = False
             for device in self._devices:
@@ -176,12 +176,12 @@ class Devices(object):
     #################################
     # Helpers:
     #################################
-    def __get_or_add__(self, device_id: int, name: str = UNKNOWN_DEVICE_NAME) -> tuple[bool, Device]:
+    def __get_or_add__(self, device_id: int, name: str = UNKNOWN_DEVICE_NAME) -> tuple[bool, SignalDevice]:
         """
         Get a device from the device list, or if not found, add it to the device list.
         :param device_id: int: The device ID.
         :param name: str: The name of the device; Defaults to UNKNOWN_DEVICE_NAME
-        :return: tuple[bool, Device]: The first element is if the device was added to the device list; And the second
+        :return: tuple[bool, SignalDevice]: The first element is if the device was added to the device list; And the second
             element is the existing device if found, or the new device if not found.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__get_or_add__.__name__)
@@ -189,8 +189,8 @@ class Devices(object):
             if device.id == device_id:
                 logger.debug("Device found.")
                 return False, device
-        device = Device(sync_socket=self._sync_socket, account_id=self._account_id, this_device=self._this_device,
-                        device_id=device_id, name=name, created=Timestamp(now=True))
+        device = SignalDevice(sync_socket=self._sync_socket, account_id=self._account_id, this_device=self._this_device,
+                              device_id=device_id, name=name, created=SignalTimestamp(now=True))
         self._devices.append(device)
         logger.debug("Device created and added.")
         return True, device
@@ -198,10 +198,10 @@ class Devices(object):
     ########################
     # Getters:
     ########################
-    def get_this_device(self) -> Optional[Device]:
+    def get_this_device(self) -> Optional[SignalDevice]:
         """
         Get the device associated with the current account.
-        :returns: Optional[Device]: Returns the device, or None if not found, which would happen for the devices of a
+        :returns: Optional[SignalDevice]: Returns the device, or None if not found, which would happen for the devices of a
                                     contact.
         """
         for device in self._devices:

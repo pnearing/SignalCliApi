@@ -9,12 +9,12 @@ import socket
 import json
 
 from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_GROUP_NAME
-from .signalGroup import Group
-from .signalContacts import Contacts
+    __check_response_for_error__, UNKNOWN_GROUP_NAME, SyncTypes
+from .signalGroup import SignalGroup
+from .signalContacts import SignalContacts
 
 
-class Groups(object):
+class SignalGroups(object):
     """
     Object containing all the groups acting like a list.
     """
@@ -23,7 +23,7 @@ class Groups(object):
                  command_socket: socket.socket,
                  config_path: str,
                  account_id: str,
-                 account_contacts: Contacts,
+                 account_contacts: SignalContacts,
                  from_dict: Optional[dict[str, Any]] = None,
                  do_sync: bool = False
                  ) -> None:
@@ -33,7 +33,7 @@ class Groups(object):
         :param command_socket: socket.socket: The socket to run commands on.
         :param config_path: str: The path to the signal-cli config directory.
         :param account_id: str: This account ID.
-        :param account_contacts: Contacts: The account's Contacts object.
+        :param account_contacts: SignalContacts: The account's SignalContacts object.
         :param from_dict: dict[str, Any]: Load the groups from a dict created by __to_dict__().
         :param do_sync: bool: Sync data with signal; Defaults to False.
         """
@@ -53,9 +53,9 @@ class Groups(object):
         if not isinstance(account_id, str):
             logger.critical("Raising TypeError")
             __type_error__("account_id", "str", account_id)
-        if not isinstance(account_contacts, Contacts):
+        if not isinstance(account_contacts, SignalContacts):
             logger.critical("Raising TypeError")
-            __type_error__("account_contacts", "Contacts", account_contacts)
+            __type_error__("account_contacts", "SignalContacts", account_contacts)
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError")
             __type_error__("from_dict", "Optional[dict]", from_dict)
@@ -72,10 +72,10 @@ class Groups(object):
         """The full path to the signal-cli config directory."""
         self._account_id: str = account_id
         """This account ID."""
-        self._contacts: Contacts = account_contacts
-        """This account's Contacts object."""
-        self._groups: list[Group] = []
-        """The list of Group objects."""
+        self._contacts: SignalContacts = account_contacts
+        """This account's SignalContacts object."""
+        self._groups: list[SignalGroup] = []
+        """The list of SignalGroup objects."""
 
         # Load from dict:
         if from_dict is not None:
@@ -90,10 +90,10 @@ class Groups(object):
     ############################
     # Overrides:
     ############################
-    def __iter__(self) -> Iterator[Group]:
+    def __iter__(self) -> Iterator[SignalGroup]:
         """
         Iterate over the groups.
-        :return: Iterator[Group]: The iterator.
+        :return: Iterator[SignalGroup]: The iterator.
         """
         return iter(self._groups)
 
@@ -127,9 +127,9 @@ class Groups(object):
         """
         self._groups = []
         for groupDict in from_dict['groups']:
-            group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                          config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
-                          from_dict=groupDict)
+            group = SignalGroup(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
+                                from_dict=groupDict)
             self._groups.append(group)
         return
 
@@ -165,9 +165,9 @@ class Groups(object):
         new_group_count: int = 0
         for raw_group in response_obj['result']:
             group_count += 1
-            new_group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                              config_path=self._config_path, account_id=self._account_id,
-                              account_contacts=self._contacts, raw_group=raw_group)
+            new_group = SignalGroup(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                    config_path=self._config_path, account_id=self._account_id,
+                                    account_contacts=self._contacts, raw_group=raw_group)
             old_group = self.get_by_id(new_group.id)
             if old_group is None:
                 new_group_count += 1
@@ -180,26 +180,29 @@ class Groups(object):
     ##############################
     # Helpers:
     ##############################
-    def __parse_sync_message__(self, sync_message) -> None:  # sync_message type SyncMessage
+    def __parse_sync_message__(self, sync_message) -> None:  # sync_message type SignalSyncMessage
         """
         Parse a sync message.
         :param sync_message: SyncMessage: The sync message to parse.
         :return: None
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
-        if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
+        if sync_message.sync_type == SyncTypes.BLOCKS:  # SignalSyncMessage.TYPE_BLOCKED_SYNC
             for group_id in sync_message.blocked_groups:
                 added, group = self.__get_or_add__("<UNKNOWN-GROUP>", group_id)
                 group.is_blocked = True
+        elif sync_message.sync_type == SyncTypes.GROUPS:
+            self.__sync__()
         else:
-            error_message: str = "groups can only parse sync message of type: SyncMessage.TYPE_BLOCKED_SYNC."
+            error_message: str = ("groups can only parse sync message of types: SyncTypes.BLOCKS or SyncTypes.GROUPS"
+                                  " not %s" % str(sync_message.sync_type))
             logger.critical("Raising TypeError(%s)." % error_message)
             raise TypeError(error_message)
 
     ##############################
     # Getters:
     ##############################
-    def get_by_id(self, group_id: str) -> Optional[Group]:
+    def get_by_id(self, group_id: str) -> Optional[SignalGroup]:
         """
         Get a group by id.
         :param group_id: str: The id to search for.
@@ -216,7 +219,7 @@ class Groups(object):
                 return group
         return None
 
-    def get_by_name(self, name: str) -> Optional[Group]:
+    def get_by_name(self, name: str) -> Optional[SignalGroup]:
         """
         Get a group given a name.
         :param name: str: The name of the group to search for.
@@ -236,19 +239,19 @@ class Groups(object):
     ####################################
     # Helpers:
     ###################################
-    def __get_or_add__(self, group_id: str, name: str = UNKNOWN_GROUP_NAME) -> tuple[bool, Group]:
+    def __get_or_add__(self, group_id: str, name: str = UNKNOWN_GROUP_NAME) -> tuple[bool, SignalGroup]:
         """
         Get an existing group, or if not found, add it to the group list.
         :param group_id: str: The group ID.
         :param name: str: The group name; Defaults to UNKNOWN_GROUP_NAME.
-        :return: tuple[bool, Group]: The first element is True if added, False if not; And the second element is either
-            the existing Group object, or the newly added Group object.
+        :return: tuple[bool, SignalGroup]: The first element is True if added, False if not; And the second element is either
+            the existing SignalGroup object, or the newly added SignalGroup object.
         """
         old_group = self.get_by_id(group_id)
         if old_group is not None:
             return False, old_group
-        new_group = Group(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                          config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
-                          name=name, group_id=group_id)
+        new_group = SignalGroup(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                config_path=self._config_path, account_id=self._account_id, account_contacts=self._contacts,
+                                name=name, group_id=group_id)
         self._groups.append(new_group)
         return True, new_group

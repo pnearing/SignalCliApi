@@ -6,48 +6,48 @@ Store and manage a signal quote.
 import logging
 from typing import Optional, Iterable, Any
 
-from .signalAttachment import Attachment
+from .signalAttachment import SignalAttachment
 from .signalCommon import __type_error__, ConversationTypes
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMention import Mention
-from .signalMentions import Mentions
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMention import SignalMention
+from .signalMentions import SignalMentions
+from .signalTimestamp import SignalTimestamp
 from .signalExceptions import ParameterError
 
 
-class Quote(object):
+class SignalQuote(object):
     """
     Class to store a quote for a message.
     """
     def __init__(self,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_quote: Optional[dict[str, Any]] = None,
-                 timestamp: Optional[Timestamp] = None,
-                 author: Optional[Contact] = None,
+                 timestamp: Optional[SignalTimestamp] = None,
+                 author: Optional[SignalContact] = None,
                  text: Optional[str] = None,
-                 attachments: Optional[Iterable[Attachment] | Attachment] = None,
-                 mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
-                 conversation: Optional[Contact | Group] = None,
+                 attachments: Optional[Iterable[SignalAttachment] | SignalAttachment] = None,
+                 mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
+                 conversation: Optional[SignalContact | SignalGroup] = None,
                  ) -> None:
         """
         Initialize a quote.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
         :param from_dict: Optional[dict[str, Any]]: The dict created by __to_dict__().
         :param raw_quote: Optional[dict[str, Any]]: The dict provided by signal.
-        :param timestamp: Optional[Timestamp]: The timestamp.# TODO: Figure out a better description.
-        :param author: Optional[Contact]: The author of the quote.
+        :param timestamp: Optional[SignalTimestamp]: The timestamp.# TODO: Figure out a better description.
+        :param author: Optional[SignalContact]: The author of the quote.
         :param text: Optional[str]: The text of the quote.
-        :param attachments: Optional[Iterable[Attachment] | Attachment]: Any attachments of the quote.
-        :param mentions: Optional[Iterable[Mention] | Mention]: Any mentions in the quote.
-        :param conversation: Optional[Contact | Group]: The conversation this quote is in.
+        :param attachments: Optional[Iterable[SignalAttachment] | SignalAttachment]: Any attachments of the quote.
+        :param mentions: Optional[Iterable[SignalMention] | SignalMention]: Any mentions in the quote.
+        :param conversation: Optional[SignalContact | SignalGroup]: The conversation this quote is in.
         """
         # Super:
         super().__init__()
@@ -59,13 +59,13 @@ class Quote(object):
             logger.critical("Raising TypeError:")
             __type_error__("config_path", "str", config_path)
         # Check contacts:
-        if not isinstance(contacts, Contacts):
+        if not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "SignalContacts", contacts)
         # Check groups:
-        if not isinstance(groups, Groups):
+        if not isinstance(groups, SignalGroups):
             logger.critical("Raising TypeError:")
-            __type_error__("groups", "Groups", groups)
+            __type_error__("groups", "SignalGroups", groups)
         # Check from_dict:
         if from_dict is not None and isinstance(from_dict, dict) is None:
             logger.critical("Raising TypeError:")
@@ -75,54 +75,54 @@ class Quote(object):
             logger.critical("Raising TypeError:")
             __type_error__("raw_quote", "dict[str, object]", raw_quote)
         # Check timestamp:
-        if timestamp is not None and not isinstance(timestamp, Timestamp):
+        if timestamp is not None and not isinstance(timestamp, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "SignalTimestamp", timestamp)
         # Check author:
-        if author is not None and not isinstance(author, Contact):
+        if author is not None and not isinstance(author, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("author", "Contact", author)
+            __type_error__("author", "SignalContact", author)
         # Check text:
         if text is not None and not isinstance(text, str):
             logger.critical("Raising TypeError:")
             __type_error__("text", "str", text)
         # Check attachments:
-        attachment_list: list[Attachment] = []
+        attachment_list: list[SignalAttachment] = []
         if attachments is not None:
-            if isinstance(attachments, Attachment):
+            if isinstance(attachments, SignalAttachment):
                 attachment_list.append(attachments)
             elif isinstance(attachments, Iterable):
                 for i, attachment in enumerate(attachments):
-                    if not isinstance(attachment, Attachment):
+                    if not isinstance(attachment, SignalAttachment):
                         logger.critical("Raising TypeError:")
-                        __type_error__("attachments[%i]" % i, "Attachment", attachment)
+                        __type_error__("attachments[%i]" % i, "SignalAttachment", attachment)
                     attachment_list.append(attachment)
             else:
                 logger.critical("Raising TypeError:")
-                __type_error__("attachments", "Iterable[Attachment] | Attachment", attachments)
+                __type_error__("attachments", "Iterable[SignalAttachment] | SignalAttachment", attachments)
         # Check mentions:
-        mention_list: list[Mention] = []
+        mention_list: list[SignalMention] = []
         if mentions is not None:
-            if isinstance(mentions, Mentions):
+            if isinstance(mentions, SignalMentions):
                 pass
-            elif isinstance(mentions, Mention):
+            elif isinstance(mentions, SignalMention):
                 mention_list.append(mentions)
             elif isinstance(mentions, Iterable):
                 for i, mention in enumerate(mentions):
-                    if not isinstance(mention, Mention):
+                    if not isinstance(mention, SignalMention):
                         logger.critical("Raising TypeError:")
-                        __type_error__("mentions[%i]" % i, "Mention", mention)
+                        __type_error__("mentions[%i]" % i, "SignalMention", mention)
                     mention_list.append(mention)
             else:
-                __type_error__("mentions", "Iterable[Mention] | Mentions | Mention", mentions)
+                __type_error__("mentions", "Iterable[SignalMention] | SignalMentions | SignalMention", mentions)
         # Check conversation:
         if conversation is not None:
-            if not isinstance(conversation, Contact) and not isinstance(conversation, Group):
+            if not isinstance(conversation, SignalContact) and not isinstance(conversation, SignalGroup):
                 logger.critical("Raising TypeError:")
-                __type_error__("conversation", "Contact | Group", conversation)
+                __type_error__("conversation", "SignalContact | SignalGroup", conversation)
 
         # Parameter check:
-        if self.conversation is None and raw_quote is None:
+        if conversation is None and raw_quote is None:
             error_message: str = "'conversation' must be defined if using 'raw_quote'"
             logger.critical("Raising ParameterError(%s)." % error_message)
             raise ParameterError(error_message)
@@ -130,15 +130,15 @@ class Quote(object):
         # Set internal vars:
         self._config_path: str = config_path
         """The full path to the signal-cli config directory."""
-        self._contacts: Contacts = contacts
-        """This accounts' Contacts object."""
-        self._groups: Groups = groups
-        """This accounts' Groups object."""
+        self._contacts: SignalContacts = contacts
+        """This accounts' SignalContacts object."""
+        self._groups: SignalGroups = groups
+        """This accounts' SignalGroups object."""
 
         # Set external properties:
-        self.timestamp: Timestamp = timestamp
+        self.timestamp: SignalTimestamp = timestamp
         """The timestamp of this quote?"""
-        self.author: Contact = author
+        self.author: SignalContact = author
         """The author of the quoted message."""
         self.text: str
         """The body of the quoted message."""
@@ -146,18 +146,18 @@ class Quote(object):
             self.text = ''
         else:
             self.text = text
-        self.attachments: list[Attachment] = attachment_list
+        self.attachments: list[SignalAttachment] = attachment_list
         """Any attachments of the quoted message."""
-        self.mentions: Mentions
+        self.mentions: SignalMentions
         """Any mentions in the quoted message."""
-        if isinstance(mentions, Mentions):
+        if isinstance(mentions, SignalMentions):
             self.mentions = mentions
         elif len(mention_list) == 0:
-            self.mentions = Mentions(contacts=contacts)
+            self.mentions = SignalMentions(contacts=contacts)
         else:
-            self.mentions = Mentions(contacts=contacts, mentions=mention_list)
-        self.conversation: Optional[Contact | Group] = conversation
-        """The conversation Contact or Group the quoted message is in."""
+            self.mentions = SignalMentions(contacts=contacts, mentions=mention_list)
+        self.conversation: Optional[SignalContact | SignalGroup] = conversation
+        """The conversation SignalContact or SignalGroup the quoted message is in."""
         self.conversation_type: Optional[ConversationTypes] = None
         # Parse from dict:
         if from_dict is not None:
@@ -167,7 +167,7 @@ class Quote(object):
             self.__from_raw_quote__(raw_quote)
         # Set conversation type based on conversation value.
         if self.conversation is not None:
-            if isinstance(self.conversation, Contact):
+            if isinstance(self.conversation, SignalContact):
                 self.conversation_type = ConversationTypes.CONTACT
             else:
                 self.conversation_type = ConversationTypes.GROUP
@@ -182,11 +182,10 @@ class Quote(object):
         :param raw_quote: dict[str, Any]: The dict to load from.
         :return: None
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_quote__.__name__)
-        logger.debug("'raw_quote': %s" % str(raw_quote))
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_quote__.__name__)
+        # logger.debug("'raw_quote': %s" % str(raw_quote))
         # Load timestamp
-        # TODO: Look into this:
-        self.timestamp = Timestamp(timestamp=raw_quote['timestamp'])
+        self.timestamp = SignalTimestamp(timestamp=raw_quote['id'])
         # Load author
         author_number: str = raw_quote['authorNumber']
         author_uuid: str = raw_quote['authorUuid']
@@ -197,10 +196,10 @@ class Quote(object):
         self.attachments = []
         raw_attachments: list[dict[str, Any]] = raw_quote['attachments']
         for raw_attachment in raw_attachments:
-            self.attachments.append(Attachment(config_path=self._config_path, raw_attachment=raw_attachment))
+            self.attachments.append(SignalAttachment(config_path=self._config_path, raw_attachment=raw_attachment))
         # Load Mentions:
         if 'mentions' in raw_quote.keys():
-            self.mentions = Mentions(contacts=self._contacts, raw_mentions=raw_quote['mentions'])
+            self.mentions = SignalMentions(contacts=self._contacts, raw_mentions=raw_quote['mentions'])
         return
 
     #################
@@ -245,7 +244,7 @@ class Quote(object):
         # Set timestamp:
         self.timestamp = None
         if from_dict['timestamp'] is not None:
-            self.timestamp = Timestamp(from_dict=from_dict['timestamp'])
+            self.timestamp = SignalTimestamp(from_dict=from_dict['timestamp'])
         # Set author
         self.author = None
         if from_dict['author'] is not None:
@@ -255,11 +254,11 @@ class Quote(object):
         # Set attachments:
         self.attachments = []
         for attachment_dict in from_dict['attachments']:
-            self.attachments.append(Attachment(config_path=self._config_path, from_dict=attachment_dict))
+            self.attachments.append(SignalAttachment(config_path=self._config_path, from_dict=attachment_dict))
         # Set mentions:
         self.mentions = None
         if from_dict['mentions'] is not None:
-            self.mentions = Mentions(contacts=self._contacts, from_dict=from_dict['mentions'])
+            self.mentions = SignalMentions(contacts=self._contacts, from_dict=from_dict['mentions'])
         # Set conversation type:
         self.conversation_type = ConversationTypes(from_dict['conversationType'])
         # Set conversation:

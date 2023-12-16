@@ -11,11 +11,11 @@ import socket
 
 from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, __parse_signal_response__, \
     __check_response_for_error__
-from .signalTimestamp import Timestamp
+from .signalTimestamp import SignalTimestamp
 from .signalExceptions import InvalidDataFile
 
 # Define Self:
-Self = TypeVar("Self", bound="Profile")
+Self = TypeVar("Self", bound="SignalProfile")
 
 # Constants:
 NOT_ACCOUNT_PROFILE_MESSAGE: Final[str] = 'this is not the account profile, not setting property'
@@ -26,7 +26,7 @@ SUCCESS_MESSAGE: Final[str] = "SUCCESS"
 NON_FATAL_ERROR_CODES: Final[list[int]] = []
 
 
-class Profile(object):
+class SignalProfile(object):
     """Class containing the profile for either a contact or the account."""
 
     def __init__(self,
@@ -111,7 +111,7 @@ class Profile(object):
         self.emoji: Optional[str] = None
         self.coin_address: Optional[str] = None
         self.avatar: Optional[str] = None
-        self.last_update: Optional[Timestamp] = None
+        self.last_update: Optional[SignalTimestamp] = None
 
         # Parse from dict:
         if from_dict is not None:
@@ -148,7 +148,7 @@ class Profile(object):
         if raw_profile['lastUpdateTimestamp'] == 0:
             self.last_update = None
         else:
-            self.last_update = Timestamp(timestamp=raw_profile['lastUpdateTimestamp'])
+            self.last_update = SignalTimestamp(timestamp=raw_profile['lastUpdateTimestamp'])
         self.__find_avatar__()
         return
 
@@ -190,7 +190,7 @@ class Profile(object):
         self.avatar = from_dict['avatar']
         self.__find_avatar__()
         if from_dict['lastUpdate'] is not None:
-            self.last_update = Timestamp(from_dict=from_dict['lastUpdate'])
+            self.last_update = SignalTimestamp(from_dict=from_dict['lastUpdate'])
         else:
             self.last_update = from_dict['lastUpdate']
         return
@@ -317,18 +317,20 @@ class Profile(object):
     def __update__(self, other: Self) -> None:
         """
         Update this profile from another given profile.
-        :param other: Profile: The profile to update from.
+        :param other: SignalProfile: The profile to update from.
         :return: None
         """
         # If other is older than self, do nothing.
-        if other.last_update < self.last_update:
-            return
+        if other.last_update is not None and self.last_update is not None:
+            if other.last_update < self.last_update:
+                return
         self.given_name = other.given_name
         self.family_name = other.family_name
         self.about = other.about
         self.emoji = other.emoji
         self.coin_address = other.coin_address
-        self.last_update = other.last_update
+        if other.last_update is not None:
+            self.last_update = other.last_update
         if self._is_account_profile:
             self.__save__()
         return

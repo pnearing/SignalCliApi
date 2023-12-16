@@ -8,17 +8,17 @@ from typing import Optional, Iterable, Any
 import socket
 
 from .signalCommon import __type_error__, MessageTypes, ReceiptTypes
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMessage import Message
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
+from .signalTimestamp import SignalTimestamp
 
 
-class Receipt(Message):
+class SignalReceipt(SignalMessage):
     """
     Class to store a receipt.
     """
@@ -26,32 +26,32 @@ class Receipt(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
-                 sender: Optional[Contact] = None,
-                 recipient: Optional[Contact | Group] = None,
-                 device: Optional[Device] = None,
-                 timestamp: Optional[Timestamp] = None,
+                 sender: Optional[SignalContact] = None,
+                 recipient: Optional[SignalContact | SignalGroup] = None,
+                 device: Optional[SignalDevice] = None,
+                 timestamp: Optional[SignalTimestamp] = None,
                  ) -> None:
         """
-        Initialize a Receipt.
+        Initialize a SignalReceipt.
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This accounts' ID.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The Device object for the device we're using.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object for the device we're using.
         :param from_dict: Optional[dict[str, Any]]: The dict created by __to_dict__()
         :param raw_message: Optional[dict[str, Any]]: The dict provided by signal.
-        :param sender: Optional[Contact]: The sender of the receipt.
-        :param recipient: Optional[Contact | Group]: The recipient of the receipt.
-        :param device: Optional[Device]: The device this receipt was generated from.
-        :param timestamp: Optional[Timestamp]: The timestamp of the receipt.
+        :param sender: Optional[SignalContact]: The sender of the receipt.
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of the receipt.
+        :param device: Optional[SignalDevice]: The device this receipt was generated from.
+        :param timestamp: Optional[SignalTimestamp]: The timestamp of the receipt.
         """
         # Set internal properties:
         self._is_parsed: bool = False
@@ -59,13 +59,13 @@ class Receipt(Message):
 
         # Set external properties:
         # Set when:
-        self.when: Optional[Timestamp] = None
+        self.when: Optional[SignalTimestamp] = None
         """When this was read / viewed / delivered."""
         # Set receipt Type:
         self.receipt_type: ReceiptTypes = ReceiptTypes.NOT_SET
         """The type of receipt."""
         # Set target timestamps:
-        self.timestamps: list[Timestamp] = []
+        self.timestamps: list[SignalTimestamp] = []
         """The timestamps this applies to."""
         # Set body:
         self.body: str = ''
@@ -97,7 +97,7 @@ class Receipt(Message):
         super().__from_raw_message__(raw_message)
         receipt_message: dict[str, Any] = raw_message['receiptMessage']
         # Load when:
-        self.when = Timestamp(timestamp=receipt_message['when'])
+        self.when = SignalTimestamp(timestamp=receipt_message['when'])
         # Load receipt type:
         if receipt_message['isDelivery']:
             self.receipt_type = ReceiptTypes.DELIVER
@@ -113,7 +113,7 @@ class Receipt(Message):
         # Load target timestamps:
         self.timestamps = []
         for target_timestamp in receipt_message['timestamps']:
-            self.timestamps.append(Timestamp(timestamp=target_timestamp))
+            self.timestamps.append(SignalTimestamp(timestamp=target_timestamp))
         return
 
     ##########################
@@ -147,13 +147,13 @@ class Receipt(Message):
         # Load when:
         self.when = None
         if from_dict['when'] is not None:
-            self.when = Timestamp(from_dict=from_dict['when'])
+            self.when = SignalTimestamp(from_dict=from_dict['when'])
         # Load receipt Type:
         self.receipt_type = ReceiptTypes(from_dict['receiptType'])
         # Load target timestamps:
         self.timestamps = []
         for timestampDict in from_dict['timestamps']:
-            self.timestamps.append(Timestamp(from_dict=timestampDict))
+            self.timestamps.append(SignalTimestamp(from_dict=timestampDict))
         return
 
     #########################

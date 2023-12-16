@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """
 File: signalCommon.py
-Common Constants, Vars, and helper functions.
+    Common Constants, Vars, and helper functions. Common display strings are put here for future localization in case
+    this takes off.
 """
+
 import json
 from subprocess import check_output, CalledProcessError
 from typing import Pattern, NoReturn, Optional, Any, Final, Callable
@@ -10,14 +12,15 @@ import socket
 import select
 import re
 import logging
-from enum import IntEnum, auto, Enum
+from enum import IntEnum, auto, Enum, IntFlag
 from .signalExceptions import CommunicationsError, SignalError, InvalidServerResponse, CallbackCausedError
 
 ###################
 # Version:
 ###################
-VERSION: Final[str] = '0.3.0'
+VERSION: Final[str] = '0.4.0'
 """Version of the library"""
+
 ########################################
 # Regex:
 ########################################
@@ -49,6 +52,18 @@ PRIMARY_DEVICE_ID: Final[int] = 1
 STICKER_MANIFEST_FILENAME: Final[str] = 'manifest.json'
 """The filename of a sticker manifest file."""
 
+STRINGS: dict[str, str] = {
+    'lessThanASecond': 'less than a second ago',
+    'secondAgo': 'second ago',
+    'secondsAgo': 'seconds ago',
+    'minuteAgo': 'minute ago',
+    'minutesAgo': 'minutes ago',
+    'hourAgo': 'hour ago',
+    'hoursAgo': 'hours ago',
+    'dayAgo': 'day ago',
+    'daysAgo': 'days ago',
+}
+"""Common strings that can be translated."""
 ###########################
 # Vars:
 ###########################
@@ -56,11 +71,55 @@ DEBUG: bool = False
 """Preform debug actions."""
 CALLBACK_RAISES_ERROR: bool = False
 """Does a callback raise an exception?"""
+_CLOSING_SOCKET: bool = False
+"""Are we closing a socket right now?"""
 
 
 ###########################
 # Enum's:
 ###########################
+class MessageFilter(IntFlag):
+    """
+    IntFlag enum for different filters.
+    """
+    NONE = 0
+    """No filter applied."""
+    READ = auto()
+    """Filter if the message has been read."""
+    NOT_READ = auto()
+    """Filter if the message has not been read."""
+    VIEWED = auto()
+    """Filter if the message has been viewed."""
+    NOT_VIEWED = auto()
+    """Filter if the message has not been viewed."""
+    DELIVERED = auto()
+    """Filter if the message has been delivered."""
+    NOT_DELIVERED = auto()
+    """Filter if the message has not been delivered."""
+
+
+def valid_message_filter(message_filter: int) -> bool:
+    """
+    Evaluate a filter and determine if it's valid.
+    :param message_filter: int: The filter.
+    :return: bool: True the fileter if valid, False it is not.
+    """
+    max_value: int = (
+        MessageFilter.READ | MessageFilter.NOT_READ |
+        MessageFilter.VIEWED | MessageFilter.NOT_VIEWED |
+        MessageFilter.DELIVERED | MessageFilter.NOT_DELIVERED
+    )
+    if (message_filter < 0) or (message_filter > max_value):
+        return False
+    elif (message_filter & MessageFilter.READ) and (message_filter & MessageFilter.NOT_READ):
+        return False
+    elif (message_filter & MessageFilter.VIEWED) and (message_filter & MessageFilter.NOT_VIEWED):
+        return False
+    elif (message_filter & MessageFilter.DELIVERED) and (message_filter & MessageFilter.NOT_DELIVERED):
+        return False
+    return True
+
+
 class LinkAccountCallbackStates(Enum):
     """
     The link message state messages.
@@ -122,9 +181,11 @@ class RecipientTypes(IntEnum):
     Enum to store message recipient types.
     """
     GROUP = auto()
-    """Recipient is a Group."""
+    """Recipient is a SignalGroup."""
     CONTACT = auto()
-    """Recipient is a Contact."""
+    """Recipient is a SignalContact."""
+    NOT_SET = auto()
+    """Recipient type is not set."""
 
 
 class ConversationTypes(IntEnum):
@@ -142,7 +203,7 @@ class ReceiptTypes(IntEnum):
     Enum to store different receipt types:
     """
     NOT_SET = auto()
-    """Receipt type not set."""
+    """SignalReceipt type not set."""
     DELIVER = auto()
     """Delivery receipt type."""
     READ = auto()
@@ -158,7 +219,7 @@ class AttachmentTypes(IntEnum):
     NOT_SET = auto()
     """Attachment type not set."""
     TEXT = auto()
-    """Attachment is a TextAttachment."""
+    """SignalAttachment is a SignalTextAttachment."""
     FILE = auto()
     """Attachment is an Attachment (file)."""
 
@@ -407,6 +468,7 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
     :return: str: The read message.
     :raises CommunicationsError: On failure to read from the socket.
     """
+    global _CLOSING_SOCKET
     logger_name: str = __name__ + '.' + __socket_receive_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
@@ -429,11 +491,14 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
                 return message.decode()
     except socket.error as e:
         error_message = "Failed to read from socket: %s" % (str(e.args))
-        logger.critical("socket.error: %s" % error_message)
+        if _CLOSING_SOCKET and e.args[0] == 9:
+            logger.info("Read error received while closing socket. This is normal during shutdown.")
+        else:
+            logger.critical("socket.error: %s" % error_message)
         raise CommunicationsError(error_message, e)
 
 
-def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.5) -> Optional[str]:
+def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1) -> Optional[str]:
     """
     Read a string from a socket; Blocks until msg read.
     :param sock: socket.socket: The socket to read from.
@@ -441,7 +506,8 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.5)
     :return: Optional[str]: The read message, or None if wait_time elapsed.
     :raises CommunicationsError: On failure to read from the socket.
     """
-    logger_name: str = __name__ + '.' + __socket_receive_blocking__.__name__
+    global _CLOSING_SOCKET
+    logger_name: str = __name__ + '.' + __socket_receive_non_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
         readable, _, erred = select.select([sock], [], [], wait_time)
@@ -462,7 +528,10 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.5)
             return message.decode()
     except socket.error as e:
         error_message = "Failed to read from socket: %s" % (str(e.args))
-        logger.critical("socket.error: %s" % error_message)
+        if _CLOSING_SOCKET:
+            logger.warning("Socket read error while closing socket. This is normal during shutdown.")
+        else:
+            logger.critical("socket.error: %s" % error_message)
         raise CommunicationsError(error_message, e)
     return None
 
@@ -474,15 +543,18 @@ def __socket_close__(sock: socket.socket) -> None:
     :return: None
     :raises CommunicationsError: On error closing socket.
     """
+    global _CLOSING_SOCKET
     logger_name: str = __name__ + '.' + __socket_close__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
+    logger.debug("Closing socket.")
+    _CLOSING_SOCKET = True
     try:
-        logger.debug("Closing socket.")
         sock.close()
     except socket.error as e:
         error_message = "Couldn't close socket connection: %s" % (str(e.args))
         logger.critical(error_message)
         raise CommunicationsError(error_message, e)
+    _CLOSING_SOCKET = False
     logger.debug("Socket closed successfully.")
     return None
 

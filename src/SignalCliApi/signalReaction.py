@@ -10,19 +10,19 @@ import json
 
 from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, RecipientTypes, \
     __parse_signal_response__, __check_response_for_error__
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMessage import Message
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
+from .signalTimestamp import SignalTimestamp
 
-Self = TypeVar("Self", bound="Reaction")
+Self = TypeVar("Self", bound="SignalReaction")
 
 
-class Reaction(Message):
+class SignalReaction(SignalMessage):
     """
     Class to store a reaction message.
     """
@@ -31,16 +31,16 @@ class Reaction(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
-                 recipient: Optional[Contact | Group] = None,
+                 recipient: Optional[SignalContact | SignalGroup] = None,
                  emoji: Optional[str] = None,
-                 target_author: Optional[Contact] = None,
-                 target_timestamp: Optional[Timestamp] = None,
+                 target_author: Optional[SignalContact] = None,
+                 target_timestamp: Optional[SignalTimestamp] = None,
                  is_remove: bool = False,
                  ) -> None:
         """
@@ -48,16 +48,16 @@ class Reaction(Message):
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This account's ID.
         :param config_path: str: The full path to signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The Device object for the device we're currently on.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object for the device we're currently on.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: The dict provided by signal.
-        :param recipient: Optional[Contact | Group]: The recipient of this reaction message.
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this reaction message.
         :param emoji: Optional[str]: The unicode emoji.
-        :param target_author: Optional[Contact]: The author of the message reacted to.
-        :param target_timestamp: Optional[Timestamp]: The timestamp of the message reacted to.
+        :param target_author: Optional[SignalContact]: The author of the message reacted to.
+        :param target_timestamp: Optional[SignalTimestamp]: The timestamp of the message reacted to.
         :param is_remove: bool: If True, this is a removal message.
         """
         # Setup logging:
@@ -67,12 +67,12 @@ class Reaction(Message):
         if emoji is not None and not isinstance(emoji, str):
             logger.critical("Raising TypeError:")
             __type_error__("emoji", 'Optional[str]', emoji)
-        if target_author is not None and not isinstance(target_author, Contact):
+        if target_author is not None and not isinstance(target_author, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("target_author", "Optional[Contact]", target_author)
-        if target_timestamp is not None and not isinstance(target_timestamp, Timestamp):
+            __type_error__("target_author", "Optional[SignalContact]", target_author)
+        if target_timestamp is not None and not isinstance(target_timestamp, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("target_timestamp", "Optional[Timestamp]", target_timestamp)
+            __type_error__("target_timestamp", "Optional[SignalTimestamp]", target_timestamp)
         if not isinstance(is_remove, bool):
             logger.critical("Raising TypeError:")
             __type_error__("is_remove", 'bool', is_remove)
@@ -86,10 +86,10 @@ class Reaction(Message):
         # Set external properties:
         self.emoji: Optional[str] = emoji
         """The emoji that was reacted with."""
-        self.target_author: Optional[Contact] = target_author
-        """The Contact object of the author of the message that was reacted to."""
-        self.target_timestamp: Optional[Timestamp] = target_timestamp
-        """The Timestamp object of the message that was reacted to."""
+        self.target_author: Optional[SignalContact] = target_author
+        """The SignalContact object of the author of the message that was reacted to."""
+        self.target_timestamp: Optional[SignalTimestamp] = target_timestamp
+        """The SignalTimestamp object of the message that was reacted to."""
         self.is_remove: bool = is_remove
         """Is this a removal message?"""
         self.previous_emoji: Optional[str] = None
@@ -120,7 +120,7 @@ class Reaction(Message):
         self.emoji = reaction_dict['emoji']
         _, self.target_author = self._contacts.__get_or_add__(number=reaction_dict['targetAuthorNumber'],
                                                               uuid=reaction_dict['targetAuthorUuid'])
-        self.target_timestamp = Timestamp(timestamp=reaction_dict['targetSentTimestamp'])
+        self.target_timestamp = SignalTimestamp(timestamp=reaction_dict['targetSentTimestamp'])
         self.is_remove = reaction_dict['isRemove']
         return
 
@@ -130,22 +130,18 @@ class Reaction(Message):
     def __eq__(self, other: Self) -> bool:
         """
         Compare equality.
-        :param other: Reaction: The reaction to compare with.
+        :param other: SignalReaction: The reaction to compare with.
         :return: bool
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
-        if isinstance(other, Reaction):
+        if isinstance(other, SignalReaction):
             sender_match: bool = self.sender == other.sender
             emoji_match: bool = self.emoji == other.emoji
             author_match: bool = self.target_author == other.target_author
             timestamp_match: bool = self.target_timestamp == other.target_timestamp
             if sender_match and emoji_match and author_match and timestamp_match:
                 return True
-            else:
-                return False
-        error_message: str = "Can only compare equality to another Reaction object."
-        logger.critical("Raising TypeError(%s)." % error_message)
-        raise TypeError(error_message)
+        return False
 
     #####################
     # To / From Dict:
@@ -184,7 +180,7 @@ class Reaction(Message):
             self.target_author = None
         # Parse target timestamp:
         if from_dict['targetTimestamp'] is not None:
-            self.target_timestamp = Timestamp(from_dict=from_dict['targetTimestamp'])
+            self.target_timestamp = SignalTimestamp(from_dict=from_dict['targetTimestamp'])
         # Parse is remove:
         self.is_remove = from_dict['isRemove']
         # Parse is change:
@@ -248,7 +244,7 @@ class Reaction(Message):
 
         # Parse Response:
         result_obj: dict[str, Any] = response_obj['result']
-        self.timestamp = Timestamp(timestamp=result_obj['timestamp'])
+        self.timestamp = SignalTimestamp(timestamp=result_obj['timestamp'])
         # Check for delivery error:
         if result_obj['results'][0]['type'] != 'SUCCESS':
             return False, result_obj['results'][0]['type']
@@ -279,14 +275,14 @@ class Reaction(Message):
                         self.sender.get_display_name(),
                         self.emoji,
                         self.target_author.get_display_name(),
-                        self.target_timestamp.timestamp
+                        self.target_timestamp._timestamp
                     )
                 elif self.recipient_type == RecipientTypes.GROUP:
                     self.body = "%s removed the reaction %s from %s's message %i in group %s" % (
                         self.sender.get_display_name(),
                         self.emoji,
                         self.target_author.get_display_name(),
-                        self.target_timestamp.timestamp,
+                        self.target_timestamp._timestamp,
                         self.recipient.get_display_name()
                     )
                 else:
@@ -297,7 +293,7 @@ class Reaction(Message):
                     self.body = "%s changed their reaction to %s's message %i, from %s to %s" % (
                         self.sender.get_display_name(),
                         self.target_author.get_display_name(),
-                        self.target_timestamp.timestamp,
+                        self.target_timestamp._timestamp,
                         self.previous_emoji,
                         self.emoji
                     )
@@ -305,7 +301,7 @@ class Reaction(Message):
                     self.body = "%s changed their reaction to %s's message %i in group %s, from %s to %s" % (
                         self.sender.get_display_name(),
                         self.target_author.get_display_name(),
-                        self.target_timestamp.timestamp,
+                        self.target_timestamp._timestamp,
                         self.recipient.get_display_name(),
                         self.previous_emoji,
                         self.emoji
@@ -324,7 +320,7 @@ class Reaction(Message):
                     self.body = "%s reacted to %s's message %i in group %s with %s" % (
                         self.sender.get_display_name(),
                         self.target_author.get_display_name(),
-                        self.target_timestamp.timestamp,
+                        self.target_timestamp._timestamp,
                         self.recipient.get_display_name(),
                         self.emoji
                     )

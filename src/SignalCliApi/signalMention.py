@@ -5,30 +5,30 @@ Class to store and handle a mention.
 """
 import logging
 from typing import TypeVar, Optional, Any
-from .signalContacts import Contacts
-from .signalContact import Contact
+from .signalContacts import SignalContacts
+from .signalContact import SignalContact
 from .signalCommon import __type_error__
-Self = TypeVar("Self", bound="Mention")
+Self = TypeVar("Self", bound="SignalMention")
 
 
-class Mention(object):
+class SignalMention(object):
     """
     Object for a mention.
     """
     def __init__(self,
-                 contacts: Contacts,
+                 contacts: SignalContacts,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_mention: Optional[dict[str, Any]] = None,
-                 contact: Optional[Contact] = None,
+                 contact: Optional[SignalContact] = None,
                  start: Optional[int] = None,
                  length: Optional[int] = None,
                  ) -> None:
         """
         Initialize a new mention.
-        :param contacts: Contacts, The accounts contacts object.
+        :param contacts: SignalContacts, The accounts contacts object.
         :param from_dict: Optional[dict[str, Any]]: Load from a dict provided by __to_dict__()
         :param raw_mention: Optional[dict[str, Any]]: Load from a dict provided by signal.
-        :param contact: Optional[Contact]: The contact this mention refers to.
+        :param contact: Optional[SignalContact]: The contact this mention refers to.
         :param start: Optional[int]: Where in the body the mention starts.
         :param length: Optional[int]: How long the mention is.
         """
@@ -39,18 +39,18 @@ class Mention(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
         # Argument checks:
-        if not isinstance(contacts, Contacts):
+        if not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "SignalContacts", contacts)
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError:")
             __type_error__("from_dict", "Optional[dict]", from_dict)
         if raw_mention is not None and not isinstance(raw_mention, dict):
             logger.critical("Raising TypeError:")
             __type_error__("raw_mention", "Optional[dict]", raw_mention)
-        if contact is not None and not isinstance(contact, Contact):
+        if contact is not None and not isinstance(contact, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("contact", "Optional[Contact]", contact)
+            __type_error__("contact", "Optional[SignalContact]", contact)
         if start is not None and not isinstance(start, int):
             logger.critical("Raising TypeError:")
             __type_error__("start", "Optional[int]", start)
@@ -59,11 +59,11 @@ class Mention(object):
             __type_error__("length", "Optional[int]", length)
 
         # Set internal properties:
-        self._contacts: Contacts = contacts
-        """This accounts Contact object."""
+        self._contacts: SignalContacts = contacts
+        """This accounts SignalContact object."""
 
         # Set external properties:
-        self.contact: Contact = contact
+        self.contact: SignalContact = contact
         """The contact this mention refers to."""
         self.start: int = start
         """The start position in the body where this mention starts."""
@@ -107,11 +107,11 @@ class Mention(object):
     def __eq__(self, other: Self) -> bool:
         """
         Calculate equality.
-        :param other: Mention: The mention to compare with.
+        :param other: SignalMention: The mention to compare with.
         :return: bool
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
-        if isinstance(other, Mention):
+        if isinstance(other, SignalMention):
             if self.start != other.start:
                 return False
             elif self.length != other.length:
@@ -120,9 +120,7 @@ class Mention(object):
                 return False
             else:
                 return True
-        error_message: str = "Can only calculate equality with a Mention object."
-        logger.critical("Raising TypeError(%s)." % error_message)
-        raise TypeError(error_message)
+        return False
 
     ######################
     # To / From Dict:

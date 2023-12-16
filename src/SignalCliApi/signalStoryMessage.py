@@ -7,21 +7,21 @@ import logging
 from typing import Optional, Any
 import socket
 
-from .signalAttachment import Attachment
+from .signalAttachment import SignalAttachment
 from .signalCommon import __type_error__, MessageTypes, AttachmentTypes
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMessage import Message
-from .signalPreview import Preview
-from .signalTextAttachment import TextAttachment
-from .signalTimestamp import Timestamp
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
+from .signalPreview import SignalPreview
+from .signalTextAttachment import SignalTextAttachment
+from .signalTimestamp import SignalTimestamp
 
 
-class StoryMessage(Message):
+class SignalStoryMessage(SignalMessage):
     """
     Class to store a story message.
     """
@@ -29,38 +29,38 @@ class StoryMessage(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
-                 sender: Optional[Contact] = None,
-                 recipient: Optional[Contact | Group] = None,
-                 device: Optional[Device] = None,
-                 timestamp: Optional[Timestamp] = None,
+                 sender: Optional[SignalContact] = None,
+                 recipient: Optional[SignalContact | SignalGroup] = None,
+                 device: Optional[SignalDevice] = None,
+                 timestamp: Optional[SignalTimestamp] = None,
                  allows_replies: bool = True,
-                 preview: Optional[Preview] = None,
-                 attachment: Optional[Attachment | TextAttachment] = None,
+                 preview: Optional[SignalPreview] = None,
+                 attachment: Optional[SignalAttachment | SignalTextAttachment] = None,
                  ) -> None:
         """
         Initialize a story message.
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This accounts' ID.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts' Contacts object.
-        :param groups: Groups: This accounts' Groups object.
-        :param devices: Devices: This accounts' Devices object.
-        :param this_device: Device: The Device object representing this device.
+        :param contacts: SignalContacts: This accounts' SignalContacts object.
+        :param groups: SignalGroups: This accounts' SignalGroups object.
+        :param devices: SignalDevices: This accounts' SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object representing this device.
         :param from_dict: Optional[dict[str, Any]]: A dict provided by __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: A dict provided by Signal.
-        :param sender: Optional[Contact]: The sender of this message.
-        :param recipient: Optional[Contact | Group]: The recipient of this message. # TODO: Check if this is needed.
-        :param device: Optional[Device]: The device sending this message.
-        :param timestamp: Optional[Timestamp]: The timestamp of this message.
+        :param sender: Optional[SignalContact]: The sender of this message.
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this message. # TODO: Check if this is needed.
+        :param device: Optional[SignalDevice]: The device sending this message.
+        :param timestamp: Optional[SignalTimestamp]: The timestamp of this message.
         :param allows_replies: bool: Does this message allow replies? Defaults to True.
-        :param preview: Optional[Preview]: Any URL preview this message contains.
-        :param attachment: Optional[Attachment | TextAttachment]: Any attachment to this message.
+        :param preview: Optional[SignalPreview]: Any URL preview this message contains.
+        :param attachment: Optional[SignalAttachment | SignalTextAttachment]: Any attachment to this message.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -72,15 +72,15 @@ class StoryMessage(Message):
             __type_error__("allows_replies", "bool", allows_replies)
 
         # Check preview:
-        if preview is not None and not isinstance(preview, Preview):
+        if preview is not None and not isinstance(preview, SignalPreview):
             logger.critical("Raising TypeError:")
-            __type_error__("preview", "Optional[Preview]", preview)
+            __type_error__("preview", "Optional[SignalPreview]", preview)
 
         # Check attachment:
         if attachment is not None:
-            if not isinstance(attachment, (Attachment, TextAttachment)):
+            if not isinstance(attachment, (SignalAttachment, SignalTextAttachment)):
                 logger.critical("Raising TypeError:")
-                __type_error__("attachment", "Optional[Attachment | TextAttachment]", attachment)
+                __type_error__("attachment", "Optional[SignalAttachment | SignalTextAttachment]", attachment)
 
         # Set external properties:
         # Allows replies:
@@ -88,14 +88,14 @@ class StoryMessage(Message):
         """Does this story message allow replies?"""
 
         # Preview:
-        self.preview: Optional[Preview] = preview
+        self.preview: Optional[SignalPreview] = preview
         """Any URL preview this story holds."""
 
         # Attachment:
-        self.attachment: Attachment | TextAttachment = attachment
+        self.attachment: SignalAttachment | SignalTextAttachment = attachment
         self.attachment_type: AttachmentTypes = AttachmentTypes.NOT_SET
         if attachment is not None:
-            if isinstance(attachment, Attachment):
+            if isinstance(attachment, SignalAttachment):
                 self.attachment_type = AttachmentTypes.FILE
             else:
                 self.attachment_type = AttachmentTypes.TEXT
@@ -118,16 +118,16 @@ class StoryMessage(Message):
         self.attachment = None
         self.attachment_type = AttachmentTypes.NOT_SET
         if 'fileAttachment' in raw_story_message.keys():
-            self.attachment = Attachment(config_path=self._config_path,
-                                         raw_attachment=raw_story_message['fileAttachment'])
+            self.attachment = SignalAttachment(config_path=self._config_path,
+                                               raw_attachment=raw_story_message['fileAttachment'])
             self.attachment_type = AttachmentTypes.FILE
         elif 'textAttachment' in raw_story_message.keys():
-            self.attachment = TextAttachment(raw_attachment=raw_story_message['textAttachment'])
+            self.attachment = SignalTextAttachment(raw_attachment=raw_story_message['textAttachment'])
             self.attachment_type = AttachmentTypes.TEXT
         # Preview:
         self.preview = None
         if 'preview' in raw_story_message.keys():
-            self.preview = Preview(config_path=self._config_path, raw_preview=raw_story_message['preview'])
+            self.preview = SignalPreview(config_path=self._config_path, raw_preview=raw_story_message['preview'])
         return
 
     ###########################
@@ -162,14 +162,14 @@ class StoryMessage(Message):
         self.allows_replies = from_dict['allowsReplies']
         self.preview = None
         if from_dict['preview'] is not None:
-            self.preview = Preview(config_path=self._config_path, from_dict=from_dict['preview'])
+            self.preview = SignalPreview(config_path=self._config_path, from_dict=from_dict['preview'])
         self.attachment_type = AttachmentTypes(from_dict['attachmentType'])
         self.attachment = None
         if from_dict['attachment'] is not None:
             if self.attachment_type == AttachmentTypes.FILE:
-                self.attachment = Attachment(config_path=self._config_path, from_dict=from_dict['attachment'])
+                self.attachment = SignalAttachment(config_path=self._config_path, from_dict=from_dict['attachment'])
             elif self.attachment_type == AttachmentTypes.TEXT:
-                self.attachment = TextAttachment(from_dict=from_dict['attachment'])
+                self.attachment = SignalTextAttachment(from_dict=from_dict['attachment'])
             else:
                 raise ValueError("Invalid attachment type in StoryMessage: %s" % self.attachment_type)
         return

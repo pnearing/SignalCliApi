@@ -8,27 +8,27 @@ from typing import Optional, Iterable, Iterator, Any
 import re
 
 from .signalCommon import __type_error__, phone_number_regex, uuid_regex
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalMention import Mention
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalMention import SignalMention
 
 
-class Mentions(object):
+class SignalMentions(object):
     """
     Object to store the mentions in the message.
     """
     def __init__(self,
-                 contacts: Contacts,
+                 contacts: SignalContacts,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_mentions: Optional[list[dict[str, Any]]] = None,
-                 mentions: Optional[Iterable[Mention]] = None,
+                 mentions: Optional[Iterable[SignalMention]] = None,
                  ) -> None:
         """
-        Initialize the Mentions.
-        :param contacts: Contacts: This accounts contacts object.
+        Initialize the SignalMentions.
+        :param contacts: SignalContacts: This accounts contacts object.
         :param from_dict: Optional[dict[str, Any]]: Load from a dict provided by __to_dict__()
         :param raw_mentions: Optional[dict[str, Any]]: Load from a dict provided by signal.
-        :param mentions: Optional[Iterable[Mention]]: Any mentions to load.
+        :param mentions: Optional[Iterable[SignalMention]]: Any mentions to load.
         """
         # Super:
         super().__init__()
@@ -37,9 +37,9 @@ class Mentions(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
         # Argument check contacts:
-        if not isinstance(contacts, Contacts):
+        if not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("contacts", "Contacts", contacts)
+            __type_error__("contacts", "SignalContacts", contacts)
         # Argument check from_dict:
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError:")
@@ -54,23 +54,23 @@ class Mentions(object):
                     logger.critical("Raising TypeError:")
                     __type_error__("raw_mention[%i]" % i, "dict[str, Any]", raw_mention)
         # Argument Check mentions:
-        mentions_list: list[Mention] = []
+        mentions_list: list[SignalMention] = []
         if mentions is not None:
             if not isinstance(mentions, Iterable):
                 logger.critical("Raising TypeError:")
-                __type_error__("mentions", "Optional[Iterable[Mention]]", mentions)
+                __type_error__("mentions", "Optional[Iterable[SignalMention]]", mentions)
             for i, mention in enumerate(mentions):
-                if not isinstance(mention, Mention):
+                if not isinstance(mention, SignalMention):
                     logger.critical("Raising TypeError:")
-                    __type_error__("mentions[%i]" % i, "Mention", mention)
+                    __type_error__("mentions[%i]" % i, "SignalMention", mention)
                 mentions_list.append(mention)
             if len(mentions_list) == 0:
                 raise ValueError("mentions cannot be empty")
 
         # Set internal vars:
-        self._contacts: Contacts = contacts
-        """This accounts Contacts object."""
-        self._mentions: list[Mention] = mentions_list
+        self._contacts: SignalContacts = contacts
+        """This accounts SignalContacts object."""
+        self._mentions: list[SignalMention] = mentions_list
         """The list of mentions."""
 
         # Parse from Dict:
@@ -92,17 +92,17 @@ class Mentions(object):
         """
         self._mentions = []
         for raw_mention in rawMentions:
-            mention = Mention(contacts=self._contacts, raw_mention=raw_mention)
+            mention = SignalMention(contacts=self._contacts, raw_mention=raw_mention)
             self._mentions.append(mention)
         return
 
     #######################################
     # Overrides:
     #######################################
-    def __iter__(self) -> Iterator[Mention]:
+    def __iter__(self) -> Iterator[SignalMention]:
         """
         Iterate over the mentions.
-        :return: Iterator[Mention]
+        :return: Iterator[SignalMention]
         """
         return iter(self._mentions)
 
@@ -113,26 +113,26 @@ class Mentions(object):
         """
         return len(self._mentions)
 
-    def __getitem__(self, index: int | Contact) -> Mention:
+    def __getitem__(self, index: int | SignalContact) -> SignalMention:
         """
         Index with square brackets.
-        :param index: int | Contact: The index to look for.
-        :return: Mention: The selected mention object.
-        :raises IndexError: If index is an int, and is out of range, or if index is a Contact and not found.
+        :param index: int | SignalContact: The index to look for.
+        :return: SignalMention: The selected mention object.
+        :raises IndexError: If index is an int, and is out of range, or if index is a SignalContact and not found.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__getitem__.__name__)
         if isinstance(index, int):
             return self._mentions[index]  # Raises IndexError
-        elif isinstance(index, Contact):
+        elif isinstance(index, SignalContact):
             for mention in self._mentions:
                 if mention.contact == index:
                     return mention
-            error_message: str = "Mention with contact_id: %s not found." % index.get_id()
+            error_message: str = "SignalMention with contact_id: %s not found." % index.get_id()
             logger.critical("Raising IndexError(%s)." % error_message)
             raise IndexError(error_message)
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("index", "int | Contact", index)
+            __type_error__("index", "int | SignalContact", index)
 
     #######################################
     # To / From Dict:
@@ -157,7 +157,7 @@ class Mentions(object):
         """
         self._mentions = []
         for mention_dict in fromDict['mentions']:
-            self._mentions.append(Mention(contacts=self._contacts, from_dict=mention_dict))
+            self._mentions.append(SignalMention(contacts=self._contacts, from_dict=mention_dict))
         return
 
     #########################################
@@ -184,24 +184,24 @@ class Mentions(object):
     #######################################
     # Getters:
     #######################################
-    def get_by_contact(self, contact: Contact) -> list[Mention]:
+    def get_by_contact(self, contact: SignalContact) -> list[SignalMention]:
         """
         Get a list of mentions given a contact.
-        :param contact: Contact: The contact to find.
+        :param contact: SignalContact: The contact to find.
         :returns: list: A list of mentions, if none found an empty list is returned.
-        :raises: TypeError if contact is not a Contact.
+        :raises: TypeError if contact is not a SignalContact.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_contact.__name__)
-        if not isinstance(contact, Contact):
+        if not isinstance(contact, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("contact", "Contact", contact)
+            __type_error__("contact", "SignalContact", contact)
         return [mention for mention in self._mentions if mention.contact == contact]
 
-    def get_by_start_pos(self, start: int) -> list[Mention]:
+    def get_by_start_pos(self, start: int) -> list[SignalMention]:
         """
         Get a mention given a start position.
         :param start: int, The start position.
-        :returns: list[Mention]: A list of mentions or an empty list if none found.
+        :returns: list[SignalMention]: A list of mentions or an empty list if none found.
         :raises: TypeError: If start is not an int.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_start_pos.__name__)
@@ -210,7 +210,7 @@ class Mentions(object):
             __type_error__("start", "int", start)
         return [mention for mention in self._mentions if mention.start == start]
 
-    def get_by_length(self, length: int) -> list[Mention]:
+    def get_by_length(self, length: int) -> list[SignalMention]:
         """
         Get a list of mentions that are of a certain length.
         :param length: int: The length to search for.
@@ -231,64 +231,64 @@ class Mentions(object):
     #######################################
     # Tests:
     #######################################
-    def contact_mentioned(self, contact: Contact) -> bool:
+    def contact_mentioned(self, contact: SignalContact) -> bool:
         """
         Return True if a contact is mentioned.
-        :param contact: Contact: The contact to search for.
+        :param contact: SignalContact: The contact to search for.
         :returns: bool: True if contact is mentioned.
-        :raises: TypeError if contact is not a Contact object.
+        :raises: TypeError if contact is not a SignalContact object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.contact_mentioned.__name__)
-        if not isinstance(contact, Contact):
+        if not isinstance(contact, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("contact", "Contact", contact)
+            __type_error__("contact", "SignalContact", contact)
         if len([mention for mention in self._mentions if mention.contact == contact]) > 0:
             return True
         return False
 
-    def get_conflicting_mention(self, mention: Mention) -> Optional[Mention]:
+    def get_conflicting_mention(self, mention: SignalMention) -> Optional[SignalMention]:
         """
         Get the first existing mention that conflicts with the given mention.
-        :param mention: Mention: The mention to check.
-        :return: Optional[Mention]: The first conflicting Mention, None if no conflict.
-        :raises TypeError: if mention is not a Mention object.
+        :param mention: SignalMention: The mention to check.
+        :return: Optional[SignalMention]: The first conflicting SignalMention, None if no conflict.
+        :raises TypeError: if mention is not a SignalMention object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_conflicting_mention.__name__)
-        if not isinstance(mention, Mention):
+        if not isinstance(mention, SignalMention):
             logger.critical("Raising TypeError:")
-            __type_error__('mention', 'Mention', mention)
+            __type_error__('mention', 'SignalMention', mention)
         for pos in range(mention.start, mention.start + mention.length + 1):
             for m in self._mentions:
                 if pos in range(m.start, m.start + m.length + 1):
                     return m
         return None
 
-    def mention_conflicts(self, mention: Mention) -> bool:
+    def mention_conflicts(self, mention: SignalMention) -> bool:
         """
         Return True if an existing mention conflicts with a given mention.
-        :param mention: Mention: The Mention to check.
+        :param mention: SignalMention: The SignalMention to check.
         :return: bool: True there is a conflict, False there is no conflict.
-        :raises TypeError: If mention is not a Mention object.
+        :raises TypeError: If mention is not a SignalMention object.
         """
-        conflict: Optional[Mention] = self.get_conflicting_mention(mention)
+        conflict: Optional[SignalMention] = self.get_conflicting_mention(mention)
         return conflict is not None
 
     #######################################
     # Methods:
     #######################################
-    def append(self, mention: Mention) -> None:
+    def append(self, mention: SignalMention) -> None:
         """
         Append a mention to the mention list.
-        :param mention: Mention: The mention to append.
+        :param mention: SignalMention: The mention to append.
         :returns: None
-        :raises: TypeError: If the mention is not a Mention object.
+        :raises: TypeError: If the mention is not a SignalMention object.
         :raises: RuntimeError: If the mention is already in the mention list, or conflicts with an existing mention.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.append.__name__)
         # Type check argument:
-        if not isinstance(mention, Mention):
+        if not isinstance(mention, SignalMention):
             logger.critical("Raising TypeError:")
-            __type_error__("mention", "Mention", mention)
+            __type_error__("mention", "SignalMention", mention)
         # Check if mention conflicts:
         if self.mention_conflicts(mention):
             error_message: str = "mention conflicts with an existing mention"
@@ -298,26 +298,26 @@ class Mentions(object):
         self._mentions.append(mention)
         return
 
-    def create(self, contact: Contact, start: int, length: int) -> Mention:
+    def create(self, contact: SignalContact, start: int, length: int) -> SignalMention:
         """
         Create and append a mention to the list.
-        :param contact: Contact: The contact to mention.
+        :param contact: SignalContact: The contact to mention.
         :param start: int: The start position of the mention.
         :param length: int: The length of the mention.
-        :returns: Mention: The mention created.
-        :raises TypeError: If contact is not a Contact object, start is not an int, or length is not an int.
+        :returns: SignalMention: The mention created.
+        :raises TypeError: If contact is not a SignalContact object, start is not an int, or length is not an int.
         :raises RuntimeError: If the created mention conflicts with a mention in the existing mentions.
         """
-        mention = Mention(contacts=self._contacts, contact=contact, start=start, length=length)
+        mention = SignalMention(contacts=self._contacts, contact=contact, start=start, length=length)
         self.append(mention)
         return mention
 
-    def create_from_body(self, body: str) -> list[Mention]:
+    def create_from_body(self, body: str) -> list[SignalMention]:
         """
         Create a mention from the body of the message. Searches for the '@' sign followed by either the phone number,
             the uuid of the contact, or the contact name surrounded in either single or double quotes.
         :param body: str: The body to create the mentions from.
-        :returns: list[Mention]: A list of the mentions in the body, an empty list if none found.
+        :returns: list[SignalMention]: A list of the mentions in the body, an empty list if none found.
         :raises: TypeError: If body is not a string.
         """
         #TODO: Check this out more.
@@ -353,7 +353,7 @@ class Mentions(object):
                         start = body.find(match, last_find)
                         length = len(match)
                         last_find = start
-                        mention = Mention(contacts=self._contacts, contact=contact, start=start, length=length)
+                        mention = SignalMention(contacts=self._contacts, contact=contact, start=start, length=length)
                         self._mentions.append(mention)
                         return_value.append(mention)
             elif match_type == "UUID":
@@ -362,7 +362,7 @@ class Mentions(object):
                         start = body.find(match, last_find)
                         length = len(match)
                         last_find = start
-                        mention = Mention(contacts=self._contacts, contact=contact, start=start, length=length)
+                        mention = SignalMention(contacts=self._contacts, contact=contact, start=start, length=length)
                         self._mentions.append(mention)
                         return_value.append(mention)
             elif match_type == 'nameDouble' or match_type == 'nameSingle':
@@ -382,7 +382,7 @@ class Mentions(object):
                 contact_name = body[name_start_pos+1:name_end_pos-1]
                 contact = self._contacts.get_by_name(contact_name)
                 if contact is not None:
-                    mention = Mention(contacts=self._contacts, contact=contact, start=start, length=length)
+                    mention = SignalMention(contacts=self._contacts, contact=contact, start=start, length=length)
                     self._mentions.append(mention)
                     return_value.append(mention)
         return return_value

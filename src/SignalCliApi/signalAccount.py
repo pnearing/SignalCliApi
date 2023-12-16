@@ -11,18 +11,18 @@ import logging
 
 from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __type_err_msg__, \
     __parse_signal_response__, __check_response_for_error__
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalContacts import Contacts
-from .signalGroups import Groups
-from .signalMessages import Messages
-from .signalProfile import Profile
-from .signalSticker import StickerPacks
-from .signalTimestamp import Timestamp
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalContacts import SignalContacts
+from .signalGroups import SignalGroups
+from .signalMessages import SignalMessages
+from .signalProfile import SignalProfile
+from .signalSticker import SignalStickerPacks
+from .signalTimestamp import SignalTimestamp
 from .signalExceptions import InvalidDataFile, UnsupportedVersion
 
 
-class Account(object):
+class SignalAccount(object):
     """Class to store an account."""
     supportedAccountFileVersions: tuple[int, int] = (5, 6, 8)
     """Supported account detail file versions."""
@@ -31,20 +31,20 @@ class Account(object):
                  sync_socket: socket.socket,
                  command_socket: socket.socket,
                  config_path: str,
-                 sticker_packs: StickerPacks,
+                 sticker_packs: SignalStickerPacks,
                  signal_account_path: str,
                  environment: str,
                  number: str,
                  uuid: str,
                  do_load: bool = False,
-                 device: Optional[Device] = None,
-                 devices: Optional[Devices] = None,
-                 contacts: Optional[Contacts] = None,
-                 groups: Optional[Groups] = None,
-                 profile: Optional[Profile] = None,
+                 device: Optional[SignalDevice] = None,
+                 devices: Optional[SignalDevices] = None,
+                 contacts: Optional[SignalContacts] = None,
+                 groups: Optional[SignalGroups] = None,
+                 profile: Optional[SignalProfile] = None,
                  ) -> None:
         """
-        Initialize the Account.
+        Initialize the SignalAccount.
         :param sync_socket: The sync socket.
         :param command_socket: The command socket.
         :param config_path: The path to the config directory.
@@ -54,11 +54,11 @@ class Account(object):
         :param number: The phone number of the account.
         :param uuid: The UUID of the account.
         :param do_load: True, load the account from the account detail file, False do not load.
-        :param device: Optional: The Device object for this account.
-        :param devices: Optional: The Devices object for this account.
-        :param contacts: Optional: The Contacts object for this account.
-        :param groups: Optional: The Groups object for this account.
-        :param profile: Optional: The Profile object for this account.
+        :param device: Optional: The SignalDevice object for this account.
+        :param devices: Optional: The SignalDevices object for this account.
+        :param contacts: Optional: The SignalContacts object for this account.
+        :param groups: Optional: The SignalGroups object for this account.
+        :param profile: Optional: The SignalProfile object for this account.
         :raises TypeError: If a parameter is of invalid type.
         :raises InvalidDataFile: If a file contains invalid JSON or a KeyError occurs during loading.
         """
@@ -83,10 +83,10 @@ class Account(object):
             logger.critical("Raising TypeError:")
             logger.critical(__type_err_msg__('config_path', 'str', config_path))
             __type_error__("config_path", "str", config_path)
-        if not isinstance(sticker_packs, StickerPacks):
+        if not isinstance(sticker_packs, SignalStickerPacks):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('sticker_packs', 'StickerPacks', sticker_packs))
-            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
+            logger.critical(__type_err_msg__('sticker_packs', 'SignalStickerPacks', sticker_packs))
+            __type_error__("sticker_packs", "SignalStickerPacks", sticker_packs)
         if not isinstance(signal_account_path, str):
             logger.critical("Raising TypeError:")
             logger.critical(__type_err_msg__("signal_account_path", 'str', signal_account_path))
@@ -106,26 +106,26 @@ class Account(object):
             logger.critical("Raising TypeError:")
             logger.critical(__type_err_msg__('do_load', 'bool', do_load))
             __type_error__("do_load", "bool", do_load)
-        if device is not None and not isinstance(device, Device):
+        if device is not None and not isinstance(device, SignalDevice):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('device', 'Optional[Device]', device))
-            __type_error__("device", "Optional[Device]", device)
-        if devices is not None and not isinstance(devices, Devices):
+            logger.critical(__type_err_msg__('device', 'Optional[SignalDevice]', device))
+            __type_error__("device", "Optional[SignalDevice]", device)
+        if devices is not None and not isinstance(devices, SignalDevices):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('devices', 'Optional[Devices', devices))
-            __type_error__("devices", "Optional[Devices]", devices)
-        if contacts is not None and not isinstance(contacts, Contacts):
+            logger.critical(__type_err_msg__('devices', 'Optional[SignalDevices]', devices))
+            __type_error__("devices", "Optional[SignalDevices]", devices)
+        if contacts is not None and not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('contacts', 'Optional[Contacts]', contacts))
-            __type_error__("contacts", "Optional[Contacts]", contacts)
-        if groups is not None and not isinstance(groups, Groups):
+            logger.critical(__type_err_msg__('contacts', 'Optional[SignalContacts]', contacts))
+            __type_error__("contacts", "Optional[SignalContacts]", contacts)
+        if groups is not None and not isinstance(groups, SignalGroups):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('groups', 'Optional[Groups]', groups))
-            __type_error__("groups", "Optional[Groups]", groups)
-        if profile is not None and not isinstance(profile, Profile):
+            logger.critical(__type_err_msg__('groups', 'Optional[SignalGroups]', groups))
+            __type_error__("groups", "Optional[SignalGroups]", groups)
+        if profile is not None and not isinstance(profile, SignalProfile):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('profile', 'Optional[Profile]', profile))
-            __type_error__("profile", "Optional[Profile]", profile)
+            logger.critical(__type_err_msg__('profile', 'Optional[SignalProfile]', profile))
+            __type_error__("profile", "Optional[SignalProfile]", profile)
 
         # Set internal Vars:
         self._sync_socket: socket.socket = sync_socket
@@ -134,7 +134,7 @@ class Account(object):
         """The socket for command operations."""
         self.config_path: str = config_path
         """The path to the signal-cli config directory."""
-        self._sticker_packs: StickerPacks = sticker_packs
+        self._sticker_packs: SignalStickerPacks = sticker_packs
         """Known sticker packs."""
         self._account_path: str = os.path.join(config_path, 'data', signal_account_path + '.d')
         """The path to the signal-cli account data directory."""
@@ -150,16 +150,16 @@ class Account(object):
         """The account uuid."""
 
         # Set external object refs:
-        self.device: Optional[Device] = device
-        """The Device object."""
-        self.devices: Optional[Devices] = devices
-        """The account Devices object."""
-        self.contacts: Optional[Contacts] = contacts
-        """The account Contacts object."""
-        self.groups: Optional[Groups] = groups
-        """The account Groups object."""
-        self.profile: Optional[Profile] = profile
-        """The account Profile object."""
+        self.device: Optional[SignalDevice] = device
+        """The SignalDevice object."""
+        self.devices: Optional[SignalDevices] = devices
+        """The account SignalDevices object."""
+        self.contacts: Optional[SignalContacts] = contacts
+        """The account SignalContacts object."""
+        self.groups: Optional[SignalGroups] = groups
+        """The account SignalGroups object."""
+        self.profile: Optional[SignalProfile] = profile
+        """The account SignalProfile object."""
 
         # Version:
         self.version: Optional[int] = None
@@ -179,8 +179,8 @@ class Account(object):
         """This device ID"""
         self.is_multi_device: Optional[bool] = None
         """Does this account have multiple devices?"""
-        self.last_received_timestamp: Optional[Timestamp] = None
-        """Timestamp object of the last time a message was received."""
+        self.last_received_timestamp: Optional[SignalTimestamp] = None
+        """SignalTimestamp object of the last time a message was received."""
         self.password: Optional[str] = None
         """Password?"""
         self.registration_id: Optional[int] = None
@@ -233,36 +233,36 @@ class Account(object):
 
             # Load devices from signal:
             logger.debug("Loading Devices...")
-            self.devices = Devices(sync_socket=self._sync_socket, account_id=self.number, this_device=self.device_id,
-                                   do_sync=True)
+            self.devices = SignalDevices(sync_socket=self._sync_socket, account_id=self.number, this_device=self.device_id,
+                                         do_sync=True)
             # Set this device:
             self.device = self.devices.get_this_device()
 
             # Load contacts from signal:
             logger.debug("Loading Contacts...")
-            self.contacts = Contacts(command_socket=command_socket, sync_socket=self._sync_socket,
-                                     config_path=self.config_path, account_id=self.number,
-                                     account_path=self._account_path, do_load=True, do_sync=True)
+            self.contacts = SignalContacts(command_socket=command_socket, sync_socket=self._sync_socket,
+                                           config_path=self.config_path, account_id=self.number,
+                                           account_path=self._account_path, do_load=True, do_sync=True)
 
             # Load groups from signal:
-            logger.debug("Loading Groups...")
-            self.groups = Groups(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                 config_path=self.config_path, account_id=self.number, account_contacts=self.contacts,
-                                 do_sync=True)
+            logger.debug("Loading SignalGroups...")
+            self.groups = SignalGroups(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                       config_path=self.config_path, account_id=self.number, account_contacts=self.contacts,
+                                       do_sync=True)
 
             # Load messages from file:
             logger.debug("Loading messages from disk....")
-            self.messages = Messages(command_socket=self._command_socket, config_path=self.config_path,
-                                     account_id=self.number, account_path=self._account_path, contacts=self.contacts,
-                                     groups=self.groups, devices=self.devices,
-                                     this_device=self.devices.get_this_device(), sticker_packs=self._sticker_packs,
-                                     do_load=True)
+            self.messages = SignalMessages(command_socket=self._command_socket, config_path=self.config_path,
+                                           account_id=self.number, account_path=self._account_path, contacts=self.contacts,
+                                           groups=self.groups, devices=self.devices,
+                                           this_device=self.devices.get_this_device(), sticker_packs=self._sticker_packs,
+                                           do_load=True)
 
             # Load profile from file and merge self-contact.
-            logger.debug("Loading Profile from disk...")
-            self.profile = Profile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
-                                   contact_id=self.number, account_path=self._account_path, do_load=True,
-                                   is_account_profile=True)
+            logger.debug("Loading SignalProfile from disk...")
+            self.profile = SignalProfile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
+                                         contact_id=self.number, account_path=self._account_path, do_load=True,
+                                         is_account_profile=True)
 
             # Merge disk profile and self-contact profile.
             logger.debug("Merging account profiles...")
@@ -305,7 +305,7 @@ class Account(object):
             self.pni = raw_account['pni']
             self.device_name = raw_account['deviceName']
             self.is_multi_device = raw_account['isMultiDevice']
-            self.last_received_timestamp = Timestamp(timestamp=raw_account['lastReceiveTimestamp'])
+            self.last_received_timestamp = SignalTimestamp(timestamp=raw_account['lastReceiveTimestamp'])
             self.password = raw_account['password']
             self.registration_id = raw_account['registrationId']
             self.pni_registration_id = raw_account['pniRegistrationId']
@@ -348,7 +348,7 @@ class Account(object):
             self.device_name = raw_account['deviceName']
             self.device_id = raw_account['deviceId']
             self.is_multi_device = raw_account['isMultiDevice']
-            self.last_received_timestamp = Timestamp(timestamp=raw_account['lastReceiveTimestamp'])
+            self.last_received_timestamp = SignalTimestamp(timestamp=raw_account['lastReceiveTimestamp'])
             self.password = raw_account['password']
             self.registration_id = raw_account['registrationId']
             self.identity_private_key = raw_account['identityPrivateKey']
@@ -498,3 +498,12 @@ class Account(object):
         logger.critical("Raising RuntimeError(%s)." % error_message)
         raise RuntimeError(error_message)
 
+################################
+# Overrides:
+################################
+    def __str__(self) -> str:
+        """
+        call str on this SignalAccount, get the ID.
+        :return: str
+        """
+        return self.get_id()

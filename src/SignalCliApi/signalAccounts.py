@@ -11,16 +11,16 @@ import logging
 
 from .signalCommon import phone_number_regex, uuid_regex, __type_error__, UUID_FORMAT_STR, __type_err_msg__, \
     NUMBER_FORMAT_STR
-from .signalAccount import Account
-from .signalSticker import StickerPacks
+from .signalAccount import SignalAccount
+from .signalSticker import SignalStickerPacks
 
 
-ACCOUNTS: list[Account] = []
+ACCOUNTS: list[SignalAccount] = []
 """The main accounts list."""
 
 
 # noinspection SpellCheckingInspection
-class Accounts(object):
+class SignalAccounts(object):
     """
     Class to store the known accounts.
     """
@@ -31,7 +31,7 @@ class Accounts(object):
                  sync_socket: socket.socket,
                  command_socket: socket.socket,
                  config_path: str,
-                 sticker_packs: StickerPacks,
+                 sticker_packs: SignalStickerPacks,
                  do_load: bool = False,
                  ) -> None:
         """
@@ -39,7 +39,7 @@ class Accounts(object):
         :param sync_socket: socket.socket: The socket to run sync operations on.
         :param command_socket: socket.socket: The socket to run commands on.
         :param config_path: str: The path to the signal-cli direcotry.
-        :param sticker_packs: StickerPacks: The loaded StickerPacks object.
+        :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
         :param do_load: bool: Load from disk right away; Defaults to False.
         """
         # Super:
@@ -73,7 +73,7 @@ class Accounts(object):
         """The command socket to use."""
         self._config_path: str = config_path
         """The path to the signal-cli config directory."""
-        self._sticker_packs: StickerPacks = sticker_packs
+        self._sticker_packs: SignalStickerPacks = sticker_packs
         """The known sticker packs."""
         self._accounts_file_path: str = os.path.join(config_path, 'data', 'accounts.json')
         """The full path to the accounts.json file."""
@@ -127,24 +127,24 @@ class Accounts(object):
         count: int = 0
         for raw_account in accounts_dict['accounts']:
             count += 1
-            account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                              config_path=self._config_path, sticker_packs=self._sticker_packs,
-                              signal_account_path=raw_account['path'], environment=raw_account['environment'],
-                              number=raw_account['number'], uuid=raw_account['uuid'], do_load=True
-                              )
+            account = SignalAccount(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                    config_path=self._config_path, sticker_packs=self._sticker_packs,
+                                    signal_account_path=raw_account['path'], environment=raw_account['environment'],
+                                    number=raw_account['number'], uuid=raw_account['uuid'], do_load=True
+                                    )
             self.logger.info("Loaded account: '%s'" % account.number)
             ACCOUNTS.append(account)
         self.logger.info("Loaded %i accounts." % count)
         return
 
-    def __sync__(self) -> list[Account]:
+    def __sync__(self) -> list[SignalAccount]:
         """
         Reread the accounts.json and load any new accounts.
-        :return: list[Account]: The list of new accounts, an empty list if none found.
+        :return: list[SignalAccount]: The list of new accounts, an empty list if none found.
         """
         global ACCOUNTS
         self.logger.info("Accounts sync started...")
-        new_accounts: list[Account] = []
+        new_accounts: list[SignalAccount] = []
         # Load accounts file:
         accounts_dict: dict = self.__load_accounts_file__()
         # Parse the accounts file looking for a new account.
@@ -154,12 +154,12 @@ class Accounts(object):
                 if account.number == raw_account['number']:
                     account_found = True
             if not account_found:
-                new_account: Account = Account(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                               config_path=self._config_path, sticker_packs=self._sticker_packs,
-                                               signal_account_path=raw_account['path'],
-                                               environment=raw_account['environment'], number=raw_account['number'],
-                                               uuid=raw_account['uuid'], do_load=True
-                                               )
+                new_account: SignalAccount = SignalAccount(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                                           config_path=self._config_path, sticker_packs=self._sticker_packs,
+                                                           signal_account_path=raw_account['path'],
+                                                           environment=raw_account['environment'], number=raw_account['number'],
+                                                           uuid=raw_account['uuid'], do_load=True
+                                                           )
                 self.logger.info("New account found: '%s'" % new_account.number)
                 ACCOUNTS.append(new_account)
                 new_accounts.append(new_account)
@@ -169,10 +169,10 @@ class Accounts(object):
     ##############################
     # Overrides:
     ##############################
-    def __iter__(self) -> Iterator[Account]:
+    def __iter__(self) -> Iterator[SignalAccount]:
         """
         Return an iterator over the accounts.
-        :return: Iterator[Account]: The iterator.
+        :return: Iterator[SignalAccount]: The iterator.
         """
         global ACCOUNTS
         return iter(ACCOUNTS)
@@ -185,11 +185,11 @@ class Accounts(object):
         global ACCOUNTS
         return len(ACCOUNTS)
 
-    def __getitem__(self, item: int | str) -> Account:
+    def __getitem__(self, item: int | str) -> SignalAccount:
         """
         Index accounts by int or str.
         :param item: int | str: If int: index as a list; If str: index by phone number.
-        :return: Account: The selected account.
+        :return: SignalAccount: The selected account.
         :raises IndexError: If selected by int, and index out of range.
         :raises KeyError: If selected by str, and phone number doesn't exist.
         :raises TypeError: If item is not an int or str.
@@ -198,6 +198,8 @@ class Accounts(object):
         global ACCOUNTS
         self.logger.debug("__getitem__ started.")
         if isinstance(item, int):
+
+
             try:
                 return ACCOUNTS[item]  # Raises IndexError if index out of range.
             except IndexError as e:
@@ -222,28 +224,28 @@ class Accounts(object):
     # Getters:
     ##############################
     @staticmethod
-    def get_registered() -> list[Account]:
+    def get_registered() -> list[SignalAccount]:
         """
         Get accounts that are both known and registered.
-        :return: list[Account]: The registerd accounts, or an empty list if none found.
+        :return: list[SignalAccount]: The registerd accounts, or an empty list if none found.
         """
         global ACCOUNTS
         return [acct for acct in ACCOUNTS if acct.registered is True]
 
     @staticmethod
-    def get_unregistered() -> list[Account]:
+    def get_unregistered() -> list[SignalAccount]:
         """
         Get accounts that are unregistered, but known.
-        :returns: list[Account]: The unregistered accounts, or an empty list if none found.
+        :returns: list[SignalAccount]: The unregistered accounts, or an empty list if none found.
         """
         global ACCOUNTS
         return [acct for acct in ACCOUNTS if acct.registered is False]
 
-    def get_by_number(self, number: str) -> Optional[Account]:
+    def get_by_number(self, number: str) -> Optional[SignalAccount]:
         """
         Get an account by phone number.
         :param number: str: The phone number in format +nnnnnnnnn...
-        :returns: Optional[Account]: The account found or None if not found.
+        :returns: Optional[SignalAccount]: The account found or None if not found.
         :raises: TypeError: If number is not a string.
         :raises: ValueError: If number not in proper format.
         """
@@ -268,11 +270,11 @@ class Accounts(object):
         self.logger.debug("Account number '%s' NOT found." % number)
         return None
 
-    def get_by_uuid(self, uuid: str) -> Optional[Account]:
+    def get_by_uuid(self, uuid: str) -> Optional[SignalAccount]:
         """
         Get an account by UUID.
         :param uuid: str: the UUID to search for.
-        :return: Optional[Account]
+        :return: Optional[SignalAccount]
         :raises TypeError: if the uuid is not a string.
         :raises ValueError: if the uuid is not in the correct format.
         """
@@ -297,11 +299,11 @@ class Accounts(object):
         self.logger.debug("Account uuid '%s' NOT found." % uuid)
         return None
 
-    def get_by_username(self, username: str) -> Optional[Account]:
+    def get_by_username(self, username: str) -> Optional[SignalAccount]:
         """
         Get an account by username.
         :param username: str: The username to search for.
-        :return: Optional[Account]: The Account object or None if not found.
+        :return: Optional[SignalAccount]: The SignalAccount object or None if not found.
         :raises TypeError: If username is not a string.
         """
         global ACCOUNTS

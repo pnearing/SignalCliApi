@@ -11,12 +11,12 @@ import logging
 
 from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, phone_number_regex, uuid_regex, \
     NUMBER_FORMAT_STR, UUID_FORMAT_STR, SELF_CONTACT_NAME, __parse_signal_response__, __check_response_for_error__, \
-    UNKNOWN_CONTACT_NAME
-from .signalContact import Contact
+    UNKNOWN_CONTACT_NAME, SyncTypes
+from .signalContact import SignalContact
 from .signalExceptions import ParameterError, InvalidDataFile
 
 
-class Contacts(object):
+class SignalContacts(object):
     """Object to contain a contact list."""
 
     def __init__(self,
@@ -94,7 +94,7 @@ class Contacts(object):
         """The filename to use for the contacts JSON file."""
         self._json_file_path: str = os.path.join(self._account_path, self._filename)
         """The full path to this accounts contacts JSON file."""
-        self._contacts: list[Contact] = []
+        self._contacts: list[SignalContact] = []
         """The main list of contacts."""
 
         # Load from file:
@@ -116,7 +116,7 @@ class Contacts(object):
 
         # Search for self-contact, and create if not found:
         logger.debug("Search for self-contact...")
-        self_contact: Optional[Contact] = self.get_by_id(self._account_id)
+        self_contact: Optional[SignalContact] = self.get_by_id(self._account_id)
         if self_contact is None:
             logger.debug("No self-contact found, adding...")
             self.add(SELF_CONTACT_NAME, self._account_id)
@@ -130,7 +130,7 @@ class Contacts(object):
     ##########################
     # Overrides:
     ##########################
-    def __iter__(self) -> Iterator[Contact]:
+    def __iter__(self) -> Iterator[SignalContact]:
         """
         Iterate over the contacts.
         :return: Iterator
@@ -144,11 +144,11 @@ class Contacts(object):
         """
         return len(self._contacts)
 
-    def __getitem__(self, index: int | str) -> Contact:
+    def __getitem__(self, index: int | str) -> SignalContact:
         """
         Index with square brackets, returning a contact.
         :param index: int | str: The index of the contact if int, the ID of the contact if str.
-        :return: Contact: The Contact object.
+        :return: SignalContact: The SignalContact object.
         :raises TypeError: If the index is not int or str.
         :raises ValueError: If the index is a string, and not a valid number or UUID format.
         :raises IndexError: If index is an integer and not a valid index.
@@ -210,9 +210,9 @@ class Contacts(object):
         self._contacts = []
         count: int = 0
         for contact_dict in from_dict['contacts']:
-            contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                              config_path=self._config_path, account_id=self._account_id,
-                              account_path=self._account_path, from_dict=contact_dict)
+            contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                                    config_path=self._config_path, account_id=self._account_id,
+                                    account_path=self._account_path, from_dict=contact_dict)
             self._contacts.append(contact)
             count += 1
         logger.debug("Loaded %i contacts from the dict." % count)
@@ -278,10 +278,10 @@ class Contacts(object):
     ######################
     # Sync with signal:
     ######################
-    def __sync__(self) -> list[Contact]:
+    def __sync__(self) -> list[SignalContact]:
         """
         Sync contacts with signal.
-        :return: list[Contact]: The new contacts found.
+        :return: list[SignalContact]: The new contacts found.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__sync__.__name__)
         logger.info("Sync contacts started.")
@@ -302,20 +302,20 @@ class Contacts(object):
         __check_response_for_error__(response_obj)  # Raises Signal Error on all signal errors.
 
         # Load contacts:
-        new_contacts: list[Contact] = []
+        new_contacts: list[SignalContact] = []
         total_count: int = 0
         new_count: int = 0
         for raw_contact in response_obj['result']:
             # Create new contact:
-            new_contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                                  config_path=self._config_path, account_id=self._account_id,
-                                  account_path=self._account_path, raw_contact=raw_contact)
+            new_contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                                        config_path=self._config_path, account_id=self._account_id,
+                                        account_path=self._account_path, raw_contact=raw_contact)
             # Increment total count:
             total_count += 1
             # Check for existing contact:
             contact_found = False
             for contact in self._contacts:
-                if contact == new_contact:
+                if new_contact == contact:
                     contact.__update__(new_contact)
                     contact_found = True
             # If contact not found add the new contact.
@@ -329,20 +329,23 @@ class Contacts(object):
     ##################################
     # Helpers:
     ##################################
-    def __parse_sync_message__(self, sync_message) -> None:  # sync_message type = SyncMessage
+    def __parse_sync_message__(self, sync_message) -> None:  # sync_message type = SignalSyncMessage
         """
         Parse a sync message.
-        :param sync_message: SyncMessage: The sync message object to check.
+        :param sync_message: SignalSyncMessage: The sync message object to check.
         :return: None
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
-        if sync_message.sync_type == 5:  # SyncMessage.TYPE_BLOCKED_SYNC
+        if sync_message.sync_type == SyncTypes.BLOCKS:
             for contact_id in sync_message.blocked_contacts:
                 added, contact = self.__get_or_add__(contact_id=contact_id)
                 contact.is_blocked = True
             self.__save__()
+        elif sync_message.sync_type == SyncTypes.CONTACTS:
+            new_contacts = self.__sync__()
+            self.__save__()
         else:
-            error_message: str = "Contacts can only parse messages of type: SyncMessage.TYPE_BLOCKED_SYNC (5)."
+            error_message: str = "SignalContacts can only parse messages of types: SyncTypes.BLOCKS or SyncTypes.CONTACTS."
             logger.critical("Raising TypeError(%s)." % error_message)
             raise TypeError(error_message)
         return
@@ -352,15 +355,15 @@ class Contacts(object):
                        number: Optional[str] = None,
                        uuid: Optional[str] = None,
                        contact_id: Optional[str] = None
-                       ) -> tuple[bool, Contact]:
+                       ) -> tuple[bool, SignalContact]:
         """
         Get or add a contact.
         :param name: str: The name of the contact, defaults to UNKNOWN_CONTACT_NAME
         :param number: Optional[str]: The known phone number of the contact.
         :param uuid: Optional[str]: The known uuid of the contact.
         :param contact_id: Optional[str] The contact ID, either uuid or number formats.
-        :return: tuple[bool, Contact]: The first element, the boolean, is if the contact was added to signal or not.
-            The second element is the Contact object for the given info.
+        :return: tuple[bool, SignalContact]: The first element, the boolean, is if the contact was added to signal or not.
+            The second element is the SignalContact object for the given info.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__get_or_add__.__name__)
@@ -418,7 +421,7 @@ class Contacts(object):
                 raise ValueError(error_message)
 
         # Search for contact:
-        found_contact: Optional[Contact] = None
+        found_contact: Optional[SignalContact] = None
         for contact in self._contacts:
             # Check for contact:
             if number is not None and contact.number == number:
@@ -435,16 +438,20 @@ class Contacts(object):
         if found_contact is not None:
             logger.debug("Contact found.")
             # Merge contact if more info found:
+            should_save: bool = False
             if found_contact.number is None and number is not None:
                 found_contact.number = number
-                self.__save__()
+                should_save = True
             if found_contact.uuid is None and uuid is not None:
                 found_contact.uuid = uuid
-                self.__save__()
+                should_save = True
             if found_contact.name is None or found_contact.name == UNKNOWN_CONTACT_NAME:
                 if name is not None and name != UNKNOWN_CONTACT_NAME:
                     found_contact.name = name
-                    self.__save__()
+                    should_save = True
+            if should_save:
+                logger.debug("contact data updated, saving.")
+                self.__save__()
             return False, found_contact
         # Add contact:
         logger.debug("Adding contact.")
@@ -462,11 +469,11 @@ class Contacts(object):
     ##################################
     # Getters:
     ##################################
-    def get_by_number(self, number: str) -> Optional[Contact]:
+    def get_by_number(self, number: str) -> Optional[SignalContact]:
         """
         Get a contact given a number.
         :param number: str: The phone number of the contact.
-        :return: Optional[Contact]: Returns the contact, or None if not found.
+        :return: Optional[SignalContact]: Returns the contact, or None if not found.
         :raises: TypeError: If phone number is not a string.
         :raises: ValueError: If phone number is not in proper format.
         """
@@ -488,11 +495,11 @@ class Contacts(object):
                 return contact
         return None
 
-    def get_by_uuid(self, uuid: str) -> Optional[Contact]:
+    def get_by_uuid(self, uuid: str) -> Optional[SignalContact]:
         """
         Get a contact given a UUID.
         :param uuid: str: The uuid of the contact.
-        :return Optional[Contact]: Return the contact, or None if not found.
+        :return Optional[SignalContact]: Return the contact, or None if not found.
         :raises: TypeError: If uuid is not a string.
         :raises: ValueError: If uuid is not in proper format.
         """
@@ -514,11 +521,11 @@ class Contacts(object):
                 return contact
         return None
 
-    def get_by_id(self, contact_id: str) -> Optional[Contact]:
+    def get_by_id(self, contact_id: str) -> Optional[SignalContact]:
         """
         Get a contact given either a phone number or an uuid.
         :param contact_id: str: The id of the contact, either a phone number or an uuid.
-        :return Optional[Contact]: Return the contact, or None if not found.
+        :return Optional[SignalContact]: Return the contact, or None if not found.
         :raises: TypeError: If the contact_id is not a string.
         :raises: ValueError: If contact_id not in phone number or uuid formats.
         """
@@ -541,10 +548,10 @@ class Contacts(object):
             logger.critical("Raising ValueError(%s)." % errorMessage)
             raise ValueError(errorMessage)
 
-    def get_self(self) -> Optional[Contact]:
+    def get_self(self) -> Optional[SignalContact]:
         """
         Return the contact for the current account.
-        :return Contact: The 'self' contact, or None if not found.
+        :return SignalContact: The 'self' contact, or None if not found.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_self.__name__)
         for contact in self._contacts:
@@ -553,11 +560,11 @@ class Contacts(object):
         logger.warning("'Self-Contact' not found ????'")
         return None
 
-    def get_by_name(self, name: str) -> Optional[Contact]:
+    def get_by_name(self, name: str) -> Optional[SignalContact]:
         """
         Get a contact given a name.
         :param name: str: The name to search for.
-        :returns: Optional[Contact]: The contact, or None if not found.
+        :returns: Optional[SignalContact]: The contact, or None if not found.
         :raises: TypeError: If name is not a string.
         :raises: ValueError: If name is an empty string.
         """
@@ -581,15 +588,15 @@ class Contacts(object):
     #########################
     # Methods:
     #########################
-    def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, Contact, Optional[str]]:
+    def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, SignalContact, Optional[str]]:
         """
         Add a contact.
         :param name: str: The name to assign to the contact.
         :param contact_id: str: The id of the contact, either a phone number or an uuid.
         :param expiration: Optional[int]: The message expiration time in seconds.
-        :returns: tuple(bool, Contact, Optional[str]): The first element, the bool indicates if the contact was
+        :returns: tuple(bool, SignalContact, Optional[str]): The first element, the bool indicates if the contact was
             successfully added to signal.
-            The second element is the new Contact object, or existing Contact object if the contact already exists.
+            The second element is the new SignalContact object, or existing SignalContact object if the contact already exists.
             The third element, the Optional string, will be None if the first element is True, otherwise it will be a
             reason the contact wasn't added to signal.
         :raises: TypeError: If a parameter is of an invalid type.
@@ -651,17 +658,17 @@ class Contacts(object):
                 exit_message = error_message
 
         # Create a new contact object:
-        new_contact: Contact
+        new_contact: SignalContact
         if phone_number_match is not None:  # Reuse phone number match from value check.
-            new_contact = Contact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                                  config_path=self._config_path, account_id=self._account_id,
-                                  account_path=self._account_path, name=name, number=contact_id
-                                  )
+            new_contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
+                                        config_path=self._config_path, account_id=self._account_id,
+                                        account_path=self._account_path, name=name, number=contact_id
+                                        )
         else:
-            new_contact = Contact(command_socket=self._sync_socket, sync_socket=self._sync_socket,
-                                  config_path=self._config_path, account_id=self._account_id,
-                                  account_path=self._account_path, name=name, uuid=contact_id
-                                  )
+            new_contact = SignalContact(command_socket=self._sync_socket, sync_socket=self._sync_socket,
+                                        config_path=self._config_path, account_id=self._account_id,
+                                        account_path=self._account_path, name=name, uuid=contact_id
+                                        )
 
         # Store the contact:
         self._contacts.append(new_contact)
@@ -671,3 +678,30 @@ class Contacts(object):
         if exit_message is not None:
             return False, new_contact, exit_message
         return True, new_contact, None
+
+    def get_blocked(self, include_self: bool = True) -> list[SignalContact]:
+        """
+        Get a list of blocked contacts.
+        :param include_self: bool: Should we include the self-contact?
+        :return: list[SignalContact]: The blocked contacts, or an empty list if none found.
+        """
+        contact_list: list[SignalContact] = [contact for contact in self._contacts if contact.is_blocked is True]
+        if include_self:
+            return contact_list
+        try:
+            contact_list.remove(self.get_self())
+        except ValueError:
+            pass
+        return contact_list
+
+    def get_unblocked(self, include_self: bool = True) -> list[SignalContact]:
+        """
+        Get a list of unblocked contacts.
+        :param include_self: bool: Should we include the self-contact?
+        :return: list[SignalContact]: The unblocked contacts, or an empty list if none found.
+        """
+        contact_list: list[SignalContact] = [contact for contact in self._contacts if contact.is_blocked is False]
+        if include_self:
+            return contact_list
+        contact_list.remove(self.get_self())
+        return contact_list

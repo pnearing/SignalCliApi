@@ -6,16 +6,16 @@ import logging
 from typing import Optional, Any
 import socket
 from .signalCommon import __type_error__, MessageTypes
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalMessage import Message
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalMessage import SignalMessage
 
 
-class CallMessage(Message):
+class SignalCallMessage(SignalMessage):
     """
     Class to store a call message.
     """
@@ -23,28 +23,22 @@ class CallMessage(Message):
                  command_socket: socket.socket,
                  account_id: str,
                  config_path: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
-                 this_device: Device,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
+                 this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
-                 # sender: Optional[Contact] = None,
-                 # recipient: Optional[Contact | Group] = None,
-                 # offer_id: Optional[int] = None,
-                 # sdp: Optional[Any] = None,
-                 # call_type: Optional[str] = None,
-                 # opaque: Optional[str] = None,
                  ) -> None:
         """
         Initialize a call message.
         :param command_socket: socket.socket: The socket to run commands on.
         :param account_id: str: This account's ID.
         :param config_path: str: The full path to the signal-cli config directory.
-        :param contacts: Contacts: This accounts Contacts object.
-        :param groups: Groups: This accounts Groups object.
-        :param devices: Devices: This accounts Devices object.
-        :param this_device: Device: The Device object for the device we're using.
+        :param contacts: SignalContacts: This accounts SignalContacts object.
+        :param groups: SignalGroups: This accounts SignalGroups object.
+        :param devices: SignalDevices: This accounts SignalDevices object.
+        :param this_device: SignalDevice: The SignalDevice object for the device we're using.
         :param from_dict: dict[str, Any]: Load properties from a dict created by __to_dict__()
         :param raw_message:  dict[str, Any]: Load properties from a dict provided by signal.
         """
@@ -76,13 +70,17 @@ class CallMessage(Message):
         :param raw_message: dict[str, Any]: The dict to load from.
         :return: None
         """
+        logger = logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_message__.__name__)
         super().__from_raw_message__(raw_message)
-        offer_message: dict[str, object] = raw_message['callMessage']['offerMessage']
-        self.offer_id = offer_message['id']
-        self.sdp = offer_message['sdp']
-        self.call_type = offer_message['type']
-        self.opaque = offer_message['opaque']
+        logger.debug(raw_message)
+        # TODO: THIS HAS CHANGED:
         return
+        # offer_message: dict[str, object] = raw_message['callMessage']['offerMessage']
+        # self.offer_id = offer_message['id']
+        # self.sdp = offer_message['sdp']
+        # self.call_type = offer_message['type']
+        # self.opaque = offer_message['opaque']
+        # return
 
     ###############################
     # To / From dict:

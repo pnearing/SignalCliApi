@@ -10,13 +10,13 @@ import os
 from subprocess import check_call, CalledProcessError
 
 from .signalCommon import __type_error__, __find_xdgopen__
-from .signalThumbnail import Thumbnail
+from .signalThumbnail import SignalThumbnail
 from .signalExceptions import ParameterError
 # Define Self:
-Self = TypeVar("Self", bound="Attachment")
+Self = TypeVar("Self", bound="SignalAttachment")
 
 
-class Attachment(object):
+class SignalAttachment(object):
     """
     Class to store an attachment.
     """
@@ -26,15 +26,15 @@ class Attachment(object):
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_attachment: Optional[dict[str, Any]] = None,
                  local_path: Optional[str] = None,
-                 thumbnail: Optional[Thumbnail] = None,
+                 thumbnail: Optional[SignalThumbnail] = None,
                  ) -> None:
         """
-        Initialize an Attachment object.
+        Initialize an SignalAttachment object.
         :param config_path: str: The path to the signal-cli config directory.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
         :param raw_attachment: Optional[dict[str, Any]]: The dict provided by signal.
         :param local_path: Optional[str]: The local path of this attachment.
-        :param thumbnail: Optional[Thumbnail]: The Thumbnail object for this attachment.
+        :param thumbnail: Optional[SignalThumbnail]: The SignalThumbnail object for this attachment.
         """
         # Super:
         object.__init__(self)
@@ -59,9 +59,9 @@ class Attachment(object):
         if local_path is not None and not isinstance(local_path, str):
             logger.critical("Raising TypeError:")
             __type_error__("local_path", "str", local_path)
-        if thumbnail is not None and not isinstance(thumbnail, Thumbnail):
+        if thumbnail is not None and not isinstance(thumbnail, SignalThumbnail):
             logger.critical("Raising TypeError:")
-            __type_error__("thumbnail", "Optional[Thumbnail]", thumbnail)
+            __type_error__("thumbnail", "Optional[SignalThumbnail]", thumbnail)
 
         # Parameter checks:
         not_nones: int = 0
@@ -106,8 +106,8 @@ class Attachment(object):
         self.exists: bool = False
         """Does the local file exist?"""
         # Thumbnail:
-        self.thumbnail: Optional[Thumbnail] = thumbnail
-        """The Thumbnail object for this attachment."""
+        self.thumbnail: Optional[SignalThumbnail] = thumbnail
+        """The SignalThumbnail object for this attachment."""
 
         # Parse from_dict:
         if from_dict is not None:
@@ -132,7 +132,10 @@ class Attachment(object):
         :param raw_attachment: dict[str, Any]: The dict to load from.
         :return: None
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_attachment__.__name__)
+        logger.debug("raw attachment: %s" % str(raw_attachment))
         self.content_type = raw_attachment['contentType']
+        # TODO: No 'id' key:
         self.id = raw_attachment['id']
         self.filename = raw_attachment['filename']
         if 'size' in raw_attachment.keys():
@@ -147,7 +150,7 @@ class Attachment(object):
             self.exists = False
         self.thumbnail = None
         if 'thumbnail' in raw_attachment.keys():
-            self.thumbnail = Thumbnail(config_path=self._config_path, raw_thumbnail=raw_attachment['thumbnail'])
+            self.thumbnail = SignalThumbnail(config_path=self._config_path, raw_thumbnail=raw_attachment['thumbnail'])
         return
 
     #########################
@@ -187,7 +190,7 @@ class Attachment(object):
             self.exists = False
         self.thumbnail = None
         if from_dict['thumbnail'] is not None:
-            self.thumbnail = Thumbnail(config_path=self._config_path, from_dict=from_dict['thumbnail'])
+            self.thumbnail = SignalThumbnail(config_path=self._config_path, from_dict=from_dict['thumbnail'])
         return
 
     ########################

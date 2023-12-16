@@ -9,46 +9,47 @@ import os
 import socket
 import json
 from syslog import syslog, LOG_INFO
-from .signalAttachment import Attachment
-from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, __parse_signal_response__,\
-    __check_response_for_error__, RecipientTypes
-from .signalContact import Contact
-from .signalContacts import Contacts
-from .signalDevice import Device
-from .signalDevices import Devices
-from .signalGroup import Group
-from .signalGroups import Groups
-from .signalGroupUpdate import GroupUpdate
-from .signalMention import Mention
-from .signalMentions import Mentions
-from .signalMessage import Message
-from .signalPreview import Preview
-from .signalQuote import Quote
-from .signalReaction import Reaction
-from .signalReceipt import Receipt
-from .signalReceivedMessage import ReceivedMessage
-from .signalSentMessage import SentMessage
-from .signalSticker import Sticker, StickerPacks
-from .signalStoryMessage import StoryMessage
-from .signalSyncMessage import SyncMessage
-from .signalTimestamp import Timestamp
-from .signalTypingMessage import TypingMessage
+from .signalAttachment import SignalAttachment
+from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, \
+    __parse_signal_response__, \
+    __check_response_for_error__, RecipientTypes, SyncTypes, MessageFilter
+from .signalContact import SignalContact
+from .signalContacts import SignalContacts
+from .signalDevice import SignalDevice
+from .signalDevices import SignalDevices
+from .signalGroup import SignalGroup
+from .signalGroups import SignalGroups
+from .signalGroupUpdate import SignalGroupUpdate
+from .signalMention import SignalMention
+from .signalMentions import SignalMentions
+from .signalMessage import SignalMessage
+from .signalPreview import SignalPreview
+from .signalQuote import SignalQuote
+from .signalReaction import SignalReaction
+from .signalReceipt import SignalReceipt
+from .signalReceivedMessage import SignalReceivedMessage
+from .signalSentMessage import SignalSentMessage
+from .signalSticker import SignalSticker, SignalStickerPacks
+from .signalStoryMessage import SignalStoryMessage
+from .signalSyncMessage import SignalSyncMessage
+from .signalTimestamp import SignalTimestamp
+from .signalTypingMessage import SignalTypingMessage
 from .signalExceptions import InvalidDataFile, ParameterError
 
 
-class Messages(object):
+class SignalMessages(object):
     """Class to hold all messages, and act like a list."""
 
     def __init__(self,
                  command_socket: socket.socket,
                  config_path: str,
                  account_id: str,
-                 contacts: Contacts,
-                 groups: Groups,
-                 devices: Devices,
+                 contacts: SignalContacts,
+                 groups: SignalGroups,
+                 devices: SignalDevices,
                  account_path: str,
-                 this_device: Device,
-                 sticker_packs: StickerPacks,
+                 this_device: SignalDevice,
+                 sticker_packs: SignalStickerPacks,
                  do_load: bool = False,
                  ) -> None:
         """
@@ -56,12 +57,12 @@ class Messages(object):
         :param command_socket: socket.socket: The socket to run commands on.
         :param config_path: str: The full path to the signal-cli config directory.
         :param account_id: str: This account's ID.
-        :param contacts: Contacts: This accounts Contacts object.
-        :param groups: Groups: This accounts Groups object.
-        :param devices: Devices: This account Devices object.
+        :param contacts: SignalContacts: This accounts SignalContacts object.
+        :param groups: SignalGroups: This accounts SignalGroups object.
+        :param devices: SignalDevices: This account SignalDevices object.
         :param account_path: str: The full path to the account data directory.
-        :param this_device: Device: This device, Device object.
-        :param sticker_packs: StickerPacks: The loaded StickerPacks object.
+        :param this_device: SignalDevice: This device, SignalDevice object.
+        :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
         :param do_load: bool: True, load from disk, False, do not.
         """
         # Super:
@@ -80,18 +81,18 @@ class Messages(object):
         if not isinstance(account_id, str):
             logger.critical("Raising TypeError:")
             __type_error__("account_id", "str", account_id)
-        if not isinstance(contacts, Contacts):
+        if not isinstance(contacts, SignalContacts):
             logger.critical("Raising TypeError:")
-            __type_error__("contacts", "Contacts", contacts)
-        if not isinstance(devices, Devices):
+            __type_error__("contacts", "SignalContacts", contacts)
+        if not isinstance(devices, SignalDevices):
             logger.critical("Raising TypeError:")
-            __type_error__("devices", "Devices", devices)
-        if not isinstance(this_device, Device):
+            __type_error__("devices", "SignalDevices", devices)
+        if not isinstance(this_device, SignalDevice):
             logger.critical("Raising TypeError:")
-            __type_error__("this_devices", "Device", this_device)
-        if not isinstance(sticker_packs, StickerPacks):
+            __type_error__("this_devices", "SignalDevice", this_device)
+        if not isinstance(sticker_packs, SignalStickerPacks):
             logger.critical("Raising TypeError:")
-            __type_error__("sticker_packs", "StickerPacks", sticker_packs)
+            __type_error__("sticker_packs", "SignalStickerPacks", sticker_packs)
         if not isinstance(do_load, bool):
             logger.critical("Raising TypeError:")
             __type_error__("do_load", "bool", do_load)
@@ -103,28 +104,28 @@ class Messages(object):
         """The full path to the signal-cli config directory."""
         self._account_id: str = account_id
         """This account's ID."""
-        self._contacts: Contacts = contacts
-        """This account's Contacts object."""
-        self._groups: Groups = groups
-        """This account's Groups object."""
-        self._devices: Devices = devices
-        """This account's Devices object."""
-        self._this_device: Device = this_device
-        """This device's Device object."""
-        self._sticker_packs: StickerPacks = sticker_packs
+        self._contacts: SignalContacts = contacts
+        """This account's SignalContacts object."""
+        self._groups: SignalGroups = groups
+        """This account's SignalGroups object."""
+        self._devices: SignalDevices = devices
+        """This account's SignalDevices object."""
+        self._this_device: SignalDevice = this_device
+        """This device's SignalDevice object."""
+        self._sticker_packs: SignalStickerPacks = sticker_packs
         """The loaded sticker packs object."""
         self._file_path: str = os.path.join(account_path, "messages.json")
         """The full path to the messages.json file."""
         self._sending: bool = False
         """Are we currently sending a message?"""
         # Set external properties:
-        self.messages: list[SentMessage | ReceivedMessage] = []
+        self.messages: list[SignalSentMessage | SignalReceivedMessage] = []
         """List of sent / received messages."""
-        self.sync: list[GroupUpdate | SyncMessage] = []
+        self.sync: list[SignalGroupUpdate | SignalSyncMessage] = []
         """List of sync messages."""
-        self.typing: list[TypingMessage] = []
+        self.typing: list[SignalTypingMessage] = []
         """List of typing messages."""
-        self.story: list[StoryMessage] = []
+        self.story: list[SignalStoryMessage] = []
         """List of story messages."""
 
         # Do load:
@@ -137,16 +138,6 @@ class Messages(object):
                 self.__save__()
         return
 
-    ################################
-    # Properties:
-    ################################
-    @property
-    def sending(self) -> bool:
-        """
-        Return sending status.
-        :returns: bool: Sending status. True if sending, False if not.
-        """
-        return self._sending
 
     ################################
     # To / From Dict:
@@ -162,7 +153,7 @@ class Messages(object):
             "typingMessages": [],
             "storyMessages": [],
         }
-        # Store messages: SentMessage | ReceivedMessage
+        # Store messages: SignalSentMessage | SignalReceivedMessage
         for message in self.messages:
             messages_dict["messages"].append(message.__to_dict__())
         # Store sync messages: (sync and group update)
@@ -170,10 +161,10 @@ class Messages(object):
             if message is None:
                 raise RuntimeError("WTF")
             messages_dict['syncMessages'].append(message.__to_dict__())
-        # Store typing messages: TypingMessage
+        # Store typing messages: SignalTypingMessage
         for message in self.typing:
             messages_dict['typingMessages'].append(message.__to_dict__())
-        # Store story messages: StoryMessage
+        # Store story messages: SignalStoryMessage
         for message in self.story:
             messages_dict['storyMessages'].append(message.__to_dict__())
         return messages_dict
@@ -187,38 +178,38 @@ class Messages(object):
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_dict__.__name__)
 
-        # Load messages: SentMessage | ReceivedMessage
+        # Load messages: SignalSentMessage | SignalReceivedMessage
         self.messages = []
         for message_dict in from_dict['messages']:
             if message_dict['messageType'] == MessageTypes.SENT.value:
-                message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                      devices=self._devices, this_device=self._this_device,
-                                      sticker_packs=self._sticker_packs,
-                                      from_dict=message_dict)
+                message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                            config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                            devices=self._devices, this_device=self._this_device,
+                                            sticker_packs=self._sticker_packs,
+                                            from_dict=message_dict)
 
             elif message_dict['messageType'] == MessageTypes.RECEIVED.value:
-                message = ReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                          config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                          devices=self._devices, this_device=self._this_device,
-                                          sticker_packs=self._sticker_packs, from_dict=message_dict)
+                message = SignalReceivedMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                                config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                                devices=self._devices, this_device=self._this_device,
+                                                sticker_packs=self._sticker_packs, from_dict=message_dict)
             else:
                 warning_message: str = "Invalid message type in messages from_dict: %s" % from_dict['message_type']
                 logger.warning(warning_message)
                 continue
             self.messages.append(message)
-        # Load sync messages: GroupUpdate | SyncMessage
+        # Load sync messages: SignalGroupUpdate | SignalSyncMessage
         self.sync = []
         for message_dict in from_dict['syncMessages']:
             if message_dict['messageType'] == MessageTypes.GROUP_UPDATE.value:
-                message = GroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                      devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                message = SignalGroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
+                                            config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                            devices=self._devices, this_device=self._this_device, from_dict=message_dict)
             elif message_dict['messageType'] == MessageTypes.SYNC.value:
-                message = SyncMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                      devices=self._devices, this_device=self._this_device,
-                                      sticker_packs=self._sticker_packs, from_dict=message_dict)
+                message = SignalSyncMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                            config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                            devices=self._devices, this_device=self._this_device,
+                                            sticker_packs=self._sticker_packs, from_dict=message_dict)
             else:
                 warning_message: str = "Invalid message type in for sync messages: message type: %i" \
                                        % message_dict['messageType']
@@ -229,9 +220,9 @@ class Messages(object):
         self.typing = []
         for message_dict in from_dict['typingMessages']:
             if message_dict['messageType'] == MessageTypes.TYPING.value:
-                message = TypingMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                        config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                        devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                message = SignalTypingMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                              config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                              devices=self._devices, this_device=self._this_device, from_dict=message_dict)
                 self.typing.append(message)
             else:
                 warning_message: str = "Invalid message type in typing messages: MessageType: %i" \
@@ -241,9 +232,9 @@ class Messages(object):
         self.story = []
         for message_dict in from_dict['storyMessages']:
             if message_dict['messageType'] == MessageTypes.STORY.value:
-                message = StoryMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                       config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                       devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                message = SignalStoryMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                             config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                             devices=self._devices, this_device=self._this_device, from_dict=message_dict)
                 self.story.append(message)
             else:
                 warning_message: str = "Invalid message type in story messages: MessageType: %i" \
@@ -302,21 +293,21 @@ class Messages(object):
     ##################################
     # Helpers:
     ##################################
-    def __parse_reaction__(self, reaction: Reaction) -> bool:
+    def __parse_reaction__(self, reaction: SignalReaction) -> bool:
         """
         Parse a Reaction message.
-        :param reaction: Reaction: The reaction to parse.
+        :param reaction: SignalReaction: The reaction to parse.
         :return: bool: True if the reaction was parsed, False if not.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_reaction__.__name__)
 
         # Get the messages from the recipients:
-        search_messages: list[Message] = []
-        if reaction.recipient_type == 'contact':
+        search_messages: list[SignalMessage] = []
+        if reaction.recipient_type == RecipientTypes.CONTACT:
             messages = self.get_by_sender(reaction.recipient)
             search_messages.extend(messages)
-        elif reaction.recipient_type == 'group':
+        elif reaction.recipient_type == RecipientTypes.GROUP:
             messages = self.get_by_recipient(reaction.recipient)
             search_messages.extend(messages)
         else:
@@ -325,7 +316,7 @@ class Messages(object):
             logger.critical("Raising RuntimeError(%s)." % error_message)
             raise RuntimeError(error_message)
         # Find the message that was reacted to:
-        reacted_message: Optional[SentMessage | ReceivedMessage | Message] = None
+        reacted_message: Optional[SignalSentMessage | SignalReceivedMessage | SignalMessage] = None
         for message in search_messages:
             if message.sender == reaction.target_author:
                 if message.timestamp == reaction.target_timestamp:
@@ -338,13 +329,13 @@ class Messages(object):
         self.__save__()  # save the results.
         return True
 
-    def __parse_receipt__(self, receipt: Receipt) -> None:
+    def __parse_receipt__(self, receipt: SignalReceipt) -> None:
         """
         Parse a receipt message.
-        :param receipt: Receipt: The receipt message to parse.
+        :param receipt: SignalReceipt: The receipt message to parse.
         :return: None
         """
-        sent_messages = [message for message in self.messages if isinstance(message, SentMessage)]
+        sent_messages = [message for message in self.messages if isinstance(message, SignalSentMessage)]
         for message in sent_messages:
             for timestamp in receipt.timestamps:
                 if message.timestamp == timestamp:
@@ -352,7 +343,7 @@ class Messages(object):
                     self.__save__()
         return
 
-    def __parse_read_message_sync__(self, sync_message: SyncMessage) -> None:
+    def __parse_read_message_sync__(self, sync_message: SignalSyncMessage) -> None:
         """
         Parse a read message sync message.
         :param sync_message: SyncMessage: The sync message to parse.
@@ -363,41 +354,41 @@ class Messages(object):
             for message in search_messages:
                 if message.timestamp == timestamp:
                     if not message.is_read:
-                        if isinstance(message, ReceivedMessage):
+                        if isinstance(message, SignalReceivedMessage):
                             message.mark_read(when=sync_message.timestamp, send_receipt=False)
                         else:
                             message.mark_read(when=sync_message.timestamp)
         return
 
-    def __parse_sent_message_sync__(self, sync_message: SyncMessage) -> None:
+    def __parse_sent_message_sync__(self, sync_message: SignalSyncMessage) -> None:
         """
         Parse a sent messages sync message.
         :param sync_message: SyncMessage: The sync message to parse.
         :return: None
         """
-        message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
-                              config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                              devices=self._devices, this_device=self._this_device, sticker_packs=self._sticker_packs,
-                              raw_message=sync_message.raw_sent_message)
+        message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                    config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                    devices=self._devices, this_device=self._this_device,
+                                    sticker_packs=self._sticker_packs, raw_message=sync_message.raw_sent_message)
         self.append(message)
         return
 
-    def __parse_sync_message__(self, sync_message: SyncMessage) -> None:
+    def __parse_sync_message__(self, sync_message: SignalSyncMessage) -> None:
         """
         Parse a sync message, sending it where it needs to go.
-        :param sync_message: SyncMessage: The sync message to parse.
+        :param sync_message: SignalSyncMessage: The sync message to parse.
         :return: None
-        :raises TypeError: On an invalid SyncMessage type.
+        :raises TypeError: On an invalid SignalSyncMessage type.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
-        if sync_message.sync_type == SyncMessage.TYPE_READ_MESSAGE_SYNC:
+        if sync_message.sync_type == SyncTypes.READ_MESSAGES:
             self.__parse_read_message_sync__(sync_message)
-        elif sync_message.sync_type == SyncMessage.TYPE_SENT_MESSAGE_SYNC:
+        elif sync_message.sync_type == SyncTypes.SENT_MESSAGES:
             self.__parse_sent_message_sync__(sync_message)
         else:
-            error_message = ("Can only parse SyncMessage.TYPE_READ_MESSAGE_SYNC and SyncMessage.TYPE_SENT_MESSAGE_SYNC"
-                             " not: %i" % sync_message.sync_type)
+            error_message = ("Can only parse SyncTypes.READ_MESSAGES and SyncTypes.SENT_MESSAGES, not"
+                             " not: %s" % str(sync_message.sync_type))
             logger.critical("Raising TypeError(%s)." % error_message)
             raise TypeError(error_message)
         self.__save__()
@@ -417,7 +408,7 @@ class Messages(object):
         Expunge expired messages.
         :return: None
         """
-        saved_messages: list[SentMessage | ReceivedMessage] = []
+        saved_messages: list[SignalSentMessage | SignalReceivedMessage] = []
         for message in self.messages:
             if not message.is_expired:
                 saved_messages.append(message)
@@ -428,112 +419,132 @@ class Messages(object):
     ##################################
     # Getters:
     ##################################
-    def get_by_timestamp(self, timestamp: Timestamp) -> list[Message]:
+    def get_by_timestamp(self, timestamp: SignalTimestamp) -> list[SignalMessage]:
         """
         Get messages by timestamp.
-        :param timestamp: Timestamp: The timestamp to search for.
+        :param timestamp: SignalTimestamp: The timestamp to search for.
         :returns: list[SentMessage|ReceivedMessage]: The list of messages, or an empty list if none found.
-        :raises: TypeError: If timestamp is not a Timestamp object.
+        :raises: TypeError: If timestamp is not a SignalTimestamp object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_timestamp.__name__)
-        if not isinstance(timestamp, Timestamp):
+        if not isinstance(timestamp, SignalTimestamp):
             logger.critical("Raising TypeError:")
-            __type_error__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "SignalTimestamp", timestamp)
         return [message for message in self.messages if message.timestamp == timestamp]
 
-    def get_by_recipient(self, recipient: Group | Contact) -> list[Message]:
+    def get_by_recipient(self, recipient: SignalGroup | SignalContact) -> list[SignalMessage]:
         """
         Get messages given a recipient.
-        :param recipient: Group | Contact: The recipient to search for.
-        :raises: TypeError: If recipient is not a Contact or a Group object.
+        :param recipient: SignalGroup | SignalContact: The recipient to search for.
+        :raises: TypeError: If recipient is not a SignalContact or a SignalGroup object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_recipient.__name__)
-        if not isinstance(recipient, Contact) and not isinstance(recipient, Group):
+        if not isinstance(recipient, SignalContact) and not isinstance(recipient, SignalGroup):
             logger.critical("Raising TypeError:")
-            __type_error__("recipient", "Contact | Group", recipient)
+            __type_error__("recipient", "SignalContact | SignalGroup", recipient)
         return [message for message in self.messages if message.recipient == recipient]
 
-    def get_by_sender(self, sender: Contact) -> list[Message]:
+    def get_by_sender(self, sender: SignalContact) -> list[SignalMessage]:
         """
         Get messages given a sender.
-        :param sender: Contact: The sender to search for.
-        :raises: TypeError if sender is not a Contact object.
+        :param sender: SignalContact: The sender to search for.
+        :raises: TypeError if sender is not a SignalContact object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_by_sender.__name__)
-        if not isinstance(sender, Contact):
+        if not isinstance(sender, SignalContact):
             logger.critical("Raising TypeError:")
-            __type_error__("sender", "Contact", sender)
+            __type_error__("sender", "SignalContact", sender)
         messages = [message for message in self.messages if message.sender == sender]
         return messages
 
-    def get_conversation(self, target: Contact | Group) -> list[Message]:
+    def get_conversation(self,
+                         target: SignalContact | SignalGroup,
+                         message_filter: int = MessageFilter.NONE,
+                         ) -> list[SignalMessage]:
         """
         Get a conversation, given a target contact or group.  Returns a list of messages either sent to or received
             from a contact or group.
-        :param target: Contact | Group: The contact or group to search for.
+        :param target: SignalContact | SignalGroup: The contact or group to search for.
+        :param message_filter: int: The filter. Use signalCommon.MessageFilter flag values.
         :returns: list[SentMessage|ReceivedMessage]: The conversation, or an empty list if not found.
-        :raises: TypeError: If target is not a Contact or Group object.
+        :raises: TypeError: If target is not a SignalContact or SignalGroup object.
         """
-        # TODO: Account for when contacts.get_self() returns None. Maybe look into auto creating it.
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_conversation.__name__)
-        returnMessages = []
-        if isinstance(target, Contact):
+        return_messages = []
+        if isinstance(target, SignalContact):
             self_contact = self._contacts.get_self()
             for message in self.messages:
                 if message.sender == self_contact and message.recipient == target:
-                    returnMessages.append(message)
+                    return_messages.append(message)
                 elif message.sender == target and message.recipient == self_contact:
-                    returnMessages.append(message)
-        elif isinstance(target, Group):
+                    return_messages.append(message)
+        elif isinstance(target, SignalGroup):
             for message in self.messages:
-                if message.recipient == target:
-                    returnMessages.append(message)
+                if message.recipient.get_id() == target.get_id():
+                    return_messages.append(message)
+                # if message.recipient == target:
+                #     return_messages.append(message)
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("target", "Contact | Group", target)
-        return returnMessages
+            __type_error__("target", "SignalContact | SignalGroup", target)
+        # Apply filters:
+        if message_filter == MessageFilter.NONE:
+            return return_messages
+        if message_filter & MessageFilter.READ:
+            return_messages = [message for message in return_messages if message.is_read is True]
+        elif message_filter & MessageFilter.NOT_READ:
+            return_messages = [message for message in return_messages if message.is_read is False]
+        if message_filter & MessageFilter.VIEWED:
+            return_messages = [message for message in return_messages if message.is_viewed is True]
+        elif message_filter & MessageFilter.NOT_VIEWED:
+            return_messages = [message for message in return_messages if message.is_viewed is False]
+        if message_filter & MessageFilter.DELIVERED:
+            return_messages = [message for message in return_messages if message.is_delivered is True]
+        elif message_filter & MessageFilter.NOT_DELIVERED:
+            return_messages = [message for message in return_messages if message.is_delivered is False]
+        return return_messages
 
     def find(self,
-             author: Contact,
-             timestamp: Timestamp,
-             conversation: Contact | Group,
-             ) -> Optional[SentMessage | ReceivedMessage | Message]:
+             author: SignalContact,
+             timestamp: SignalTimestamp,
+             conversation: SignalContact | SignalGroup,
+             ) -> Optional[SignalSentMessage | SignalReceivedMessage | SignalMessage]:
         """
         Get a message, given an author, a timestamp, and a conversation.
-        :param author: Contact: The author of the message we're looking for.
-        :param timestamp: Timestamp: The time stamp of the message we're looking for.
-        :param conversation: Contact | Group: The conversation the message is in; IE: The conversation between self and
-            a specified Contact or Group.
+        :param author: SignalContact: The author of the message we're looking for.
+        :param timestamp: SignalTimestamp: The time stamp of the message we're looking for.
+        :param conversation: SignalContact | SignalGroup: The conversation the message is in; IE: The conversation between self and
+            a specified SignalContact or SignalGroup.
         :returns: SentMessage | ReceivedMessage: The message found, or None if not found.
-        :raises: TypeError: If author is not a Contact object, if timestamp is not a Timestamp object, or if
-                                conversation is not a Contact or Group object.
+        :raises: TypeError: If author is not a SignalContact object, if timestamp is not a SignalTimestamp object, or if
+                                conversation is not a SignalContact or SignalGroup object.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.find.__name__)
 
         # Validate author:
-        target_author: Contact
-        if isinstance(author, Contact):
+        target_author: SignalContact
+        if isinstance(author, SignalContact):
             target_author = author
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("author", "Contact", author)
+            __type_error__("author", "SignalContact", author)
 
         # Validate recipient:
-        target_conversation: Contact | Group
-        if isinstance(conversation, (Contact, Group)):
+        target_conversation: SignalContact | SignalGroup
+        if isinstance(conversation, (SignalContact, SignalGroup)):
             target_conversation = conversation
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("recipient", "Contact | Group", conversation)
+            __type_error__("recipient", "SignalContact | SignalGroup", conversation)
 
         # Validate timestamp:
-        target_timestamp: Timestamp
-        if isinstance(timestamp, Timestamp):
+        target_timestamp: SignalTimestamp
+        if isinstance(timestamp, SignalTimestamp):
             target_timestamp = timestamp
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("timestamp", "Timestamp", timestamp)
+            __type_error__("timestamp", "SignalTimestamp", timestamp)
 
         # Find Message:
         search_messages = self.get_conversation(target_conversation)
@@ -542,19 +553,19 @@ class Messages(object):
                 return message
         return None
 
-    def get_quoted(self, quote: Quote) -> Optional[SentMessage | ReceivedMessage | Message]:
+    def get_quoted(self, quote: SignalQuote) -> Optional[SignalSentMessage | SignalReceivedMessage | SignalMessage]:
         """
-        Get a message that contains a given Quote.
-        :param quote: Quote: The quote we're looking for.
+        Get a message that contains a given SignalQuote.
+        :param quote: SignalQuote: The quote we're looking for.
         :returns: SentMessage | ReceivedMessage: The message that contains the quote, or None if not found.
-        :raises: TypeError: If quote is not a Quote object.
+        :raises: TypeError: If quote is not a SignalQuote object.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_quoted.__name__)
         # Type check quote:
-        if not isinstance(quote, Quote):
+        if not isinstance(quote, SignalQuote):
             logger.critical("Raising TypeError:")
-            __type_error__("quote", "Quote", quote)
+            __type_error__("quote", "SignalQuote", quote)
         # Search messages in conversation:
         for message in self.get_conversation(quote.conversation):
             if message.sender == quote.author:
@@ -562,72 +573,72 @@ class Messages(object):
                     return message
         return None
 
-    def get_sent(self) -> list[SentMessage]:
+    def get_sent(self) -> list[SignalSentMessage]:
         """
         Returns all messages that are SentMessage objects.
         :returns: list[SentMessage]: All the sent messages.
         """
-        return [message for message in self.messages if isinstance(message, SentMessage)]
+        return [message for message in self.messages if isinstance(message, SignalSentMessage)]
 
     ##################################
     # Methods:
     ##################################
-    def append(self, message: Message) -> None:
+    def append(self, message: SignalMessage) -> None:
         """
         Append a message to the appropriate message list.
-        :param message: Message: The message to append.
+        :param message: SignalMessage: The message to append.
         :returns: None
-        :raises TypeError: If 'message' is not a Message.
+        :raises TypeError: If 'message' is not a SignalMessage.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.append.__name__)
 
         # Type check the message:
-        if not isinstance(message, (SentMessage, ReceivedMessage, GroupUpdate, SyncMessage, TypingMessage)):
+        if not isinstance(message, (SignalSentMessage, SignalReceivedMessage, SignalGroupUpdate, SignalSyncMessage, SignalTypingMessage)):
             logger.critical("Raising TypeError:")
-            __type_error__("message", "Message", message)
+            __type_error__("message", "SignalMessage", message)
 
         # Sort the message based on the message type:
-        if isinstance(message, (SentMessage, ReceivedMessage)):
+        if isinstance(message, (SignalSentMessage, SignalReceivedMessage)):
             self.messages.append(message)
-        elif isinstance(message, (GroupUpdate, SyncMessage)):
+        elif isinstance(message, (SignalGroupUpdate, SignalSyncMessage)):
             self.sync.append(message)
-        elif isinstance(message, TypingMessage):
+        elif isinstance(message, SignalTypingMessage):
             self.typing.append(message)
         # Save the messages.
         self.__save__()
         return
 
     def send_message(self,
-                     recipients: Iterable[Contact | Group] | Contact | Group,
+                     recipients: Iterable[SignalContact | SignalGroup] | SignalContact | SignalGroup,
                      body: Optional[str] = None,
-                     attachments: Optional[Iterable[Attachment | str] | Attachment | str] = None,
-                     mentions: Optional[Iterable[Mention] | Mentions | Mention] = None,
-                     quote: Optional[Quote] = None,
-                     sticker: Optional[Sticker] = None,
-                     preview: Optional[Preview] = None,
-                     ) -> tuple[tuple[bool, Contact | Group, str | SentMessage], ...]:
+                     attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str] = None,
+                     mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
+                     quote: Optional[SignalQuote] = None,
+                     sticker: Optional[SignalSticker] = None,
+                     preview: Optional[SignalPreview] = None,
+                     ) -> tuple[tuple[bool, SignalContact | SignalGroup, str | SignalSentMessage], ...]:
 
         """
         Send a message.
-        :param recipients: Iterable[Contact | Group] | Contact | Group: The recipients of the message.
+        :param recipients: Iterable[SignalContact | SignalGroup] | SignalContact | SignalGroup: The recipients of the message.
         :param body: Optional[str]: The body of the message.
-        :param attachments: Optional[Iterable[Attachment | str] | Attachment | str ]: Attachments to the message.
-        :param mentions: Optional[Iterable[Mention] | Mentions | Mention]: Mentions in the message.
-        :param quote: Optional[Quote]: A Quote object for the message.
-        :param sticker: Optional[Sticker]: A sticker to send.
-        :param preview: Optional[Preview]: A preview for the url in the message, url must appear in the body of the
+        :param attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str ]: Attachments to the message.
+        :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Mentions in the message.
+        :param quote: Optional[SignalQuote]: A SignalQuote object for the message.
+        :param sticker: Optional[SignalSticker]: A sticker to send.
+        :param preview: Optional[SignalPreview]: A preview for the url in the message, url must appear in the body of the
             message.
-        :returns: tuple[tuple[bool, Contact | Group, str | SentMessage]]: A tuple of tuples, the outer tuple is one
+        :returns: tuple[tuple[bool, SignalContact | SignalGroup, str | SentMessage]]: A tuple of tuples, the outer tuple is one
             element per message sent.
             The inner tuple's first element, a bool, is True or False for if the message was sent successfully or not.
-            The second element of the inner tuple is the Contact | Group the message was sent to.
+            The second element of the inner tuple is the SignalContact | SignalGroup the message was sent to.
             The third element of the inner tuple, a str | SentMessage, is either a string containing an error message
             when sending fails, or the SentMessage object on sending success.
-        :raises: TypeError: If a recipient is not a Contact or Group object, if body is not a string, if attachments is
-            not an Attachment object or a string, or a list of Attachment objects, or strings, if mentions is not a
-            list of Mention objects, or not a Mentions object, if quote is not a Quote object, if sticker is not a
-            Sticker object, or if preview is not a Preview object.
+        :raises: TypeError: If a recipient is not a SignalContact or SignalGroup object, if body is not a string, if attachments is
+            not an SignalAttachment object or a string, or a list of SignalAttachment objects, or strings, if mentions is not a
+            list of SignalMention objects, or not a SignalMentions object, if quote is not a SignalQuote object, if sticker is not a
+            SignalSticker object, or if preview is not a SignalPreview object.
         :raises: ValueError: If body is an empty string, if attachments is an empty list, or if mentions is an empty
             list.
         """
@@ -636,23 +647,23 @@ class Messages(object):
 
         # Validate recipients:
         recipient_type: Optional[RecipientTypes] = None
-        target_recipients: list[Contact | Group]
-        if isinstance(recipients, Contact):
+        target_recipients: list[SignalContact | SignalGroup]
+        if isinstance(recipients, SignalContact):
             recipient_type = RecipientTypes.CONTACT
             target_recipients = [recipients]
-        elif isinstance(recipients, Group):
+        elif isinstance(recipients, SignalGroup):
             recipient_type = RecipientTypes.GROUP
             target_recipients = [recipients]
         elif isinstance(recipients, Iterable):
             target_recipients = []
             checkType = None
             for i, recipient in enumerate(recipients):
-                if not isinstance(recipient, (Contact, Group)):
+                if not isinstance(recipient, (SignalContact, SignalGroup)):
                     logger.critical("Raising TypeError:")
-                    __type_error__("recipients[%i]" % i, "Contact | Group", recipient)
+                    __type_error__("recipients[%i]" % i, "SignalContact | SignalGroup", recipient)
                 if i == 0:
                     checkType = type(recipient)
-                    if isinstance(recipient, Contact):
+                    if isinstance(recipient, SignalContact):
                         recipient_type = RecipientTypes.CONTACT
                     else:
                         recipient_type = RecipientTypes.GROUP
@@ -662,7 +673,7 @@ class Messages(object):
                 target_recipients.append(recipient)
         else:
             logger.critical("Raising TypeError:")
-            __type_error__("recipients", "Iterable[Contact | Group] | Contact | Group", recipients)
+            __type_error__("recipients", "Iterable[SignalContact | SignalGroup] | SignalContact | SignalGroup", recipients)
         if len(target_recipients) == 0:
             error_message: str = "recipients cannot be of zero length"
             logger.critical("Raising ValueError(%s)." % error_message)
@@ -678,68 +689,68 @@ class Messages(object):
             raise ValueError(error_message)
 
         # Validate attachments:
-        target_attachments: Optional[list[Attachment]] = None
+        target_attachments: Optional[list[SignalAttachment]] = None
         if attachments is not None:
-            if isinstance(attachments, Attachment):
+            if isinstance(attachments, SignalAttachment):
                 target_attachments = [attachments]
             elif isinstance(attachments, str):
-                target_attachments = [Attachment(config_path=self._config_path, local_path=attachments)]
+                target_attachments = [SignalAttachment(config_path=self._config_path, local_path=attachments)]
             elif isinstance(attachments, Iterable):
                 target_attachments = []
                 for i, attachment in enumerate(attachments):
-                    if not isinstance(attachment, (Attachment, str)):
+                    if not isinstance(attachment, (SignalAttachment, str)):
                         logger.critical("Raising TypeError:")
-                        __type_error__("attachments[%i]" % i, "Attachment | str", attachment)
-                    if isinstance(attachment, Attachment):
+                        __type_error__("attachments[%i]" % i, "SignalAttachment | str", attachment)
+                    if isinstance(attachment, SignalAttachment):
                         target_attachments.append(attachment)
                     else:
-                        target_attachments.append(Attachment(config_path=self._config_path, local_path=attachment))
+                        target_attachments.append(SignalAttachment(config_path=self._config_path, local_path=attachment))
             else:
                 logger.critical("Raising TypeError:")
-                __type_error__("attachments", "Iterable[Attachment | str] | Attachment | str", attachments)
+                __type_error__("attachments", "Iterable[SignalAttachment | str] | SignalAttachment | str", attachments)
         if target_attachments is not None and len(target_attachments) == 0:
             error_message: str = "attachments cannot be empty"
             logger.critical("Raising ValueError(%s)." % error_message)
             raise ValueError(error_message)
 
         # Validate mentions:
-        target_mentions: Optional[list[Mention] | Mentions] = None
+        target_mentions: Optional[list[SignalMention] | SignalMentions] = None
         if mentions is not None:
-            if isinstance(mentions, Mentions):
+            if isinstance(mentions, SignalMentions):
                 target_mentions = mentions
-            elif isinstance(mentions, Mention):
+            elif isinstance(mentions, SignalMention):
                 target_mentions = [mentions]
             elif isinstance(mentions, Iterable):
                 target_mentions = []
                 for i, mention in enumerate(mentions):
-                    if not isinstance(mention, Mention):
+                    if not isinstance(mention, SignalMention):
                         logger.critical("Raising TypeError:")
-                        __type_error__("mentions[%i]" % i, "Mention", mention)
+                        __type_error__("mentions[%i]" % i, "SignalMention", mention)
                     target_mentions.append(mention)
             else:
                 logger.critical("Raising TypeError:")
-                __type_error__("mentions", "Optional[Iterable[Mention] | Mention]", mentions)
+                __type_error__("mentions", "Optional[Iterable[SignalMention] | SignalMention]", mentions)
         if target_mentions is not None and len(target_mentions) == 0:
             error_message: str = "mentions cannot be empty"
             logger.critical("Raising ValueError(%s).")
             raise ValueError(error_message)
 
         # Validate quote:
-        if quote is not None and not isinstance(quote, Quote):
+        if quote is not None and not isinstance(quote, SignalQuote):
             logger.critical("Raising TypeError:")
             __type_error__("quote", "SentMessage | ReceivedMessage", quote)
 
         # Validate sticker:
         if sticker is not None:
-            if not isinstance(sticker, Sticker):
+            if not isinstance(sticker, SignalSticker):
                 logger.critical("Raising TypeError:")
-                raise __type_error__("sticker", "Sticker", sticker)
+                raise __type_error__("sticker", "SignalSticker", sticker)
 
         # Validate preview:
         if preview is not None:
-            if not isinstance(preview, Preview):
+            if not isinstance(preview, SignalPreview):
                 logger.critical("Raising TypeError:")
-                __type_error__("preview", "Preview", preview)
+                __type_error__("preview", "SignalPreview", preview)
             if body.find(preview.url) == -1:
                 error_message: str = "preview URL must appear in body of message."
                 logger.critical("Raising ValueError(%s)." % error_message)
@@ -803,7 +814,7 @@ class Messages(object):
 
         # Add quote:
         if quote is not None:
-            send_command_obj['params']['quoteTimestamp'] = quote.timestamp.timestamp
+            send_command_obj['params']['quoteTimestamp'] = quote.timestamp._timestamp
             send_command_obj['params']['quoteAuthor'] = quote.author.get_id()
             send_command_obj['params']['quoteMessage'] = quote.text
             if quote.mentions is not None:
@@ -841,7 +852,7 @@ class Messages(object):
 
         # Check for error:
         if error_occurred:
-            return_value: list[tuple[bool, Contact | Group, str]] = []
+            return_value: list[tuple[bool, SignalContact | SignalGroup, str]] = []
             error_message: str = "signal error while sending message: Code: %i, Message: %s" \
                                  % (signal_code, signal_message)
             if recipient_type == RecipientTypes.CONTACT:
@@ -857,20 +868,20 @@ class Messages(object):
         results_list: list[dict[str, Any]] = response_obj['result']['results']
 
         # Gather timestamp:
-        timestamp = Timestamp(timestamp=response_obj['result']['timestamp'])
+        timestamp = SignalTimestamp(timestamp=response_obj['result']['timestamp'])
 
         # Parse results:
-        return_value: list[tuple[bool, Contact | Group, SentMessage]] = []
+        return_value: list[tuple[bool, SignalContact | SignalGroup, SignalSentMessage]] = []
         if recipient_type == RecipientTypes.GROUP:
-            sent_messages: list[SentMessage] = []
+            sent_messages: list[SignalSentMessage] = []
             for recipient in target_recipients:
-                sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                           config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                           devices=self._devices, this_device=self._this_device,
-                                           sticker_packs=self._sticker_packs, recipient=recipient,
-                                           timestamp=timestamp, body=body, attachments=target_attachments,
-                                           mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True,
-                                           sent_to=target_recipients, preview=preview)
+                sent_message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                                 config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                                 devices=self._devices, this_device=self._this_device,
+                                                 sticker_packs=self._sticker_packs, recipient=recipient,
+                                                 timestamp=timestamp, body=body, attachments=target_attachments,
+                                                 mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True,
+                                                 sent_to=target_recipients, preview=preview)
                 self.append(sent_message)
                 sent_messages.append(sent_message)
             for result in results_list:
@@ -903,14 +914,14 @@ class Messages(object):
                 # Message Sent successfully:
                 if result['type'] == 'SUCCESS':
                     # Create a sent message
-                    sent_message = SentMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                               config_path=self._config_path, contacts=self._contacts,
-                                               groups=self._groups, devices=self._devices,
-                                               this_device=self._this_device, sticker_packs=self._sticker_packs,
-                                               recipient=contact, timestamp=timestamp, body=body,
-                                               attachments=target_attachments, mentions=target_mentions, quote=quote,
-                                               sticker=sticker, is_sent=True, sent_to=target_recipients,
-                                               preview=preview)
+                    sent_message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
+                                                     config_path=self._config_path, contacts=self._contacts,
+                                                     groups=self._groups, devices=self._devices,
+                                                     this_device=self._this_device, sticker_packs=self._sticker_packs,
+                                                     recipient=contact, timestamp=timestamp, body=body,
+                                                     attachments=target_attachments, mentions=target_mentions, quote=quote,
+                                                     sticker=sticker, is_sent=True, sent_to=target_recipients,
+                                                     preview=preview)
                     return_value.append((True, contact, sent_message))
                     self.append(sent_message)
                     self.__save__()
@@ -918,3 +929,14 @@ class Messages(object):
                 else:
                     return_value.append((False, contact, result['type']))
             return tuple(return_value)
+
+    ################################
+    # Properties:
+    ################################
+    @property
+    def sending(self) -> bool:
+        """
+        Return sending status.
+        :returns: bool: Sending status. True if sending, False if not.
+        """
+        return self._sending

@@ -8,7 +8,7 @@ from typing import Optional, Any
 from .signalCommon import __type_error__
 
 
-class TextAttachment(object):
+class SignalTextAttachment(object):
     """
     Class to store a 'text attachment' from story messages.
     """

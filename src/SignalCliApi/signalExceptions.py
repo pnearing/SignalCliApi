@@ -241,3 +241,16 @@ class CallbackCausedError(Error):
         :return: str
         """
         return self._callback_name
+
+
+class SignalAlreadyRunningError(Error):
+    """
+    Exception to throw when signal is already running.
+    """
+    def __init__(self, *args) -> None:
+        """
+        Initialize the Exception.
+        """
+        message: str = "An instance of signal-cli is already running."
+        super().__init__(message, None, *args)
+        return

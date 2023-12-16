@@ -3,12 +3,13 @@ import logging
 import json
 import os
 import socket
+import time
 from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
 from time import sleep
 from typing import Optional, Callable, Any, NoReturn
 
-from .signalAccount import Account
-from .signalAccounts import Accounts
+from .signalAccount import SignalAccount
+from .signalAccounts import SignalAccounts
 from . import signalCommon
 from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__, \
     __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, __socket_send__, phone_number_regex, \
@@ -16,10 +17,11 @@ from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __
 from .runCallback import __run_callback__, __type_check_callback__
 from .runCallback import set_suppress_error as set_callback_suppress_error
 from .runCallback import type_string as callback_type_string
-from .signalLinkThread import LinkThread
-from .signalReceiveThread import ReceiveThread
-from .signalSticker import StickerPacks
-from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError, CallbackCausedError
+from .signalLinkThread import SignalLinkThread
+from .signalReceiveThread import SignalReceiveThread
+from .signalSticker import SignalStickerPacks
+from .signalExceptions import LinkNotStarted, LinkInProgress, SignalError, CallbackCausedError, \
+    SignalAlreadyRunningError
 from .signalErrors import LinkError
 
 
@@ -209,11 +211,11 @@ class SignalCli(object):
         """The full path to the qrencode executable."""
         # Set external properties and objects:
         # Set accounts:
-        self.accounts: Optional[Accounts] = None
-        """The Accounts object."""
+        self.accounts: Optional[SignalAccounts] = None
+        """The SignalAccounts object."""
         # Set sticker packs:
-        self.sticker_packs: Optional[StickerPacks] = None
-        """The known StickerPacks object."""
+        self.sticker_packs: Optional[SignalStickerPacks] = None
+        """The known SignalStickerPacks object."""
         # Start signal-cli if requested:
         if start_signal:
             logger.info("Starting signal-cli.")
@@ -243,19 +245,21 @@ class SignalCli(object):
 
         # Load stickers:
         logger.info("Loading sticker packs.")
-        self.sticker_packs = StickerPacks(config_path=self.config_path)
-        """Known StickerPacks object."""
+        self.sticker_packs = SignalStickerPacks(config_path=self.config_path)
+        """Known SignalStickerPacks object."""
 
         # Load accounts:
         logger.info("Loading accounts.")
-        self.accounts = Accounts(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                 config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)
-        """The Accounts object."""
+        self.accounts = SignalAccounts(sync_socket=self._sync_socket, command_socket=self._command_socket,
+                                       config_path=self.config_path, sticker_packs=self.sticker_packs, do_load=True)
+        """The SignalAccounts object."""
 
         # Create dict to hold processes:
-        self._receive_threads: dict[str, Optional[ReceiveThread]] = {}
+        self._receive_threads: dict[str, Optional[SignalReceiveThread]] = {}
         """The dict to store the receive threads."""
 
+        self._link_thread: Optional[SignalLinkThread] = None
+        """The link thread that's running."""
         logger.info("Initialization complete.")
         return
 
@@ -306,6 +310,11 @@ class SignalCli(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__wait_for_signal_socket_file__.__name__)
         current_time: float = 0.0
         while not os.path.exists(socket_file_path):
+            std_err = self._signal_process.stderr.readline()
+            if std_err.find('Config file is in use by another instance') != -1:
+                logger.critical("Another signal-cli process is running. Please either connect to that instance or "
+                                "stop it from running before continuing.")
+                raise SignalAlreadyRunningError()
             logger.debug("Waiting for socket...")
             __run_callback__(self._callback, 'waiting for socket')
             sleep(0.5)
@@ -345,10 +354,7 @@ class SignalCli(object):
 
         # Run signal-cli:
         try:
-            if signalCommon.DEBUG:
-                self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE)
-            else:
-                self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE, stderr=PIPE)
+            self._signal_process = Popen(signal_command_line, text=True, stdout=PIPE, stderr=PIPE)
         except CalledProcessError as e:
             logger.critical("Failed to start signal-cli.")
             __run_callback__(self._callback, "failed to start signal-cli")
@@ -386,6 +392,15 @@ class SignalCli(object):
     def __del__(self):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__del__.__name__)
 
+        try:
+            for thread_id in self._receive_threads.keys():
+                if self._receive_threads[thread_id] is not None:
+                    self._receive_threads[thread_id].join(1.0)
+        except Exception as e:
+            logger.warning("Error occurred during termination of receive process.")
+            logger.warning("Error type: %s" % str(type(e)))
+            logger.warning("Error strArgs: %s" % str(e.args))
+
         if self._signal_process is not None:
             try:
                 self.stop_signal()
@@ -406,10 +421,6 @@ class SignalCli(object):
         :raises CommunicationsError: On error closing a socket.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.stop_signal.__name__)
-
-        for thread_id in self._receive_threads.keys():
-            if self._receive_threads[thread_id] is not None:
-                self._receive_threads[thread_id].stop()
 
         # Close the sockets:
         logger.debug("Closing sockets.")
@@ -440,15 +451,15 @@ class SignalCli(object):
                          number: str,
                          captcha: str,
                          voice: bool = False
-                         ) -> tuple[bool, Account | str]:
+                         ) -> tuple[bool, SignalAccount | str]:
         """
                 Register a new account. NOTE: Subject to rate limiting.
                 :param number: str: The phone number to register.
                 :param captcha: str: The captcha from 'https://signalcaptchas.org/registration/generate.html', can
                                         include the 'signalcaptcha://'.
                 :param voice: bool: True = Voice call verification, False = SMS verification.
-                :returns: tuple[bool, Account | str]: The first element (bool) is True for success or failure.  The
-                                                        second element on success is the new Account object, which
+                :returns: tuple[bool, SignalAccount | str]: The first element (bool) is True for success or failure.  The
+                                                        second element on success is the new SignalAccount object, which
                                                         will remain in an unregistered state until verify is called
                                                         with the verification code.  Upon failure, the second element
                                                         will contain a string with an error message.
@@ -636,12 +647,12 @@ class SignalCli(object):
 
     def finish_link(self,
                     device_name: Optional[str] = None,
-                    ) -> tuple[bool, Account | LinkError]:
+                    ) -> tuple[bool, SignalAccount | LinkError]:
         """
         Finish the linking process after confirming the link on the primary device.
         :param device_name: Optional[str]: The device name to give this link.
-        :returns: tuple[bool, Account | str]: The first element is a bool representing success or failure; The second
-                                                element on success will be the new Account object, or on failure will be
+        :returns: tuple[bool, SignalAccount | str]: The first element is a bool representing success or failure; The second
+                                                element on success will be the new SignalAccount object, or on failure will be
                                                 a string containing an error message.
         :raises LinkNotStarted: If the link process hasn't been started yet.
         :raises InvalidServerResponse: If the signal success code is not recognized.
@@ -713,7 +724,7 @@ class SignalCli(object):
         return True, new_accounts[0]
 
     def start_receive(self,
-                      account: Account,
+                      account: SignalAccount,
                       all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                       received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                       receipt_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
@@ -723,11 +734,12 @@ class SignalCli(object):
                       payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                       reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
                       call_message_callback: Optional[tuple[Callable, Optional[list[Any]]]] = None,
-                      ) -> None:
+                      do_expunge: bool = True,
+                      ) -> SignalReceiveThread:
         """
         Start receiving messages for the given account.
-        NOTE: Callback signature is (account: Account, message: Message)
-        :param account: Account: The account to receive messages for.
+        NOTE: Callback signature is (account: SignalAccount, message: SignalMessage)
+        :param account: SignalAccount: The account to receive messages for.
         :param all_messages_callback: Optional[Callable]: Callback for all messages received.
         :param received_message_callback: Optional[Callable]: Callback for received messages. (regular message)
         :param receipt_message_callback: Optional[Callable]: Callback for receipt messages.
@@ -737,59 +749,63 @@ class SignalCli(object):
         :param payment_message_callback: Optional[Callable]: Callback for payment messages.
         :param reaction_message_callback: Optional[Callable]: Callback for reaction messages.
         :param call_message_callback: Optional[Callable]: Callback for incoming call messages.
-        :returns: None
-        :raises: TypeError: If the account is not an Account object, or if a callback is defined, but not callable.
+        :param do_expunge: bool: Honour expiry times.
+        :returns: SignalReceiveThread: The created thread.
+        :raises: TypeError: If the account is not an SignalAccount object, or if a callback is defined, but not callable.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.start_receive.__name__)
         logger.info("Start receive started.")
-        # Argument checks NOTE: ReceiveThread type checks callbacks:
-        if not isinstance(account, Account):
+        # Argument checks NOTE: SignalReceiveThread type checks callbacks:
+        if not isinstance(account, SignalAccount):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('account', 'Account', account))
-            __type_error__("account", "Account", account)
+            logger.critical(__type_err_msg__('account', 'SignalAccount', account))
+            __type_error__("account", "SignalAccount", account)
 
         # Start receive:
         thread_id: str = account.number
-        thread = ReceiveThread(server_address=self._server_address,
-                               command_socket=self._command_socket,
-                               config_path=self.config_path,
-                               account=account,
-                               sticker_packs=self.sticker_packs,
-                               all_messages_callback=all_messages_callback,
-                               received_message_callback=received_message_callback,
-                               receipt_message_callback=receipt_message_callback,
-                               sync_message_callback=sync_message_callback,
-                               typing_message_callback=typing_message_callback,
-                               story_message_callback=story_message_callback,
-                               payment_message_callback=payment_message_callback,
-                               reaction_message_callback=reaction_message_callback,
-                               call_message_callback=call_message_callback,
-                               )
+        thread = SignalReceiveThread(server_address=self._server_address,
+                                     command_socket=self._command_socket,
+                                     config_path=self.config_path,
+                                     account=account,
+                                     sticker_packs=self.sticker_packs,
+                                     all_messages_callback=all_messages_callback,
+                                     received_message_callback=received_message_callback,
+                                     receipt_message_callback=receipt_message_callback,
+                                     sync_message_callback=sync_message_callback,
+                                     typing_message_callback=typing_message_callback,
+                                     story_message_callback=story_message_callback,
+                                     payment_message_callback=payment_message_callback,
+                                     reaction_message_callback=reaction_message_callback,
+                                     call_message_callback=call_message_callback,
+                                     do_expunge=do_expunge,
+                                     )
         thread.start()
         self._receive_threads[thread_id] = thread
-        return
+        return thread
 
-    def stop_receive(self, account: Account) -> bool:
+    def stop_receive(self, account: SignalAccount) -> bool:
         """
         Stop receiving messages for the given account.
-        :param account: Account: The account to stop reception for.
+        :param account: SignalAccount: The account to stop reception for.
         :returns: bool: True reception successfully stopped, False reception wasn't started.
-        :raises: TypeError: If the parameter account is not an Account object.
+        :raises: TypeError: If the parameter account is not an SignalAccount object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.stop_receive.__name__)
         logger.info("Stopping reception thread.")
         # Argument checks:
-        if not isinstance(account, Account):
+        if not isinstance(account, SignalAccount):
             logger.critical("Raising TypeError:")
-            logger.critical(__type_err_msg__('account', "Account", account))
-            __type_error__("account", "Account", account)
+            logger.critical(__type_err_msg__('account', "SignalAccount", account))
+            __type_error__("account", "SignalAccount", account)
+        # Set the thread id:
         thread_id: str = account.number
-        try:
-            logger.debug("Fetching thread: '%s'." % thread_id)
-            thread = self._receive_threads[thread_id]
-        except KeyError:
-            logger.debug("Thread not started.")
+        # Check that the thread was started:
+        if thread_id not in self._receive_threads.keys():
+            logger.warning("Trying to stop receive for an account that isn't receiving.")
             return False
+        # Get the thread and stop it:
+
+        thread = self._receive_threads[thread_id]
         logger.debug("Stopping thread...")
         thread.stop()
         logger.debug("Thread stopped.")
@@ -797,26 +813,29 @@ class SignalCli(object):
         logger.info("Reception stopped.")
         return True
 
-    def generate_link_thread(self,
-                             callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]],
-                             gen_text_qr: bool = True,
-                             png_qr_file_path: Optional[str] = None,
-                             device_name: Optional[str] = None,
-                             wait_time: float = 0.25,
-                             ) -> LinkThread:
+    def start_link_thread(self,
+                          callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]],
+                          gen_text_qr: bool = True,
+                          png_qr_file_path: Optional[str] = None,
+                          device_name: Optional[str] = None,
+                          wait_time: float = 0.25,
+                          ) -> None:
         """
         Create and return the signal link thread.
         :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The callback to call with the status
         updates, with a signature of:
-            some_callback(status:str, data:Optional[tuple[Optional[str], Optional[str]] | str | Account) -> bool
+            some_callback(status:str, data:Optional[tuple[Optional[str], Optional[str]] | str | SignalAccount) -> bool
             If the callback returns True, then the link process is canceled, and the socket is closed.
         :param gen_text_qr: bool: Should we generate a text qr-code?
         :param png_qr_file_path: Optional[str]: Path to the png qr-code file. If None, the qr-code is not generated.
         :param device_name: Optional[str]: The device name. If None, the default set by signal-cli is used.
         :param wait_time: float: The amount of time to give the socket to respond.
-        :return: LinkThread: The running link thread.
+        :return: None.
         """
-        link_thread: LinkThread = LinkThread(
+        if self._link_thread is not None:
+            raise LinkInProgress()
+
+        self._link_thread = SignalLinkThread(
             server_address=self._server_address,
             accounts=self.accounts,
             callback=callback,
@@ -825,4 +844,29 @@ class SignalCli(object):
             device_name=device_name,
             wait_time=wait_time
         )
-        return link_thread
+        self._link_thread.start()
+        return
+
+    def stop_link_thread(self) -> None:
+        """
+        Stop the running link thread.
+        :return: None
+        """
+        if self._link_thread is None:
+            raise LinkNotStarted()
+        if self._link_thread.is_complete or self._link_thread.is_canceled:
+            return
+        self._link_thread.cancel()
+        self._link_thread = None
+        return
+
+############################################
+# Properties:
+############################################
+    @property
+    def link_thread(self) -> Optional[SignalLinkThread]:
+        """
+        The current link thread.
+        :return: Optional[SignalLinkThread]: The SignalLinkThread object, other wise if not linking, None.
+        """
+        return self._link_thread
