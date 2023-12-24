@@ -157,3 +157,4 @@ run/
 
 SignalCliApiEnv/
 /signalTest.py
+.pypirc
