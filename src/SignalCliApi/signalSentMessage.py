@@ -35,6 +35,18 @@ from .signalTimestamp import SignalTimestamp
 Self = TypeVar("Self", bound="SentMessage")
 
 
+def __expiration_int_to_timedelta__(expiration: int) -> Optional[timedelta]:
+    if expiration == 0:
+        return None
+    return timedelta(seconds=expiration)
+
+
+def __timedelta_to_expiration_int__(timedelta_obj: Optional[timedelta]) -> int:
+    if timedelta_obj == None:
+        return 0
+    return int(timedelta_obj.total_seconds())
+
+
 class SignalSentMessage(SignalMessage):
     """
     Class to store a sent message.
@@ -59,10 +71,11 @@ class SignalSentMessage(SignalMessage):
                  reactions: Optional[Iterable[SignalReaction] | SignalReactions | SignalReaction] = None,
                  sticker: Optional[SignalSticker] = None,
                  quote: Optional[SignalQuote] = None,
-                 expiration: Optional[timedelta] = None,
+                 expiration: Optional[timedelta | int] = None,
                  is_sent: bool = False,
                  sent_to: Optional[Iterable[SignalContact] | SignalContact] = None,
-                 preview: Optional[SignalPreview] = None,
+                 previews: Optional[Iterable[SignalPreview]] = None,
+                 view_once: bool = False,
                  ) -> None:
         """
         Initialize a SentMessage object.
@@ -80,15 +93,19 @@ class SignalSentMessage(SignalMessage):
         :param timestamp: Optional[SignalTimestamp]: The timestamp of this message.
         :param body: Optional[str]: The body of this message.
         :param attachments: Optional[Iterable[SignalAttachment] | SignalAttachment]: Any attachments to this message.
-        :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Any mentions in this message.
-        :param reactions: Optional[Iterable[SignalReaction] | SignalReactions | SignalReaction]: Any reactions to this message.
+        :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Any mentions in this
+            message.
+        :param reactions: Optional[Iterable[SignalReaction] | SignalReactions | SignalReaction]: Any reactions to this
+            message.
         :param sticker: Optional[SignalSticker]: The sticker for this message.
         :param quote: Optional[SignalQuote]: The quote this message contains.
         :param expiration: Optional[timedelta]: The expiration time in seconds as a timedelta.
         :param is_sent: bool: Is this message already sent?
-        :param sent_to: Optional[Iterable[SignalContact] | SignalContact]: The SignalContacts of the people this message was sent to, if
-            the message was sent to a SignalGroup, the members of the group will show up here individually.
-        :param preview: Optional[SignalPreview]: Any URL preview this message contains.
+        :param sent_to: Optional[Iterable[SignalContact] | SignalContact]: The SignalContacts of the people this
+            message was sent to, if the message was sent to a SignalGroup, the members of the group will show up here
+            individually.
+        :param previews: Optional[Iterable[SignalPreview]]: Any URL previews this message contains.
+        :param view_once: bool: Is this a view once message?
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -166,9 +183,9 @@ class SignalSentMessage(SignalMessage):
 
         # Check expiry:
         if expiration is not None:
-            if not isinstance(expiration, timedelta):
+            if not isinstance(expiration, (timedelta, int)):
                 logger.critical("Raising TypeError:")
-                __type_error__("expiry", "timedelta", expiration)
+                __type_error__("expiry", "timedelta | int", expiration)
 
         # Check is_sent:
         if not isinstance(is_sent, bool):
@@ -191,9 +208,19 @@ class SignalSentMessage(SignalMessage):
                 __type_error__("sent_to", "Iterable[SignalContact] | SignalContact", sent_to)
 
         # Check previews:
-        if preview is not None and not isinstance(preview, SignalPreview):
+        preview_list: list[SignalPreview] = []
+        if previews is not None and not isinstance(previews, Iterable):
             logger.critical("Raising TypeError:")
-            __type_error__("preview", "SignalPreview", preview)
+            __type_error__("previews", "Optional[Iterable[SignalPreview]]", previews)
+        if previews is not None:
+            for i, preview in enumerate(previews):
+                if not isinstance(preview, SignalPreview):
+                    __type_error__('previews[%i]' % i, 'SignalPreview', previews[i])
+                preview_list.append(preview)
+
+        # Check view once:
+        if not isinstance(view_once, bool):
+            __type_error__('view_once', 'bool', view_once)
 
         # Set internal vars:
         self._sticker_packs = sticker_packs
@@ -239,12 +266,19 @@ class SignalSentMessage(SignalMessage):
         self.quote: Optional[SignalQuote] = quote
         """The quote this message contains."""
         # Set expiry:
-        self.expiration: Optional[timedelta] = expiration
+        self.expiration: Optional[timedelta] = None
         """The expiration time of this message in seconds as a timedelta."""
+        if isinstance(expiration, timedelta):
+            self.expiration = expiration
+        elif isinstance(expiration, int):
+            self.expiration = timedelta(seconds=float(expiration))
+
         self.expiration_timestamp: Optional[SignalTimestamp] = None
         """The timestamp at which this message expires."""
-        self.is_expired: bool = False
-        """Is this message expired?"""
+        # self.is_expired: bool = False
+        # """Is this message expired?"""
+        self.view_once: bool = view_once
+        """Is this a view once message?"""
         # Set is sent:
         self.is_sent: bool = is_sent
         """Was this message sent?"""
@@ -261,16 +295,33 @@ class SignalSentMessage(SignalMessage):
         self.viewed_receipts: list[SignalReceipt] = []
         """The viewed receipts for this message."""
         # Set previews:
-        self.preview: SignalPreview = preview
+        self.previews: list[SignalPreview] = preview_list
         """Any URL previews for this message."""
 
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
                          raw_message, contacts.get_self(), recipient, this_device, timestamp, MessageTypes.SENT)
-        now = SignalTimestamp(now=True)
-        super().mark_delivered(now)
-        super().mark_read(now)
-        super().mark_viewed(now)
+        self.is_expiration_update: bool = self.__check_expiry_update__()
+        """Is this an expiration update message?"""
+        if self.is_expiration_update:
+            # Set the recipient expiration:
+            self.recipient.expiration = self.expiration
+            # If it's a contact save the contact list:
+            if self.recipient.recipient_type == RecipientTypes.CONTACT:
+                self._contacts.__save__()
+            # Set the sender string:
+            sender: str
+            if self.sender == self._contacts.get_self():
+                sender = "You"
+            else:
+                sender = self.sender.get_display_name()
+            # Set the body:
+            if self.expiration is None:
+                self.body = "%s disabled disappearing messages." % sender
+            else:
+                self.body = "%s set the disappearing message timer to: %s" % (sender, str(self.expiration))
+        if self.expiration is not None and self.expiration.total_seconds() == 0:
+            raise ValueError("timedelta with 0 seconds.")
         return
 
     ##########################
@@ -283,9 +334,8 @@ class SignalSentMessage(SignalMessage):
         :return: None
         """
         # super().__from_raw_message__(raw_message)
-        # Set raw message dict:
-        raw_sent_message: dict[str, Any] = raw_message['syncMessage']['sentMessage']
-
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_message__.__name__)
+        raw_sent_message = raw_message['syncMessage']['sentMessage']
         # Load recipient and recipient type:
         if raw_sent_message['destination'] is not None:
             self._recipient_type = RecipientTypes.CONTACT
@@ -298,7 +348,7 @@ class SignalSentMessage(SignalMessage):
         # Load timestamp:
         self._timestamp = SignalTimestamp(timestamp=raw_sent_message['timestamp'])
 
-        # Load Device:
+        # Load Device: NOTE: This in the raw_message not the raw_sent_message
         _, self._device = self._devices.__get_or_add__(device_id=raw_message['sourceDevice'])
 
         # Load body:
@@ -318,30 +368,34 @@ class SignalSentMessage(SignalMessage):
                                                            sticker_id=raw_sent_message['sticker']['sticker_id'])
 
         # Load mentions:
-        self.mentions = None
         if 'mentions' in raw_sent_message.keys():
             self.mentions = SignalMentions(contacts=self._contacts, raw_mentions=raw_sent_message['mentions'])
+        else:
+            self.mentions = SignalMentions(contacts=self._contacts)
 
         # Load quote:
         self.quote = None
         if 'quote' in raw_sent_message.keys():
             self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                     raw_quote=raw_sent_message['quote'])
+                                     raw_quote=raw_sent_message['quote'], conversation=self.recipient)
 
         # Load expiry:
         if raw_sent_message['expiresInSeconds'] == 0:
             self.expiration = None
             self.expiration_timestamp = None
-            self.is_expired = False
         else:
             self.expiration = timedelta(seconds=raw_sent_message['expiresInSeconds'])
             self.expiration_timestamp = None
-            self.is_expired = False
 
-        # Load preview:
-        self.preview = None
-        if 'preview' in raw_sent_message.keys():
-            self.preview = SignalPreview(config_path=self._config_path, raw_preview=raw_sent_message['preview'])
+        # Load view once:
+        self.view_once = raw_sent_message['viewOnce']
+
+        # Load previews:
+        self.previews = []
+        if 'previews' in raw_sent_message.keys():
+            for raw_preview in raw_sent_message['previews']:
+                preview = SignalPreview(config_path=self._config_path, raw_preview=raw_preview)
+                self.previews.append(preview)
 
         # Set sent, since this is coming from a sync message.
         self.is_sent = True
@@ -377,9 +431,9 @@ class SignalSentMessage(SignalMessage):
                 sent_message_dict["attachments"].append(attachment.__to_dict__())
 
         # Set Mentions:
-        sent_message_dict['mentions'] = None
-        if self.mentions is not None:
-            sent_message_dict['mentions'] = self.mentions.__to_dict__()
+        sent_message_dict['mentions'] = self.mentions.__to_dict__()
+        # if self.mentions is not None:
+        #     sent_message_dict['mentions'] = self.mentions.__to_dict__()
 
         # Set Reactions:
         sent_message_dict['reactions'] = None
@@ -402,15 +456,18 @@ class SignalSentMessage(SignalMessage):
         # Set expiration:
         sent_message_dict['expiration'] = None
         if self.expiration is not None:
-            sent_message_dict['expiration'] = self.expiration.seconds
+            sent_message_dict['expiration'] = self.expiration.total_seconds()
 
         # Set expiration timestamp:
         sent_message_dict['expirationTimestamp'] = None
         if self.expiration_timestamp is not None:
             sent_message_dict['expirationTimestamp'] = self.expiration_timestamp.__to_dict__()
 
-        # Set is expired:
-        sent_message_dict['isExpired'] = self.is_expired
+        # # Set is expired:
+        # sent_message_dict['isExpired'] = self.is_expired
+
+        # Set view once:
+        sent_message_dict['viewOnce'] = self.view_once
 
         # Set is sent:
         sent_message_dict['isSent'] = self.is_sent
@@ -434,6 +491,12 @@ class SignalSentMessage(SignalMessage):
         sent_message_dict['viewedReceipts'] = []
         for receipt in self.viewed_receipts:
             sent_message_dict['viewedReceipts'].append(receipt.__to_dict__())
+
+        # Store previews list:
+        sent_message_dict['previews'] = []
+        for preview in self.previews:
+            sent_message_dict['previews'].append(preview.__to_dict__())
+
         # Return Resulting dict:
         return sent_message_dict
 
@@ -443,6 +506,7 @@ class SignalSentMessage(SignalMessage):
         :param from_dict: dict[str, Any]: The dict created by __to_dict__().
         :return: None
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_dict__.__name__)
         super().__from_dict__(from_dict)
         # Load Body:
         self.body = from_dict['body']
@@ -456,18 +520,15 @@ class SignalSentMessage(SignalMessage):
                 self.attachments.append(attachment)
 
         # Load mentions:
-        self.mentions = None
-        if from_dict['mentions'] is not None:
-            self.mentions = SignalMentions(contacts=self._contacts, from_dict=from_dict['mentions'])
+        # self.mentions = None
+        # if from_dict['mentions'] is not None:
+        self.mentions = SignalMentions(contacts=self._contacts, from_dict=from_dict['mentions'])
 
         # Load reactions:
-        self.reactions = None
-        if from_dict['reactions'] is not None:
-            self.reactions = SignalReactions(command_socket=self._command_socket, account_id=self._account_id,
-                                             config_path=self._config_path, contacts=self._contacts,
-                                             groups=self._groups,
-                                             devices=self._devices, this_device=self._this_device,
-                                             from_dict=from_dict['reactions'])
+        self.reactions = SignalReactions(command_socket=self._command_socket, account_id=self._account_id,
+                                         config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                         devices=self._devices, this_device=self._this_device,
+                                         from_dict=from_dict['reactions'])
 
         # Load sticker
         self.sticker = None
@@ -481,7 +542,8 @@ class SignalSentMessage(SignalMessage):
         # Load Quote:
         self.quote = None
         if from_dict['quote'] is not None:
-            self.quote = SignalQuote(from_dict=from_dict['quote'])
+            self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                     from_dict=from_dict['quote'])
 
         # Load expiration:
         self.expiration = None
@@ -493,8 +555,11 @@ class SignalSentMessage(SignalMessage):
         if from_dict['expirationTimestamp'] is not None:
             self.expiration_timestamp = SignalTimestamp(from_dict=from_dict['expirationTimestamp'])
 
-        # Load is expired:
-        self.is_expired = from_dict['isExpired']
+        # # Load is expired:
+        # self.is_expired = from_dict['isExpired']
+
+        # Load view once:
+        self.view_once = from_dict['viewOnce']
 
         # Load is_sent:
         self.is_sent = from_dict['isSent']
@@ -531,6 +596,13 @@ class SignalSentMessage(SignalMessage):
                                     config_path=self._config_path,
                                     contacts=self._contacts, groups=self._groups, devices=self._devices,
                                     this_device=self._this_device, from_dict=receiptDict)
+            self.viewed_receipts.append(receipt)
+
+        # Load previews:
+        self.previews = []
+        for previewDict in from_dict['previews']:
+            preview = SignalPreview(self._config_path, from_dict=previewDict)
+            self.previews.append(preview)
         return
 
     ###########################
@@ -540,7 +612,7 @@ class SignalSentMessage(SignalMessage):
         """
         Parse a receipt message, storing it in the right list, and acting on it.
         :param receipt: SignalReceipt: The receipt to parse.
-        :return:
+        :return: None
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_receipt__.__name__)
@@ -551,37 +623,50 @@ class SignalSentMessage(SignalMessage):
         elif receipt.receipt_type == ReceiptTypes.READ:
             self.mark_read(receipt.when)
             self.read_receipts.append(receipt)
+            if not self.is_delivered:
+                self.mark_delivered(receipt.when)
         elif receipt.receipt_type == ReceiptTypes.VIEWED:
             self.mark_viewed(receipt.when)
             self.viewed_receipts.append(receipt)
+            if not self.is_delivered:
+                self.mark_delivered(receipt.when)
         else:
             error_message: str = "invalid receipt type, cannot parse: %s" % str(receipt.receipt_type)
             logger.critical("Raising RuntimeError(%s)" % error_message)
             raise RuntimeError(error_message)
         return
 
-    def __set_expiry__(self, time_opened: SignalTimestamp) -> None:
+    def __set_expiry__(self, time_opened: Optional[SignalTimestamp]) -> None:
         """
-        Set the expiration datetime object.
-        :param time_opened: SignalTimestamp: The time the message was opened.
+        Set the expiration_timestamp property according to when it was opened.
+        :param time_opened: Optional[SignalTimestamp]: The timestamp of when opened; If None, NOW is used.
         :return: None
         """
-        if self.expiration is not None:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__set_expiry__.__name__)
+        if time_opened is None:
+            time_opened = SignalTimestamp(now=True)
+        if self.expiration is not None and self.expiration_timestamp is None:
             expiry_datetime = time_opened.datetime_obj + self.expiration
+            logger.debug("expiration is: %s" % str(self.expiration))
+            logger.debug("Setting expiry to: %s" % expiry_datetime)
             self.expiration_timestamp = SignalTimestamp(datetime_obj=expiry_datetime)
         else:
             self.expiration_timestamp = None
         return
 
-    def __check_expired__(self) -> bool:
+    def __check_expiry_update__(self) -> bool:
         """
-        Check and set is_expired.
-        :returns: bool: True if this run has set the expired flag.
+        Check if this an expiry update message, if it is, it's a message with no body, no sticker, etc, and a different
+            expiration time than the current recipient has.
+        :return: bool: True if this an expiration update.
         """
-        if self.expiration_timestamp is not None:
-            if self.expiration_timestamp.datetime_obj <= pytz.utc.localize(datetime.utcnow()):
-                self.is_expired = True
-                return True
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__check_expiry_update__.__name__)
+        if self.body is None and len(self.mentions) == 0:
+            if self.sticker is None and self.quote is None:
+                if self.attachments is None or len(self.attachments) == 0:
+                    if len(self.previews) == 0:
+                        if self.expiration != self.recipient.expiration:
+                            return True
         return False
 
     ##############################################
@@ -589,10 +674,12 @@ class SignalSentMessage(SignalMessage):
     ##############################################
     def mark_read(self, when: Optional[SignalTimestamp] = None) -> None:
         super().mark_read(when)
+        self.__set_expiry__(when)
         return
 
     def mark_viewed(self, when: Optional[SignalTimestamp] = None) -> None:
         super().mark_viewed(when)
+        self.__set_expiry__(when)
         return
 
     ##############################################
@@ -693,3 +780,22 @@ class SignalSentMessage(SignalMessage):
             failure.
         """
         raise NotImplementedError()
+
+#########################################
+# Properties:
+#########################################
+    @property
+    def is_expired(self) -> bool:
+        """
+        Is this message expired?
+        :return: bool: True the message is expired, False it is not.
+        """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + "is_expired.getter")
+        if self.expiration_timestamp is not None:
+            now = pytz.utc.localize(datetime.utcnow())
+            if self.expiration_timestamp.datetime_obj <= now:
+                # logger.debug("exp_ts = %s" % str(self.expiration_timestamp.datetime_obj))
+                # logger.debug("now = %s" % str(now))
+                # logger.debug("RETURNING TRUE!")
+                return True
+        return False

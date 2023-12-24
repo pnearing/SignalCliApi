@@ -80,3 +80,18 @@ class SignalRecipient(object):
                 self._timestamp = other._timestamp
                 self._recipient_id = other._recipient_id
         return
+
+###########################################
+# Properties:
+###########################################
+    @property
+    def recipient_type(self):
+        return self._recipient_type
+
+    @property
+    def recipient_id(self):
+        return self._recipient_id
+
+    @property
+    def timestamp(self):
+        return self._timestamp

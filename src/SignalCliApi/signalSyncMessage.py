@@ -66,9 +66,8 @@ class SignalSyncMessage(SignalMessage):
         self._sync_type: SyncTypes = SyncTypes.NOT_SET
         """The type of sync this message represents."""
         # Set sent message properties:
-        # TODO: Why am I doing this?
         self.raw_sent_message: Optional[dict[str, Any]] = None
-        """The raw dict of a sent message.???"""
+        """The raw dict of a sent message / reaction."""
         # Set read messages list:
         self.read_messages: list[tuple[SignalContact, SignalTimestamp]] = []
         """Read message sync list."""
@@ -115,9 +114,11 @@ class SignalSyncMessage(SignalMessage):
                 self.read_messages.append((contact, timestamp))
         # Sent message:
         elif 'sentMessage' in raw_sync_message.keys():
-            # print(raw_sync_message['sentMessage'])
-            self.sync_type = SyncTypes.SENT_MESSAGES
-            self.raw_sent_message = raw_message  # TODO: Follow this.
+            if 'reaction' in raw_sync_message['sentMessage'].keys():
+                self.sync_type = SyncTypes.SENT_REACTION
+            else:
+                self.sync_type = SyncTypes.SENT_MESSAGES
+            self.raw_sent_message = raw_message
         # Blocked Numbers / Groups:
         elif 'blockedNumbers' in raw_sync_message.keys() or 'blockedGroupsIds' in raw_sync_message.keys():
             self.sync_type = SyncTypes.BLOCKS

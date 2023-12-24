@@ -122,7 +122,7 @@ class SignalQuote(object):
                 __type_error__("conversation", "SignalContact | SignalGroup", conversation)
 
         # Parameter check:
-        if conversation is None and raw_quote is None:
+        if conversation is None and raw_quote is not None:
             error_message: str = "'conversation' must be defined if using 'raw_quote'"
             logger.critical("Raising ParameterError(%s)." % error_message)
             raise ParameterError(error_message)

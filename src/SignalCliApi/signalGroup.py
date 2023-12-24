@@ -4,12 +4,14 @@ File: signalGroup.py
 Manage and maintain a single group.
 """
 import logging
+from datetime import timedelta
 from typing import TypeVar, Optional, Any
 import socket
 import json
 
+# from . import SignalTypingMessage
 from .signalCommon import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_GROUP_NAME, RecipientTypes
+    __check_response_for_error__, UNKNOWN_GROUP_NAME, RecipientTypes, TypingStates
 from .signalContacts import SignalContacts
 from .signalContact import SignalContact
 from .signalRecipient import SignalRecipient
@@ -33,7 +35,7 @@ class SignalGroup(SignalRecipient):
                  description: Optional[str] = None,
                  is_blocked: bool = False,
                  is_member: bool = False,
-                 expiration: Optional[int] = None,
+                 expiration: Optional[int | timedelta] = None,
                  link: Optional[str] = None,
                  members: list[SignalContact] = [],
                  pending_members: list[SignalContact] = [],
@@ -58,7 +60,7 @@ class SignalGroup(SignalRecipient):
         :param description: Optional[str]: The group description.
         :param is_blocked: bool: If this group is blocked.
         :param is_member: bool: If this account is a member of the group.
-        :param expiration: Optional[int]: The expiration time of the group.
+        :param expiration: Optional[int | timedelta]: The expiration time of the group.
         :param link: Optional[str]: The join link of the group.
         :param members: list[SignalContact]: Existing members.
         :param pending_members: list[SignalContact]: Pending members.
@@ -113,9 +115,9 @@ class SignalGroup(SignalRecipient):
         if is_member is not None and not isinstance(is_member, bool):
             logger.critical("Raising TypeError:")
             __type_error__("is_member", "Optional[bool]", is_member)
-        if expiration is not None and not isinstance(expiration, int):
+        if expiration is not None and not isinstance(expiration, (int, timedelta)):
             logger.critical("Raising TypeError:")
-            __type_error__("expiration", "Optional[int]", expiration)
+            __type_error__("expiration", "Optional[int | timedelta]", expiration)
         if link is not None and not isinstance(link, str):
             logger.critical("Raising TypeError:")
             __type_error__("link", "Optional[str]", link)
@@ -197,8 +199,13 @@ class SignalGroup(SignalRecipient):
         """Is this group blocked?"""
         self.is_member: bool = is_member
         """Is this account a member of the group?"""
-        self.expiration: Optional[int] = expiration
-        """The expiration time of this group in seconds."""
+        self.expiration: Optional[int] = None
+        """The expiration time as a timedelta."""
+        if expiration is not None:
+            if isinstance(expiration, int):
+                self.expiration = timedelta(seconds=expiration)
+            else:  # Expiration is a timedelta:
+                self.expiration = expiration
         self.link: Optional[str] = link
         """The join link of this group."""
         self.members: list[SignalContact] = members
@@ -264,7 +271,7 @@ class SignalGroup(SignalRecipient):
         if raw_group['messageExpirationTime'] == 0:
             self.expiration = None
         else:
-            self.expiration = raw_group['messageExpirationTime']
+            self.expiration = timedelta(seconds=raw_group['messageExpirationTime'])
         self.link = raw_group['groupInviteLink']
         self.permission_add_member = raw_group['permissionAddMember']
         self.permission_edit_details = raw_group['permissionEditDetails']
@@ -329,7 +336,7 @@ class SignalGroup(SignalRecipient):
             'description': self.description,
             'isBlocked': self.is_blocked,
             'isMember': self.is_member,
-            'expiration': self.expiration,
+            'expiration': None,
             'link': self.link,
             'permAddMember': self.permission_add_member,
             'permEditDetails': self.permission_edit_details,
@@ -341,6 +348,8 @@ class SignalGroup(SignalRecipient):
             'banned': [],
             'lastSeen': None,
         }
+        if self.expiration is not None:
+            group_dict['expiration'] = self.expiration.total_seconds()
         for contact in self.members:
             group_dict['members'].append(contact.get_id())
         for contact in self.pending:
@@ -371,7 +380,9 @@ class SignalGroup(SignalRecipient):
         self.description = from_dict['description']
         self.is_blocked = from_dict['isBlocked']
         self.is_member = from_dict['isMember']
-        self.expiration = from_dict['expiration']
+        self.expiration = None
+        if from_dict['expiration'] is not None:
+            self.expiration = timedelta(seconds=from_dict['expiration'])
         self.link = from_dict['link']
         self.permission_add_member = from_dict['permAddMember']
         self.permission_edit_details = from_dict['permEditDetails']
@@ -436,6 +447,20 @@ class SignalGroup(SignalRecipient):
                 self.last_seen = other.last_seen
         elif self.last_seen is None and other.last_seen is not None:
             self.last_seen = other.last_seen
+        return
+
+    def __parse_typing_message__(self, message) -> None:  # Message type: SignalTypingMessage
+        """
+        Parse a typing message for the group.
+        :param message: SignalTypingMessage: The message to parse.
+        :return: None
+        """
+        if message.action == TypingStates.STARTED:
+            if message.sender not in self.typing_members:
+                self.typing_members.append(message.sender)
+        elif message.action == TypingStates.STOPPED:
+            if message.sender in self.typing_members:
+                self.typing_members.remove(message.sender)
         return
 
     ########################

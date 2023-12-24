@@ -158,7 +158,7 @@ class SignalMessage(object):
             logger.debug("Loading from raw_message")
             self.__from_raw_message__(raw_message)
             self.sender.__seen__(self.timestamp)
-            self.device.seen(self.timestamp)
+            self.device.__seen__(self.timestamp)
             self.recipient.__seen__(self.timestamp)  # Both SignalGroup and SignalContact have a seen function.
 
         # Set recipient type

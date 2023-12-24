@@ -13,7 +13,7 @@ from .signalAccount import SignalAccount
 from .signalCallMessage import SignalCallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, \
     __socket_send__, __type_error__, SyncTypes, __parse_signal_response__, __check_response_for_error__, \
-    TypingStates, __socket_receive_non_blocking__
+    TypingStates, __socket_receive_non_blocking__, RecipientTypes
 from . import runCallback
 from .runCallback import __run_callback__, __type_check_callback__
 from .signalGroupUpdate import SignalGroupUpdate
@@ -32,6 +32,7 @@ class SignalReceiveThread(threading.Thread):
     """
     The reception thread.
     """
+
     def __init__(self,
                  server_address: tuple[str, int] | str,
                  command_socket: socket.socket,
@@ -286,13 +287,17 @@ class SignalReceiveThread(threading.Thread):
                     raw_message=envelope_dict,
                 )
                 logger.debug("Got a received message, storing and calling received callback.")
+                # Store the received message:
+                self._account.messages.append(message)
                 # Sender is no longer typing:
                 if message.sender.is_typing:
                     # Create a typing stopped message:
                     stop_typing_message = SignalTypingMessage(command_socket=self._command_socket,
                                                               account_id=self._account.get_id(),
-                                                              config_path=self._config_path, contacts=self._account.contacts,
-                                                              groups=self._account.groups, devices=self._account.devices,
+                                                              config_path=self._config_path,
+                                                              contacts=self._account.contacts,
+                                                              groups=self._account.groups,
+                                                              devices=self._account.devices,
                                                               this_device=self._account.device, sender=message.sender,
                                                               recipient=message.recipient, device=message.device,
                                                               timestamp=message.timestamp, action=TypingStates.STOPPED,
@@ -301,10 +306,10 @@ class SignalReceiveThread(threading.Thread):
                     message.sender.__parse_typing_message__(stop_typing_message)
                     # Store the typing message.
                     self._account.messages.append(stop_typing_message)
-                # Store the received message:
-                self._account.messages.append(message)
                 # Mark the sender as seen:
                 message.sender.__seen__(message.timestamp)
+                message.device.__seen__(message.timestamp)
+                message.recipient.__seen__(message.timestamp)
                 return self.__call_callback__(self._recv_msg_cb, self._account, message)
 
     def __parse_receipt_message__(self, envelope_dict: dict[str, Any]) -> Optional[bool]:
@@ -345,7 +350,8 @@ class SignalReceiveThread(threading.Thread):
             this_device=self._account.device, sticker_packs=self._sticker_packs,
             raw_message=envelope_dict
         )
-        if message.sync_type == SyncTypes.READ_MESSAGES or message.sync_type == SyncTypes.SENT_MESSAGES:
+        if message.sync_type == SyncTypes.READ_MESSAGES or message.sync_type == SyncTypes.SENT_MESSAGES or \
+                message.sync_type == SyncTypes.SENT_REACTION:
             self._account.messages.__parse_sync_message__(message)
         elif message.sync_type == SyncTypes.CONTACTS:
             self._account.contacts.__sync__()
@@ -378,7 +384,10 @@ class SignalReceiveThread(threading.Thread):
             this_device=self._account.device, raw_message=envelope_dict
         )
         # Parse typing message:
-        message.sender.__parse_typing_message__(message)
+        if message.recipient.recipient_type == RecipientTypes.GROUP:
+            message.recipient.__parse_typing_message__(message)
+        else:
+            message.sender.__parse_typing_message__(message)
         # Append the typing message and call the typing call back:
         self._account.messages.append(message)
 
@@ -575,9 +584,9 @@ class SignalReceiveThread(threading.Thread):
             ###############################
             # Check for expired messages:
             ###############################
-            self._account.messages.__check_expiries__()
+            # self._account.messages.__check_expiries__()
             if self._do_expunge:
-                self._account.messages.__do_expunge__()
+                self._account.messages.do_expunge()
         # #####################################
         # # Reception halted:
         # #####################################

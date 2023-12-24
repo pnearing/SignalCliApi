@@ -37,6 +37,7 @@ class SignalReaction(SignalMessage):
                  this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
+                 sync_message: Optional[dict[str, Any]] = None,
                  recipient: Optional[SignalContact | SignalGroup] = None,
                  emoji: Optional[str] = None,
                  target_author: Optional[SignalContact] = None,
@@ -52,8 +53,9 @@ class SignalReaction(SignalMessage):
         :param groups: SignalGroups: This accounts' SignalGroups object.
         :param devices: SignalDevices: This accounts' SignalDevices object.
         :param this_device: SignalDevice: The SignalDevice object for the device we're currently on.
-        :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
-        :param raw_message: Optional[dict[str, Any]]: The dict provided by signal.
+        :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided by __to_dict__().
+        :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided by signal.
+        :param sync_message: Optional[dict[str, Any]]: Load properties from a dict provided by the sync message.
         :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this reaction message.
         :param emoji: Optional[str]: The unicode emoji.
         :param target_author: Optional[SignalContact]: The author of the message reacted to.
@@ -100,14 +102,31 @@ class SignalReaction(SignalMessage):
         # Run super init:
         super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
                          raw_message, contacts.get_self(), recipient, this_device, None, MessageTypes.REACTION)
-
+        if sync_message is not None:
+            self.__from_sync_message__(sync_message)
         # Set body:
         self.__update_body__()
+        now = SignalTimestamp(now=True)
+        super().mark_delivered(now)
+        super().mark_read(now)
+        super().mark_viewed(now)
         return
 
     ###############################
     # Init:
     ###############################
+    def __from_sync_message__(self, sync_message: dict[str, Any]) -> None:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_sync_message__.__name__)
+        logger.debug(sync_message)
+        super().__from_raw_message__(sync_message)
+        reaction_dict: dict[str, Any] = sync_message['syncMessage']['sentMessage']['reaction']
+        self.emoji = reaction_dict['emoji']
+        _, self.target_author = self._contacts.__get_or_add__(number=reaction_dict['targetAuthorNumber'],
+                                                              uuid = reaction_dict['targetAuthorUuid'])
+        self.target_timestamp = SignalTimestamp(timestamp=reaction_dict['targetSentTimestamp'])
+        self.is_remove = reaction_dict['isRemove']
+        return
+
     def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
         """
         Load reaction properties from a dict provided by signal.
@@ -115,7 +134,7 @@ class SignalReaction(SignalMessage):
         :return: None
         """
         super().__from_raw_message__(raw_message)
-        reaction_dict: dict = raw_message['dataMessage']['reaction']
+        reaction_dict: dict[str, Any] = raw_message['dataMessage']['reaction']
         # print(reactionDict)
         self.emoji = reaction_dict['emoji']
         _, self.target_author = self._contacts.__get_or_add__(number=reaction_dict['targetAuthorNumber'],
@@ -133,14 +152,20 @@ class SignalReaction(SignalMessage):
         :param other: SignalReaction: The reaction to compare with.
         :return: bool
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + '__eq__')
+        logger.debug("__eq__ entered.")
         if isinstance(other, SignalReaction):
-            sender_match: bool = self.sender == other.sender
-            emoji_match: bool = self.emoji == other.emoji
-            author_match: bool = self.target_author == other.target_author
-            timestamp_match: bool = self.target_timestamp == other.target_timestamp
-            if sender_match and emoji_match and author_match and timestamp_match:
-                return True
+            logger.debug("Instance match.")
+            if self.sender == other.sender:
+                logger.debug("Sender match.")
+                if self.target_author == other.target_author:
+                    logger.debug("Author match.")
+                    if self.target_timestamp == other.target_timestamp:
+                        logger.debug("timestamp match.")
+                        if self.emoji == other.emoji:
+                            logger.debug('Emoji match, return True.')
+                            return True
+        logger.debug("Returning False")
         return False
 
     #####################
@@ -369,3 +394,4 @@ class SignalReaction(SignalMessage):
         :return: bool: True the reaction has been sent, False it has not.
         """
         return self.timestamp is not None  # If we have a timestamp, then the reaction was sent.
+

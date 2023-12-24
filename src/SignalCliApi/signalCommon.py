@@ -18,7 +18,7 @@ from .signalExceptions import CommunicationsError, SignalError, InvalidServerRes
 ###################
 # Version:
 ###################
-VERSION: Final[str] = '0.4.0'
+VERSION: Final[str] = '0.5.0'
 """Version of the library"""
 
 ########################################
@@ -37,7 +37,7 @@ UUID_FORMAT_STR: Final[str] = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 """UUID format string."""
 NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 """Number format string."""
-SELF_CONTACT_NAME: Final[str] = 'Note-To-Self'
+SELF_CONTACT_NAME: Final[str] = 'Note-To-Self \u2318'
 """The contact name for the self-contact."""
 UNKNOWN_CONTACT_NAME: Final[str] = '<UNKNOWN-CONTACT>'
 """The default name for an unknown contact. If this the contact name it signals the library to update it if ever an
@@ -73,6 +73,14 @@ CALLBACK_RAISES_ERROR: bool = False
 """Does a callback raise an exception?"""
 _CLOSING_SOCKET: bool = False
 """Are we closing a socket right now?"""
+_OPEN_SOCKETS: list[dict[str, socket.socket | str | tuple[str, int]]] = []
+"""A list of open sockets, and the server they're associated with so we can automatically reconnect them."""
+SERVER_ADDRESS: Optional[str | tuple[str, int]] = None
+"""The current server address."""
+HONOUR_VIEW_ONCE: bool = True
+"""Should we honour the view once message property?"""
+HONOUR_EXPIRY: bool = True
+"""Should we honour the expiry times of the messages?"""
 
 
 ###########################
@@ -237,6 +245,8 @@ class SyncTypes(IntEnum):
     """Sync Groups type."""
     SENT_MESSAGES = auto()
     """Sync SentMessages type."""
+    SENT_REACTION = auto()
+    """Sync sent Reaction type."""
     READ_MESSAGES = auto()
     """Sync read messages type."""
     BLOCKS = auto()
@@ -387,15 +397,32 @@ def __parse_signal_return_code__(return_code: int, command_line: str | list[str]
 ####################################
 # Socket helpers:
 ####################################
-def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
+def __find_socket_dict_by_socket__(sock: socket.socket) -> Optional[dict[str, socket.socket | str | tuple[str, int]]]:
+    global _OPEN_SOCKETS
+    for socket_dict in _OPEN_SOCKETS:
+        if socket_dict['socket'] == sock:
+            return socket_dict
+    return None
+
+
+def __socket_create__(server_address: Optional[tuple[str, int] | str] = None) -> socket.socket:
     """
     Create a socket.socket object based on the server address type.
     :param server_address: tuple[str, str] | str: The server address, either (HOSTNAME, PORT) or "PATH_TO_SOCKET".
     :return: socket.socket: The created socket.
     :raises CommunicationsError: On failure to create socket.
     """
+    global _OPEN_SOCKETS, SERVER_ADDRESS
+
+    if server_address is None:
+        server_address = SERVER_ADDRESS
+
+    if server_address is None:
+        raise ValueError("No server address defined.")
+
     logger_name: str = __name__ + '.' + __socket_create__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
+
     if isinstance(server_address, (tuple, list)):
         logger.debug("Creating INET socket.")
         try:
@@ -416,10 +443,17 @@ def __socket_create__(server_address: tuple[str, int] | str) -> socket.socket:
         logger.critical("Raising TypeError:")
         logger.critical(__type_err_msg__('server_address', 'tuple[str, int] | str', server_address))
         __type_error__('server_address', 'tuple[str, int] | str', server_address)
+    # Create the socket dict and append it to the socket list.
+    socket_dict: dict[str, socket.socket | str | tuple[str, int]] = {
+        'server': server_address,
+        'socket': sock,
+        'status': 'created'
+    }
+    _OPEN_SOCKETS.append(socket_dict)
     return sock
 
 
-def __socket_connect__(sock: socket.socket, server_address: tuple[str, int] | str) -> None:
+def __socket_connect__(sock: socket.socket, server_address: Optional[tuple[str, int] | str] = None) -> None:
     """
     Connect a socket to a server address.
     :param sock: socket.socket: The socket to connect with.
@@ -427,16 +461,47 @@ def __socket_connect__(sock: socket.socket, server_address: tuple[str, int] | st
     :return: None
     :raises CommunicationsError: On failure to connect.
     """
+    global _OPEN_SOCKETS, SERVER_ADDRESS
+
+    if server_address is None:
+        server_address = SERVER_ADDRESS
+    if server_address is None:
+        raise ValueError("Server address not defined.")
+
     logger_name: str = __name__ + '.' + __socket_connect__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
+        # logger.debug("Connecting to: %s" % str(server_address))
+        # sock.connect(server_address)
         logger.debug("Connecting to: %s" % str(server_address))
         sock.connect(server_address)
     except socket.error as e:
         error_message = "Couldn't connect to socket: %s" % (str(e.args))
         logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
         raise CommunicationsError(error_message, e)
+    socket_dict = __find_socket_dict_by_socket__(sock)
+    socket_dict['status'] = 'connected'
+    # logger.debug("Connected to: %s" % str(server_address))
     logger.debug("Connected to: %s" % str(server_address))
+    return
+
+
+def __socket_reconnect__(sock: socket.socket) -> None:
+    global _OPEN_SOCKETS
+    logger: logging.Logger = logging.getLogger(__name__ + '.' + __socket_reconnect__.__name__)
+    socket_dict = __find_socket_dict_by_socket__(sock)
+    if socket_dict['status'] == 'connected':
+        try:
+            __socket_close__(sock)
+        except socket.error as e:
+            warning_message = "Error while closing socket, ignoring."
+            logger.warning(warning_message)
+        try:
+            __socket_connect__(sock, socket_dict['server'])
+        except socket.error as e:
+            error_message = "Couldn't reconnect the socket: %s" % (str(e.args))
+            logger.critical("socket.error: %s, raising CommunicationsError." % error_message)
+            raise CommunicationsError(error_message, e)
     return
 
 
@@ -454,9 +519,20 @@ def __socket_send__(sock: socket.socket, message: str) -> int:
         logger.debug("Sending message: %s" % message)
         bytes_sent = sock.send(message.encode())
     except socket.error as e:
-        error_message = "Couldn't send to socket: %s" % (str(e.args))
-        logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
-        raise CommunicationsError(error_message, e)
+        if e.args[0] == 32:
+            logger.warning("Error while sending message. Broken pipe. Reconnecting.")
+            __socket_reconnect__(sock)
+            try:
+                logger.debug("Resending message: %s" % message)
+                bytes_sent = sock.send(message.encode())
+            except socket.error as e:
+                error_message = "Sending still failed: %s" % str(e.args)
+                logger.critical("resending message failed: %s, raising CommunicationsError." % error_message)
+                raise CommunicationsError(error_message, e)
+        else:
+            error_message = "Couldn't send to socket: %s" % (str(e.args))
+            logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
+            raise CommunicationsError(error_message, e)
     logger.debug("Sent %i bytes." % bytes_sent)
     return bytes_sent
 
@@ -473,7 +549,9 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
         while True:
-            readable, _, erred = select.select([sock], [], [], 0.5)
+            readable, _, erred = select.select([sock], [], [sock], 0.5)
+            if len(erred) > 0:
+                logger.critical("GOT ERRORS DURING SELECT.")
             if len(readable) > 0:
                 message = b''
                 byte_count: int = 0
@@ -510,7 +588,9 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1)
     logger_name: str = __name__ + '.' + __socket_receive_non_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
-        readable, _, erred = select.select([sock], [], [], wait_time)
+        readable, _, erred = select.select([sock], [], [sock], wait_time)
+        if len(erred) > 0:
+            logger.critical("GOT ERRORS WHILE SELECTING SOCKET.")
         if len(readable) > 0:
             message = b''
             byte_count: int = 0

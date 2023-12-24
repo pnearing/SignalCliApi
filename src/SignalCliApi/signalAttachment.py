@@ -15,6 +15,9 @@ from .signalExceptions import ParameterError
 # Define Self:
 Self = TypeVar("Self", bound="SignalAttachment")
 
+dict_keys: list[str] = [
+    'contentType', 'id', 'filename', 'size', 'height', 'width', 'caption', 'localPath', 'thumbnail',
+]
 
 class SignalAttachment(object):
     """
@@ -90,33 +93,40 @@ class SignalAttachment(object):
         """The path to xdg-open executable."""
 
         # Set external vars:
-        # Content-Type:
         self.content_type: Optional[str] = None
         """The content-type of the attachment."""
-        # Filename:
         self.filename: Optional[str] = None
         """The filename of this attachment."""
-        # Size in bytes:
+        self.id: Optional[str] = None
+        """The id of this attachment."""
         self.size: Optional[int] = None
         """The size in bytes of the attachment."""
-        # Local path:
+        self.height: Optional[int] = None
+        """The height of the image in pixels."""
+        self.width: Optional[int] = None
+        """The width of the image in pixels."""
+        self.caption: Optional[str] = None
+        """The caption of the attachment."""
         self.local_path: Optional[str] = local_path
         """The path to the local copy of the attachment."""
-        # File exists:
         self.exists: bool = False
         """Does the local file exist?"""
-        # Thumbnail:
         self.thumbnail: Optional[SignalThumbnail] = thumbnail
         """The SignalThumbnail object for this attachment."""
 
         # Parse from_dict:
         if from_dict is not None:
             logger.debug("Loading from dict.")
+            verified, message = self.__verify_dict__(from_dict)
+            if not verified:
+                raise ValueError("Invalid from_dict: %s." % message)
             self.__from_dict__(from_dict)
+
         # Parse from raw Attachment
         elif raw_attachment is not None:
             logger.debug("Loading from raw signal dict.")
             self.__from_raw_attachment__(raw_attachment)
+
         # Set properties from the local path:
         elif local_path is not None:  # We've checked that local_path exists earlier and Failed if it doesn't.
             logger.debug("'local_path' been passed in.")
@@ -134,28 +144,67 @@ class SignalAttachment(object):
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_attachment__.__name__)
         logger.debug("raw attachment: %s" % str(raw_attachment))
-        self.content_type = raw_attachment['contentType']
-        # TODO: No 'id' key:
-        self.id = raw_attachment['id']
-        self.filename = raw_attachment['filename']
+
+        # Load content type:
+        self.content_type = None
+        if 'contentType' in raw_attachment.keys():
+            self.content_type = raw_attachment['contentType']
+
+        # Load ID:
+        self.id = None
+        if 'id' in raw_attachment.keys():
+            self.id = raw_attachment['id']
+
+        # Load filename:
+        self.filename = None
+        if 'filename' in raw_attachment.keys():
+            self.filename = raw_attachment['filename']
+
+        # Load size:
+        self.size = None
         if 'size' in raw_attachment.keys():
             self.size = raw_attachment['size']
-        else:
-            self.size = None
-        if 'id' in raw_attachment.keys():
-            self.local_path = os.path.join(self._config_path, 'attachments', raw_attachment['id'])
-            self.exists = os.path.exists(self.local_path)
-        else:
-            self.local_path = None
-            self.exists = False
+
+        # Lood height:
+        self.height = None
+        if 'height' in raw_attachment.keys():
+            self.height = raw_attachment['height']
+
+        # Load width:
+        self.width = None
+        if 'width' in raw_attachment.keys():
+            self.width = raw_attachment['width']
+
+        # Load caption:
+        self.caption = None
+        if 'caption' in raw_attachment.keys():
+            self.caption = raw_attachment['caption']
+
+        # Set the thumbnail:
         self.thumbnail = None
         if 'thumbnail' in raw_attachment.keys():
             self.thumbnail = SignalThumbnail(config_path=self._config_path, raw_thumbnail=raw_attachment['thumbnail'])
+
+        # Set the local path:
+        self.local_path = None
+        self.exists = False
+        if self.filename is not None:
+            self.local_path = os.path.join(self._config_path, 'attachments', self.filename)
+            self.exists = os.path.exists(self.local_path)
+        elif self.id is not None:
+                self.local_path = os.path.join(self._config_path, 'attachments', self.id)
+                self.exists = os.path.exists(self.local_path)
         return
 
     #########################
     # To / From Dict:
     #########################
+    def __verify_dict__(self, from_dict: dict[str, Any]) -> tuple[bool, str]:
+        for key in dict_keys:
+            if key not in from_dict.keys():
+                return False, "key '%s' doesn't exist"
+        return True, "okay"
+
     def __to_dict__(self) -> dict[str, Any]:
         """
         Create a JSON friendly dict.
@@ -166,6 +215,9 @@ class SignalAttachment(object):
             'id': self.id,
             'filename': self.filename,
             'size': self.size,
+            'height': self.height,
+            'width': self.width,
+            'caption': self.caption,
             'localPath': self.local_path,
             'thumbnail': None,
         }
@@ -183,6 +235,9 @@ class SignalAttachment(object):
         self.id = from_dict['id']
         self.filename = from_dict['filename']
         self.size = from_dict['size']
+        self.height = from_dict['height']
+        self.width = from_dict['width']
+        self.caption = from_dict['caption']
         self.local_path = from_dict['localPath']
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)

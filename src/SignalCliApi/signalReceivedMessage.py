@@ -101,10 +101,14 @@ class SignalReceivedMessage(SignalMessage):
         """The expiration time as a timedelta in seconds."""
         self.expiration_timestamp: Optional[SignalTimestamp] = None
         """The SignalTimestamp for when this message expires."""
-        self.is_expired: bool = False
+        self._is_expired: bool = False
         """Is this message expired?"""
+        # View once:
+        self.view_once: bool = False
+        """Is this a view once message?"""
+
         # Set preview:
-        self.previews: Optional[list[SignalPreview]] = None
+        self.previews: list[SignalPreview] = []
         """Any previews this message holds."""
 
         # Run super init:
@@ -118,8 +122,26 @@ class SignalReceivedMessage(SignalMessage):
         # Check if this is a group invite, it'll be a group message with no: body, attachment, sticker etc.
         self.is_group_invite = self.__check_invite__()
         if self.is_group_invite:
-            self.body = "Group invite from: %s<%s>" % (self.sender.get_display_name(), self.sender.get_id())
-
+            self.body = "Group invite from: %s to group: %s" % (self.sender.get_display_name(),
+                                                                self.recipient.get_display_name())
+        self.is_expiration_update = self.__check_expiry_update__()
+        if self.is_expiration_update:
+            # Set the recipient expiration:
+            self.recipient.expiration = self.expiration
+            # If it's a contact save the contact list:
+            if self.recipient.recipient_type == RecipientTypes.CONTACT:
+                self._contacts.__save__()
+            # Set the sender string:
+            sender: str
+            if self.sender == self._contacts.get_self():
+                sender = "You"
+            else:
+                sender = self.sender.get_display_name()
+            # Set the body:
+            if self.expiration is None:
+                self.body = "%s disabled disappearing messages." % sender
+            else:
+                self.body = "%s set the disappearing message timer to: %s" % (sender, str(self.expiration))
         return
 
     ######################
@@ -140,16 +162,21 @@ class SignalReceivedMessage(SignalMessage):
             self.expiration = None
         else:
             self.expiration = timedelta(seconds=data_message["expiresInSeconds"])
+
+        # Parse view once:
+        self.view_once = data_message['viewOnce']
+
         # Parse attachments:
         if 'attachments' in data_message.keys():
-            # print("DEBUG: %s: Started attachment decoding." % __name__)
             self.attachments = []
             for raw_attachment in data_message['attachments']:
                 attachment = SignalAttachment(config_path=self._config_path, raw_attachment=raw_attachment)
                 self.attachments.append(attachment)
+
         # Parse mentions:
         if 'mentions' in data_message.keys():
             self.mentions = SignalMentions(contacts=self._contacts, raw_mentions=data_message['mentions'])
+
         # Parse sticker:
         if 'sticker' in data_message.keys():
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
@@ -164,8 +191,8 @@ class SignalReceivedMessage(SignalMessage):
                 self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                          raw_quote=data_message['quote'], conversation=self.sender)
         # Parse preview:
+        self.previews = []
         if 'previews' in data_message.keys():
-            self.previews = []
             for rawPreview in data_message['previews']:
                 preview = SignalPreview(config_path=self._config_path, raw_preview=rawPreview)
                 self.previews.append(preview)
@@ -204,22 +231,23 @@ class SignalReceivedMessage(SignalMessage):
         received_message_dict['quote'] = None
         if self.quote is not None:
             received_message_dict['quote'] = self.quote.__to_dict__()
-        # Set is expired:
-        received_message_dict['isExpired'] = self.is_expired
+        # # Set is expired:
+        # received_message_dict['isExpired'] = self.is_expired
         # Set expiration (timedelta)
         received_message_dict['expiration'] = None
         if self.expiration is not None:
-            received_message_dict['expiration'] = self.expiration.seconds
+            received_message_dict['expiration'] = self.expiration.total_seconds()
         # Set expiration timestamp:
         received_message_dict['expirationTimestamp'] = None
         if self.expiration_timestamp is not None:
             received_message_dict['expirationTimestamp'] = self.expiration_timestamp.__to_dict__()
+        # Set view once:
+        received_message_dict['viewOnce'] = self.view_once
+
         # Set previews:
-        received_message_dict['previews'] = None
-        if self.previews is not None:
-            received_message_dict['previews'] = []
-            for preview in self.previews:
-                received_message_dict['previews'].append(preview.__to_dict__())
+        received_message_dict['previews'] = []
+        for preview in self.previews:
+            received_message_dict['previews'].append(preview.__to_dict__())
         return received_message_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -253,23 +281,27 @@ class SignalReceivedMessage(SignalMessage):
                 pack_id=from_dict['sticker']['packId'],
                 sticker_id=from_dict['sticker']['stickerId']
             )
+
         # Load quote
         self.quote = None
         if from_dict['quote'] is not None:
             self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                      from_dict=from_dict['quote'])
         # Load expiration:
-        self.is_expired = from_dict['isExpired']
+        # self.is_expired = from_dict['isExpired']
         self.expiration = None
         if from_dict['expiration'] is not None:
             self.expiration = timedelta(seconds=from_dict['expiration'])
         self.expiration_timestamp = None
         if from_dict['expirationTimestamp'] is not None:
             self.expiration_timestamp = SignalTimestamp(from_dict=from_dict['expirationTimestamp'])
+
+        # Load view once:
+        self.view_once = from_dict['viewOnce']
+
         # Load previews:
-        self.previews = None
+        self.previews = []
         if from_dict['previews'] is not None:
-            self.previews = []
             for preview_dict in from_dict['previews']:
                 self.previews.append(SignalPreview(config_path=self._config_path, from_dict=preview_dict))
         return
@@ -348,25 +380,31 @@ class SignalReceivedMessage(SignalMessage):
         """
         Set the expiration_timestamp property according to when it was opened.
         :param time_opened: Optional[SignalTimestamp]: The timestamp of when opened; If None, NOW is used.
-        :return: None
+        :return: None        if self.is_expiration_update:
+            # Set the recipient expiration:
+            self.recipient.expiration = self.expiration
+            # If it's a contact save the contact list:
+            if self.recipient.recipient_type == RecipientTypes.CONTACT:
+                self._contacts.__save__()
+            # Set the sender string:
+            sender: str
+            if self.sender == self._contacts.get_self():
+                sender = "You"
+            else:
+                sender = self.sender.get_display_name()
+            # Set the body:
+            if self.expiration is None:
+                self.body = "%s disabled disappearing messages." % sender
+            else:
+                self.body = "%s set the disappearing message timer to: %s" % (sender, str(self.expiration))
+
         """
-        if self.expiration is not None:
-            expiry_datetime = time_opened._datetime + self.expiration
+        if self.expiration is not None and self.expiration_timestamp is None:
+            expiry_datetime = time_opened.datetime_obj + self.expiration
             self.expiration_timestamp = SignalTimestamp(datetime_obj=expiry_datetime)
         else:
             self.expiration_timestamp = None
         return
-
-    def __check_expired__(self) -> bool:
-        """
-        Check and set is_expired.
-        :returns: bool: True if this run has set the expired flag.
-        """
-        if self.expiration_timestamp is not None:
-            if self.expiration_timestamp._datetime <= pytz.utc.localize(datetime.utcnow()):
-                self.is_expired = True
-                return True
-        return False
 
     def __check_invite__(self) -> bool:
         """
@@ -376,7 +414,23 @@ class SignalReceivedMessage(SignalMessage):
         if self.recipient_type == RecipientTypes.GROUP and self.body is None:
             if self.attachments is None and len(self.mentions) == 0:
                 if self.sticker is None and self.quote is None:
-                    return True
+                    if len(self.previews) == 0:
+                        return True
+        return False
+
+    def __check_expiry_update__(self) -> bool:
+        """
+        Check if this an expiry update message, if it is, it's a message with no body, no sticker, etc, and a different
+            expiration time than the current recipient has.
+        :return: bool: True if this an expiration update.
+        """
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__check_expiry_update__.__name__)
+        if self.body is None and len(self.mentions) == 0:
+            if self.sticker is None and self.quote is None:
+                if self.attachments is None or len(self.attachments) == 0:
+                    if len(self.previews) == 0:
+                        if self.expiration != self.recipient.expiration:
+                            return True
         return False
 
     #####################
@@ -564,3 +618,17 @@ class SignalReceivedMessage(SignalMessage):
             failure.
         """
         raise NotImplementedError()
+
+##############################
+# Properties:
+##############################
+    @property
+    def is_expired(self) -> bool:
+        """
+        Is this message expired?
+        :return:
+        """
+        if self.expiration_timestamp is not None:
+            if self.expiration_timestamp.datetime_obj <= pytz.utc.localize(datetime.utcnow()):
+                return True
+        return False

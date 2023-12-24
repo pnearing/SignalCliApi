@@ -4,6 +4,7 @@ File: signalContact.py
 Store and manage a single contact.
 """
 import logging
+from datetime import timedelta
 from typing import TypeVar, Optional, Any
 import socket
 import json
@@ -20,6 +21,7 @@ Self = TypeVar("Self", bound="SignalContact")
 
 class SignalContact(SignalRecipient):
     """Class to store a contact."""
+
     def __init__(self,
                  command_socket: socket.socket,
                  sync_socket: socket.socket,
@@ -32,7 +34,7 @@ class SignalContact(SignalRecipient):
                  number: Optional[str] = None,
                  uuid: Optional[str] = None,
                  is_blocked: bool = False,
-                 expiration: Optional[int] = None,
+                 expiration: Optional[int | timedelta] = None,
                  color: Optional[str] = None,
                  ) -> None:
         """
@@ -48,7 +50,7 @@ class SignalContact(SignalRecipient):
         :param number: Optional[str]: The phone number of this contact.
         :param uuid: Optional[str]: The UUID of the contact.
         :param is_blocked: bool: If this contact should be blocked.
-        :param expiration: Optional[int]: The expiration of this contact in seconds.
+        :param expiration: Optional[int | timedelta]: The expiration of this contact in seconds.
         :param color: Optional[str]: The colour of this contact.
         """
         # Super:
@@ -91,9 +93,9 @@ class SignalContact(SignalRecipient):
         if not isinstance(is_blocked, bool):
             logger.critical("Raising TypeError:")
             __type_error__('is_blocked', 'bool', is_blocked)
-        if expiration is not None and not isinstance(expiration, int):
+        if expiration is not None and not isinstance(expiration, (int, timedelta)):
             logger.critical("Raising TypeError:")
-            __type_error__('expiration', 'Optional[int]', expiration)
+            __type_error__('expiration', 'Optional[int | timedelta]', expiration)
         if color is not None and not isinstance(color, str):
             logger.critical("Raising TypeError:")
             __type_error__('color', 'Optional[str]', color)
@@ -123,8 +125,13 @@ class SignalContact(SignalRecipient):
         """The contacts device list."""
         self.is_blocked: bool = is_blocked
         """Is this contact blocked?"""
-        self.expiration: Optional[int] = expiration
-        """Expiration in seconds."""
+        self.expiration: Optional[timedelta] = None
+        """Expiration timedelta."""
+        if expiration is not None:
+            if isinstance(expiration, int):
+                self.expiration = timedelta(seconds=expiration)
+            else:
+                self.expiration = expiration
         self.is_typing: bool = False
         """Is this contact typing?"""
         self.last_typing_change: Optional[SignalTimestamp] = None
@@ -135,6 +142,8 @@ class SignalContact(SignalRecipient):
         """The colour of the contact."""
         self.is_self: bool = False
         """Is this the self-contact?"""
+        self.user_obj: Optional[Any] = None
+        """An object set by the user to store with the contact."""
 
         # Parse from dict:
         if from_dict is not None:
@@ -146,7 +155,6 @@ class SignalContact(SignalRecipient):
         # Mark as self:
         if self.number == self._account_id:
             self.is_self = True
-            self.name = SELF_CONTACT_NAME
 
         # Catch unknown contact:
         if self.name == UNKNOWN_CONTACT_NAME:
@@ -183,12 +191,15 @@ class SignalContact(SignalRecipient):
         if raw_contact['messageExpirationTime'] == 0:
             self.expiration = None
         else:
-            self.expiration = raw_contact['messageExpirationTime']
+            self.expiration = timedelta(seconds=raw_contact['messageExpirationTime'])
         self.profile = SignalProfile(sync_socket=self._sync_socket, config_path=self._config_path,
-                                     account_id=self._account_id, contact_id=self.get_id(), raw_profile=raw_contact['profile']
+                                     account_id=self._account_id, contact_id=self.get_id(),
+                                     raw_profile=raw_contact['profile']
                                      )
         if self.name is None and self.profile.name != '':
             self.set_name(self.profile.name)
+            self.name = self.profile.name
+
         return
 
     ##########################
@@ -232,20 +243,24 @@ class SignalContact(SignalRecipient):
             'profile': None,
             'devices': None,
             'isBlocked': self.is_blocked,
-            'expiration': self.expiration,
+            'expiration': None,
             'isTyping': False,
             'lastTypingChange': None,
             'lastSeen': None,
             'color': self.color,
+            'userObj': self.user_obj,
         }
         if self.profile is not None:
             contact_dict['profile'] = self.profile.__to_dict__()
         if self.devices is not None:
             contact_dict['devices'] = self.devices.__to_dict__()
+        if self.expiration is not None:
+            contact_dict['expiration'] = self.expiration.total_seconds()
         if self.last_typing_change is not None:
             contact_dict['lastTypingChange'] = self.last_typing_change.__to_dict__()
         if self.last_seen is not None:
             contact_dict['lastSeen'] = self.last_seen.__to_dict__()
+
         # Add recipient data:
         recipient_dict = super().__to_dict__()
         for key in recipient_dict.keys():
@@ -266,9 +281,11 @@ class SignalContact(SignalRecipient):
         self.uuid = from_dict['uuid']
         self.is_blocked = from_dict['isBlocked']
         self.is_typing = from_dict['isTyping']
-        self.expiration = from_dict['expiration']
+        self.expiration = None
+        if from_dict['expiration'] is not None:
+            self.expiration = timedelta(seconds=from_dict['expiration'])
         self.color = from_dict['color']
-
+        self.user_obj = from_dict['userObj']
         # Load Profile:
         self.profile = None
         if from_dict['profile'] is not None:
@@ -309,25 +326,22 @@ class SignalContact(SignalRecipient):
             return self.number
         return self.uuid
 
-    def get_display_name(self) -> str:
+    def get_display_name(self, proper_self: bool = True) -> str:
         """
         Get a display version of the contact name.
+        :param proper_self: bool: If this is the self contact, return the proper name, otherwise return 'note-to-self'.
         :returns: str: The display name.
         """
-        if self.is_self:
-            return 'Note to Self \u2318'
-            # if self.profile is not None and self.profile.name != '':
-            #     return self.profile.name
-            # else:
-            #     return self.name
-        if self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME:
+        if not proper_self and self.is_self:
+            return SELF_CONTACT_NAME
+        elif self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME and \
+                self.name != 'Note-To-Self':
             return self.name
         elif self.profile is not None and self.profile.name != '':
             return self.profile.name
-        else:
-            if self.number is not None:
-                return self.number
-            return UNKNOWN_CONTACT_NAME
+        elif self.number is not None:
+            return self.number
+        return UNKNOWN_CONTACT_NAME
 
     ###########################
     # Setters:

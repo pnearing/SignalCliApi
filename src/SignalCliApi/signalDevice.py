@@ -217,13 +217,13 @@ class SignalDevice(object):
     ########################
     # Methods:
     ########################
-    def seen(self, time_seen: SignalTimestamp) -> None:
+    def __seen__(self, time_seen: SignalTimestamp) -> None:
         """
         Update the last time this device has been seen.
         :param time_seen: SignalTimestamp: The time this device was seen at.
         :raises TypeError: If time_seen not a SignalTimestamp.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.seen.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__seen__.__name__)
         if not isinstance(time_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
             __type_error__("time_seen", "SignalTimestamp", time_seen)

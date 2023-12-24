@@ -10,6 +10,7 @@ import os
 from subprocess import check_call, CalledProcessError
 from .signalExceptions import ParameterError
 from .signalCommon import __type_error__, __find_xdgopen__
+from .signalTimestamp import SignalTimestamp
 
 
 class SignalThumbnail(object):
@@ -80,16 +81,20 @@ class SignalThumbnail(object):
         # Thumbnail filename:
         self.filename: Optional[str] = None
         """The thumbnail filename."""
-        # Local path:
         self.local_path: Optional[str] = local_path
         """The local path to the file."""
-        # Local path exists:
         self.exists: bool = False
         """Does this file exist on disk?"""
-        # Size in bytes:
         self.size: Optional[int] = None
         """The size of the thumbnail file in bytes."""
-
+        self.height: Optional[int] = None
+        """The height of the thumbnail in pixels."""
+        self.width: Optional[int] = None
+        """The width of the thumbnail in pixels."""
+        self.caption: Optional[str] = None
+        """The caption of the image."""
+        self.upload_timestamp: Optional[SignalTimestamp] = None
+        """When the thumbnail was uploaded."""
         # Parse from_dict:
         if from_dict is not None:
             logger.debug("Loading from dict.")
@@ -115,11 +120,50 @@ class SignalThumbnail(object):
         :param raw_thumbnail: dict[str, Any]: The dict to load from.
         :return: None
         """
-        self.content_type = raw_thumbnail['contentType']
-        self.filename = raw_thumbnail['filename']
-        self.local_path = os.path.join(self._config_path, 'attachments', raw_thumbnail['id'])
-        self.exists = os.path.exists(self.local_path)
-        self.size = raw_thumbnail['size']
+        # Load content type:
+        self.content_type = None
+        if 'contentType' in raw_thumbnail.keys():
+            self.content_type = raw_thumbnail['contentType']
+
+        # Load filename:
+        self.filename = None
+        if 'filename' in raw_thumbnail.keys():
+            self.filename = raw_thumbnail['filename']
+
+        # Load ID:
+        self.id = None
+        if 'id' in raw_thumbnail.keys():
+            self.id = raw_thumbnail['id']
+
+        # Load size:
+        self.size = None
+        if 'size' in raw_thumbnail.keys():
+            self.size = raw_thumbnail['size']
+
+        # Load height:
+        self.height = None
+        if 'height' in raw_thumbnail.keys():
+            self.height = raw_thumbnail['height']
+
+        # Load width:
+        self.width = None
+        if 'width' in raw_thumbnail.keys():
+            self.width = raw_thumbnail['width']
+
+        # Load caption:
+        self.caption = None
+        if 'caption' in raw_thumbnail.keys():
+            self.caption = raw_thumbnail['caption']
+
+        # Set local path and exists:
+        self.local_path = None
+        self.exists = False
+        if self.filename is not None:
+            self.local_path = os.path.join(self._config_path, 'attachments', self.filename)
+            self.exists = os.path.exists(self.local_path)
+        elif self.id is not None:
+            self.local_path = os.path.join(self._config_path, 'attachments', self.id)
+            self.exists = os.path.exists(self.local_path)
         return
 
     ############################
@@ -133,8 +177,12 @@ class SignalThumbnail(object):
         thumbnail_dict: dict[str, Any] = {
             'contentType': self.content_type,
             'filename': self.filename,
-            'localPath': self.local_path,
+            'id': self.id,
             'size': self.size,
+            'height': self.height,
+            'width': self.width,
+            'caption': self.caption,
+            'localPath': self.local_path,
         }
         return thumbnail_dict
 
@@ -146,13 +194,15 @@ class SignalThumbnail(object):
         """
         self.content_type = from_dict['contentType']
         self.filename = from_dict['filename']
+        self.id = from_dict['id']
+        self.size = from_dict['size']
+        self.height = from_dict['height']
+        self.width = from_dict['width']
+        self.caption = from_dict['caption']
         self.local_path = from_dict['localPath']
         self.exists = False
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)
-        else:
-            self.exists = False
-        self.size = from_dict['size']
         return
 
     ############################

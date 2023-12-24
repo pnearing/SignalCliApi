@@ -11,9 +11,10 @@ from typing import Optional, Callable, Any, NoReturn
 from .signalAccount import SignalAccount
 from .signalAccounts import SignalAccounts
 from . import signalCommon
-from .signalCommon import __type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__, \
-    __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, __socket_send__, phone_number_regex, \
-    __type_err_msg__, __parse_signal_response__, __check_response_for_error__
+from .signalCommon import (__type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__,
+                           __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__,
+                           __socket_send__, phone_number_regex, __type_err_msg__, __parse_signal_response__,
+                           __check_response_for_error__)
 from .runCallback import __run_callback__, __type_check_callback__
 from .runCallback import set_suppress_error as set_callback_suppress_error
 from .runCallback import type_string as callback_type_string
@@ -182,6 +183,7 @@ class SignalCli(object):
             logger.debug("Building server_address, selecting UNIX socket.")
             self._server_address = os.path.join(self.config_path, 'socket')
         logger.debug("Server address: %s" % str(self._server_address))
+        signalCommon.SERVER_ADDRESS = self._server_address
 
         # Store debug:
         signalCommon.DEBUG = debug
@@ -360,12 +362,12 @@ class SignalCli(object):
             __run_callback__(self._callback, "failed to start signal-cli")
             return e
         logger.info("signal-cli started.")
-        __run_callback__(self._callback, "signal-cli started.")
+        __run_callback__(self._callback, "signal-cli started")
 
         # Give signal 5 seconds to start
-        __run_callback__(self._callback, "Waiting for signal-cli to initialize.")
+        __run_callback__(self._callback, "waiting for signal-cli to initialize")
         sleep(5)
-        __run_callback__(self._callback, 'signal-cli initialized.')
+        __run_callback__(self._callback, 'signal-cli initialized')
         return True
 
     #################################
@@ -860,9 +862,9 @@ class SignalCli(object):
         self._link_thread = None
         return
 
-############################################
-# Properties:
-############################################
+    ############################################
+    # Properties:
+    ############################################
     @property
     def link_thread(self) -> Optional[SignalLinkThread]:
         """

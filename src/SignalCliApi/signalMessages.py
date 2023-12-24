@@ -12,7 +12,8 @@ from syslog import syslog, LOG_INFO
 from .signalAttachment import SignalAttachment
 from .signalCommon import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, \
     __parse_signal_response__, \
-    __check_response_for_error__, RecipientTypes, SyncTypes, MessageFilter
+    __check_response_for_error__, RecipientTypes, SyncTypes, MessageFilter, __socket_create__, SERVER_ADDRESS, \
+    __socket_connect__, __socket_close__, HONOUR_VIEW_ONCE, HONOUR_EXPIRY
 from .signalContact import SignalContact
 from .signalContacts import SignalContacts
 from .signalDevice import SignalDevice
@@ -118,6 +119,9 @@ class SignalMessages(object):
         """The full path to the messages.json file."""
         self._sending: bool = False
         """Are we currently sending a message?"""
+        self._unparsed_receipts: list[SignalReceipt] = []
+        """A list of un-parsed receipts."""
+
         # Set external properties:
         self.messages: list[SignalSentMessage | SignalReceivedMessage] = []
         """List of sent / received messages."""
@@ -138,7 +142,6 @@ class SignalMessages(object):
                 self.__save__()
         return
 
-
     ################################
     # To / From Dict:
     ################################
@@ -152,10 +155,12 @@ class SignalMessages(object):
             "syncMessages": [],
             "typingMessages": [],
             "storyMessages": [],
+            "unparsedReceipts": [],
         }
         # Store messages: SignalSentMessage | SignalReceivedMessage
         for message in self.messages:
-            messages_dict["messages"].append(message.__to_dict__())
+            if (not message.is_expired or not HONOUR_EXPIRY) and (not message.view_once or not HONOUR_VIEW_ONCE):
+                messages_dict["messages"].append(message.__to_dict__())
         # Store sync messages: (sync and group update)
         for message in self.sync:
             if message is None:
@@ -167,6 +172,10 @@ class SignalMessages(object):
         # Store story messages: SignalStoryMessage
         for message in self.story:
             messages_dict['storyMessages'].append(message.__to_dict__())
+        # Store unparsed receipts:
+        for receipt in self._unparsed_receipts:
+            messages_dict['unparsedReceipts'].append(receipt.__to_dict__())
+
         return messages_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -204,12 +213,14 @@ class SignalMessages(object):
             if message_dict['messageType'] == MessageTypes.GROUP_UPDATE.value:
                 message = SignalGroupUpdate(command_socket=self._command_socket, account_id=self._account_id,
                                             config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                            devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                                            devices=self._devices, this_device=self._this_device, from_dict=message_dict
+                                            )
             elif message_dict['messageType'] == MessageTypes.SYNC.value:
                 message = SignalSyncMessage(command_socket=self._command_socket, account_id=self._account_id,
                                             config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                             devices=self._devices, this_device=self._this_device,
-                                            sticker_packs=self._sticker_packs, from_dict=message_dict)
+                                            sticker_packs=self._sticker_packs, from_dict=message_dict
+                                            )
             else:
                 warning_message: str = "Invalid message type in for sync messages: message type: %i" \
                                        % message_dict['messageType']
@@ -221,8 +232,9 @@ class SignalMessages(object):
         for message_dict in from_dict['typingMessages']:
             if message_dict['messageType'] == MessageTypes.TYPING.value:
                 message = SignalTypingMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                              config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                              devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                                              config_path=self._config_path, contacts=self._contacts,
+                                              groups=self._groups, devices=self._devices, this_device=self._this_device,
+                                              from_dict=message_dict)
                 self.typing.append(message)
             else:
                 warning_message: str = "Invalid message type in typing messages: MessageType: %i" \
@@ -233,13 +245,22 @@ class SignalMessages(object):
         for message_dict in from_dict['storyMessages']:
             if message_dict['messageType'] == MessageTypes.STORY.value:
                 message = SignalStoryMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                             config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                             devices=self._devices, this_device=self._this_device, from_dict=message_dict)
+                                             config_path=self._config_path, contacts=self._contacts,
+                                             groups=self._groups, devices=self._devices, this_device=self._this_device,
+                                             from_dict=message_dict)
                 self.story.append(message)
             else:
                 warning_message: str = "Invalid message type in story messages: MessageType: %i" \
                                        % message_dict['messageType']
                 logger.warning(warning_message)
+
+        # Load unparsed receipts:
+        self._unparsed_receipts = []
+        for receipt_dict in from_dict['unparsedReceipts']:
+            receipt = SignalReceipt(command_socket=self._command_socket, account_id=self._account_id,
+                                    config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                    devices=self._devices, this_device=self._this_device, from_dict=receipt_dict)
+
         return
 
     #################################
@@ -277,6 +298,8 @@ class SignalMessages(object):
         :return: None
         :raises RuntimeError: On error opening the file for writing.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__save__.__name__)
+        logger.debug("Saving messages.")
         # Create a messages Object, and json save string:
         messages_dict: dict[str, Any] = self.__to_dict__()
         json_messages_str: str = json.dumps(messages_dict, indent=4)
@@ -335,12 +358,28 @@ class SignalMessages(object):
         :param receipt: SignalReceipt: The receipt message to parse.
         :return: None
         """
-        sent_messages = [message for message in self.messages if isinstance(message, SignalSentMessage)]
-        for message in sent_messages:
-            for timestamp in receipt.timestamps:
-                if message.timestamp == timestamp:
-                    message.__parse_receipt__(receipt)
-                    self.__save__()
+        # Mark seen:
+        receipt.sender.__seen__(receipt.timestamp)
+        receipt.device.__seen__(receipt.timestamp)
+        receipt.recipient.__seen__(receipt.timestamp)
+        # Build a list of unparsed receipts
+        receipts = [receipt, *self._unparsed_receipts]
+        self._unparsed_receipts = []
+        should_save: bool = False
+        for _receipt in receipts:
+            # Parse receipts:
+            receipt_parsed: bool = False
+            for message in self.get_sent():
+                for timestamp in _receipt.timestamps:
+                    if message.timestamp == timestamp:
+                        message.__parse_receipt__(_receipt)
+                        receipt_parsed = True
+            if receipt_parsed:
+                should_save = True
+            else:
+                self._unparsed_receipts.append(_receipt)
+        if should_save:
+            self.__save__()
         return
 
     def __parse_read_message_sync__(self, sync_message: SignalSyncMessage) -> None:
@@ -349,15 +388,25 @@ class SignalMessages(object):
         :param sync_message: SyncMessage: The sync message to parse.
         :return: None
         """
+        # Mark sync_message seen:
+        sync_message.sender.__seen__(sync_message.timestamp)
+        sync_message.device.__seen__(sync_message.timestamp)
+        sync_message.recipient.__seen__(sync_message.timestamp)
+
+        # Parse the read message sync message:
+        should_save: bool = False
         for contact, timestamp in sync_message.read_messages:
             search_messages = self.get_by_sender(contact)
             for message in search_messages:
                 if message.timestamp == timestamp:
                     if not message.is_read:
+                        should_save = True
                         if isinstance(message, SignalReceivedMessage):
                             message.mark_read(when=sync_message.timestamp, send_receipt=False)
                         else:
                             message.mark_read(when=sync_message.timestamp)
+        if should_save:
+            self.__save__()
         return
 
     def __parse_sent_message_sync__(self, sync_message: SignalSyncMessage) -> None:
@@ -369,8 +418,18 @@ class SignalMessages(object):
         message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                     config_path=self._config_path, contacts=self._contacts, groups=self._groups,
                                     devices=self._devices, this_device=self._this_device,
-                                    sticker_packs=self._sticker_packs, raw_message=sync_message.raw_sent_message)
+                                    sticker_packs=self._sticker_packs,
+                                    raw_message=sync_message.raw_sent_message)
+        message.mark_delivered()
         self.append(message)
+        return
+
+    def __parse_sent_reaction_sync__(self, sync_message: SignalSyncMessage) -> None:
+        reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
+                                  config_path=self._config_path, contacts=self._contacts, groups=self._groups,
+                                  devices=self._devices, this_device=self._this_device,
+                                  sync_message=sync_message.raw_sent_message)
+        self.__parse_reaction__(reaction)
         return
 
     def __parse_sync_message__(self, sync_message: SignalSyncMessage) -> None:
@@ -386,33 +445,13 @@ class SignalMessages(object):
             self.__parse_read_message_sync__(sync_message)
         elif sync_message.sync_type == SyncTypes.SENT_MESSAGES:
             self.__parse_sent_message_sync__(sync_message)
+        elif sync_message.sync_type == SyncTypes.SENT_REACTION:
+            self.__parse_sent_reaction_sync__(sync_message)
         else:
-            error_message = ("Can only parse SyncTypes.READ_MESSAGES and SyncTypes.SENT_MESSAGES, not"
-                             " not: %s" % str(sync_message.sync_type))
+            error_message = ("Can only parse SyncTypes.READ_MESSAGES, SyncTypes.SENT_MESSAGES,"
+                             " and SyncTypes.SENT_REACTION, not: %s" % str(sync_message.sync_type))
             logger.critical("Raising TypeError(%s)." % error_message)
             raise TypeError(error_message)
-        self.__save__()
-        return
-
-    def __check_expiries__(self) -> None:
-        """
-        Check expiry times on all messages.
-        :return: None
-        """
-        for message in self.messages:
-            message.__check_expired__()
-        return
-
-    def __do_expunge__(self) -> None:
-        """
-        Expunge expired messages.
-        :return: None
-        """
-        saved_messages: list[SignalSentMessage | SignalReceivedMessage] = []
-        for message in self.messages:
-            if not message.is_expired:
-                saved_messages.append(message)
-        self.messages = saved_messages
         self.__save__()
         return
 
@@ -583,6 +622,19 @@ class SignalMessages(object):
     ##################################
     # Methods:
     ##################################
+    def do_expunge(self) -> None:
+        """
+        Expunge expired messages.
+        :return: None
+        """
+        saved_messages: list[SignalSentMessage | SignalReceivedMessage] = []
+        for message in self.messages:
+            if not message.is_expired:
+                saved_messages.append(message)
+        self.messages = saved_messages
+        self.__save__()
+        return
+
     def append(self, message: SignalMessage) -> None:
         """
         Append a message to the appropriate message list.
@@ -592,12 +644,17 @@ class SignalMessages(object):
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.append.__name__)
-
-        # Type check the message:
-        if not isinstance(message, (SignalSentMessage, SignalReceivedMessage, SignalGroupUpdate, SignalSyncMessage, SignalTypingMessage)):
+        # Type check message:
+        if not isinstance(message, (SignalSentMessage, SignalReceivedMessage, SignalGroupUpdate, SignalSyncMessage,
+                                    SignalTypingMessage)):
             logger.critical("Raising TypeError:")
-            __type_error__("message", "SignalMessage", message)
+            __type_error__("message", "SignalSentMessage | SignalReceivedMessage | "
+                                      "SignalGroupUpdate | SignalSyncMessage | SignalTypingMessage", message)
 
+        # Mark seen:
+        message.sender.__seen__(message.timestamp)
+        message.recipient.__seen__(message.timestamp)
+        message.device.__seen__(message.timestamp)
         # Sort the message based on the message type:
         if isinstance(message, (SignalSentMessage, SignalReceivedMessage)):
             self.messages.append(message)
@@ -605,6 +662,7 @@ class SignalMessages(object):
             self.sync.append(message)
         elif isinstance(message, SignalTypingMessage):
             self.typing.append(message)
+
         # Save the messages.
         self.__save__()
         return
@@ -616,29 +674,32 @@ class SignalMessages(object):
                      mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
                      quote: Optional[SignalQuote] = None,
                      sticker: Optional[SignalSticker] = None,
-                     preview: Optional[SignalPreview] = None,
+                     previews: Optional[Iterable[SignalPreview]] = None,
                      ) -> tuple[tuple[bool, SignalContact | SignalGroup, str | SignalSentMessage], ...]:
 
         """
         Send a message.
-        :param recipients: Iterable[SignalContact | SignalGroup] | SignalContact | SignalGroup: The recipients of the message.
+        :param recipients: Iterable[SignalContact | SignalGroup] | SignalContact | SignalGroup: The recipients of the
+            message.
         :param body: Optional[str]: The body of the message.
-        :param attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str ]: Attachments to the message.
+        :param attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str ]: Attachments to the
+            message.
         :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Mentions in the message.
         :param quote: Optional[SignalQuote]: A SignalQuote object for the message.
         :param sticker: Optional[SignalSticker]: A sticker to send.
-        :param preview: Optional[SignalPreview]: A preview for the url in the message, url must appear in the body of the
-            message.
-        :returns: tuple[tuple[bool, SignalContact | SignalGroup, str | SentMessage]]: A tuple of tuples, the outer tuple is one
-            element per message sent.
+        :param previews: Optional[Iterable[SignalPreview]]: A preview for the url in the message, url must appear in
+            the body of the message.
+        :returns: tuple[tuple[bool, SignalContact | SignalGroup, str | SentMessage]]: A tuple of tuples, the outer-tuple
+            is one element per message sent.
             The inner tuple's first element, a bool, is True or False for if the message was sent successfully or not.
             The second element of the inner tuple is the SignalContact | SignalGroup the message was sent to.
             The third element of the inner tuple, a str | SentMessage, is either a string containing an error message
             when sending fails, or the SentMessage object on sending success.
-        :raises: TypeError: If a recipient is not a SignalContact or SignalGroup object, if body is not a string, if attachments is
-            not an SignalAttachment object or a string, or a list of SignalAttachment objects, or strings, if mentions is not a
-            list of SignalMention objects, or not a SignalMentions object, if quote is not a SignalQuote object, if sticker is not a
-            SignalSticker object, or if preview is not a SignalPreview object.
+        :raises: TypeError: If a recipient is not a SignalContact or SignalGroup object, if body is not a string, if
+            attachments is not an SignalAttachment object or a string, or a list of SignalAttachment objects, or
+            strings, if mentions is not a list of SignalMention objects, or not a SignalMentions object, if quote is
+            not a SignalQuote object, if sticker is not a SignalSticker object, or if previews is not an
+            Optional[Iterable[SignalPreview] object.
         :raises: ValueError: If body is an empty string, if attachments is an empty list, or if mentions is an empty
             list.
         """
@@ -747,14 +808,19 @@ class SignalMessages(object):
                 raise __type_error__("sticker", "SignalSticker", sticker)
 
         # Validate preview:
-        if preview is not None:
-            if not isinstance(preview, SignalPreview):
+        preview_list: list[SignalPreview] = []
+        if previews is not None:
+            if not isinstance(previews, Iterable):
                 logger.critical("Raising TypeError:")
-                __type_error__("preview", "SignalPreview", preview)
-            if body.find(preview.url) == -1:
-                error_message: str = "preview URL must appear in body of message."
-                logger.critical("Raising ValueError(%s)." % error_message)
-                raise ValueError(error_message)
+                __type_error__("previews", "Optional[Iterable[SignalPreview]]", previews)
+            for i, preview in enumerate(previews):
+                if not isinstance(preview, SignalPreview):
+                    __type_error__('previews[%i]' % i, 'SignalPreview', preview)
+                if body.find(preview.url) == -1:
+                    error_message: str = "preview URL: '%s' must appear in the body of message." % preview.url
+                    logger.critical("Raising ValueError(%s)." % error_message)
+                    raise ValueError(error_message)
+                preview_list.append(preview)
 
         # Validate conflicting options:
         if sticker is not None:
@@ -791,8 +857,8 @@ class SignalMessages(object):
             for contact in target_recipients:
                 send_command_obj['params']['recipient'].append(contact.get_id())
         else:
-            error_message: str = ("'recipient_type' (which might be None) must be either 'contact' or 'group', we should"
-                                  " never get here.")
+            error_message: str = ("'recipient_type' (which might be None) must be either 'contact' or 'group', "
+                                  "we should never get here.")
             logger.critical("Raising ValueError(%s)." % error_message)
             raise ValueError(error_message)
 
@@ -814,7 +880,7 @@ class SignalMessages(object):
 
         # Add quote:
         if quote is not None:
-            send_command_obj['params']['quoteTimestamp'] = quote.timestamp._timestamp
+            send_command_obj['params']['quoteTimestamp'] = quote.timestamp.timestamp
             send_command_obj['params']['quoteAuthor'] = quote.author.get_id()
             send_command_obj['params']['quoteMessage'] = quote.text
             if quote.mentions is not None:
@@ -826,22 +892,32 @@ class SignalMessages(object):
         if sticker is not None:
             send_command_obj['params']['sticker'] = str(sticker)
 
-        # Add preview:
-        if preview is not None:
-            send_command_obj['params']['previewUrl'] = preview.url
-            send_command_obj['params']['previewTitle'] = preview.title
-            send_command_obj['params']['previewDescription'] = preview.description
-            if preview.image is not None:
-                send_command_obj['params']['previewImage'] = preview.image.local_path
+        # Add previews:
+        if previews is not None:
+            preview_list: list[dict[str, Any]] = []
+            for preview in previews:
+                preview_dict: dict[str, Any] = {
+                    'previewUrl': preview.url,
+                    'previewTitle': preview.title,
+                    'previewDescription': preview.description,
+                }
+                if preview.image is not None:
+                    preview_dict['previewImage'] = preview.image.local_path
+                preview_list.append(preview_dict)
+            send_command_obj['params']['previews'] = preview_list
 
         # Create json command string:
         json_command_str = json.dumps(send_command_obj) + '\n'
 
         # Mark system as sending:
         self._sending = True
+        # Create socket:
+        sock = __socket_create__()
+        __socket_connect__(sock)
         # Communicate with signal:
-        __socket_send__(self._command_socket, json_command_str)
-        response_str = __socket_receive_blocking__(self._command_socket)
+        __socket_send__(sock, json_command_str)
+        response_str = __socket_receive_blocking__(sock)
+        __socket_close__(sock)
         # Mark system as finished sending
         self._sending = False
 
@@ -876,12 +952,13 @@ class SignalMessages(object):
             sent_messages: list[SignalSentMessage] = []
             for recipient in target_recipients:
                 sent_message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
-                                                 config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                                 devices=self._devices, this_device=self._this_device,
-                                                 sticker_packs=self._sticker_packs, recipient=recipient,
-                                                 timestamp=timestamp, body=body, attachments=target_attachments,
-                                                 mentions=target_mentions, quote=quote, sticker=sticker, is_sent=True,
-                                                 sent_to=target_recipients, preview=preview)
+                                                 config_path=self._config_path, contacts=self._contacts,
+                                                 groups=self._groups, devices=self._devices,
+                                                 this_device=self._this_device, sticker_packs=self._sticker_packs,
+                                                 recipient=recipient, timestamp=timestamp, body=body,
+                                                 attachments=target_attachments, mentions=target_mentions, quote=quote,
+                                                 sticker=sticker, is_sent=True, sent_to=target_recipients,
+                                                 previews=previews, expiration=recipient.expiration)
                 self.append(sent_message)
                 sent_messages.append(sent_message)
             for result in results_list:
@@ -913,16 +990,20 @@ class SignalMessages(object):
 
                 # Message Sent successfully:
                 if result['type'] == 'SUCCESS':
+
                     # Create a sent message
                     sent_message = SignalSentMessage(command_socket=self._command_socket, account_id=self._account_id,
                                                      config_path=self._config_path, contacts=self._contacts,
                                                      groups=self._groups, devices=self._devices,
                                                      this_device=self._this_device, sticker_packs=self._sticker_packs,
                                                      recipient=contact, timestamp=timestamp, body=body,
-                                                     attachments=target_attachments, mentions=target_mentions, quote=quote,
-                                                     sticker=sticker, is_sent=True, sent_to=target_recipients,
-                                                     preview=preview)
+                                                     attachments=target_attachments, mentions=target_mentions,
+                                                     quote=quote, sticker=sticker, is_sent=True,
+                                                     sent_to=target_recipients, previews=previews,
+                                                     expiration=contact.expiration)
                     return_value.append((True, contact, sent_message))
+                    if sent_message.recipient == self._contacts.get_self():
+                        sent_message.mark_delivered(sent_message.timestamp)
                     self.append(sent_message)
                     self.__save__()
                 # Message failed to send:

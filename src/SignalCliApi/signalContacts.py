@@ -90,7 +90,7 @@ class SignalContacts(object):
         """The account ID, either number or uuid."""
         self._account_path: str = account_path
         """The full path to the account data directory."""
-        self._filename: str = "contacts-" + account_id + ".json"
+        self._filename: str = "contacts.json"
         """The filename to use for the contacts JSON file."""
         self._json_file_path: str = os.path.join(self._account_path, self._filename)
         """The full path to this accounts contacts JSON file."""

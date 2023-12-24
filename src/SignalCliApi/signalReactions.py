@@ -31,7 +31,6 @@ class SignalReactions(object):
                  devices: SignalDevices,
                  this_device: SignalDevice,
                  from_dict: Optional[dict[str, Any]] = None,
-                 reactions: Optional[Iterable[SignalReaction]] = None,
                  ) -> None:
         """
         Initialize a SignalReactions object.
@@ -43,7 +42,6 @@ class SignalReactions(object):
         :param devices: SignalDevices: This accounts' SignalDevices object.
         :param this_device: SignalDevice: The SignalDevice object for the device we're using.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
-        :param reactions: Optional[Iterable[SignalReaction]]: A list of reaction objects to store in the object.
         """
         # Super:
         super().__init__()
@@ -76,9 +74,6 @@ class SignalReactions(object):
         if from_dict is not None and not isinstance(from_dict, dict):
             logger.critical("Raising TypeError:")
             __type_error__("from_dict", "dict", from_dict)
-        if reactions is not None and not isinstance(reactions, Iterable):
-            logger.critical("Raising TypeError:")
-            __type_error__("reactions", "Optional[Iterable[SignalReaction]]", reactions)
 
         # Set internal vars:
         self._command_socket: socket.socket = command_socket
@@ -98,13 +93,8 @@ class SignalReactions(object):
         self._reactions: list[SignalReaction] = []
         """The list of reactions."""
 
-        # Parse reactions parameter:
-        if reactions is not None:
-            for i, reaction in enumerate(reactions):
-                if not isinstance(reaction, SignalReaction):
-                    logger.critical("Raising TypeError:")
-                    __type_error__("reactions[%i]" % i, "SignalReaction", reaction)
-                self._reactions.append(reaction)
+        if from_dict is not None:
+            self.__from_dict__(from_dict)
         return
 
     ############################
@@ -146,11 +136,14 @@ class SignalReactions(object):
         Create a JSON friendly dict.
         :return: dict[str, Any]: The dict to provide to __from_dict__().
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__to_dict__.__name__)
         reactions_dict: dict[str, Any] = {
             'reactions': []
         }
+
         for reaction in self._reactions:
             reactions_dict['reactions'].append(reaction.__to_dict__())
+        logger.debug("Saved %i reactions to the dict." % len(reactions_dict['reactions']))
         return reactions_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -159,6 +152,8 @@ class SignalReactions(object):
         :param from_dict: dict[str, Any]: The dict created by __to_dict__()
         :return: None
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_dict__.__name__)
+        logger.debug("Entered")
         self._reactions = []
         for reaction_dict in from_dict['reactions']:
             reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
@@ -166,6 +161,7 @@ class SignalReactions(object):
                                       devices=self._devices, this_device=self._this_device, from_dict=reaction_dict
                                       )
             self._reactions.append(reaction)
+        logger.debug("Loaded %i reactions." % len(self._reactions))
         return
 
     ####################
@@ -194,18 +190,17 @@ class SignalReactions(object):
         # Parse a remove request:
         if reaction.is_remove:
             self.__remove_reaction__(reaction)
+            reaction.is_parsed = True
         # Add the reaction if no previous reaction:
         elif previous_reaction is None:
             self.__add_reaction__(reaction)
+            reaction.is_parsed = True
         # Otherwise, replace the existing reaction:
         else:
             reaction.is_change = True
             reaction.previous_emoji = previous_reaction.emoji
             self.__replace_reaction__(previous_reaction, reaction)
-        # Store the reaction:
-        self._reactions.append(reaction)
-        # Mark as parsed
-        reaction.is_parsed = True
+            reaction.is_parsed = True
         return reaction.is_parsed
 
     def __add_reaction__(self, new_reaction: SignalReaction) -> None:
@@ -216,19 +211,28 @@ class SignalReactions(object):
         :raises TypeError: If new_reaction is not of type SignalReaction.
         :raises RuntimeError: If the reaction is already in the list.
         """
+        # TODO: Rewrite this.
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__add_reaction__.__name__)
+        logger.debug("Entered.")
         # Type check param:
         if not isinstance(new_reaction, SignalReaction):
             logger.critical("Raising TypeError:")
             __type_error__("new_reaction", "SignalReaction", new_reaction)
         # Search for reaction in the reactions, and if it exists, raise RuntimeError:
-        if new_reaction in self._reactions:
-            error_message: str = "reaction already in reactions."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
-        # Add the reaction.
-        self._reactions.append(new_reaction)
+        reaction_found: bool = False
+        for reaction in self._reactions:
+            logger.debug("new_reaction: %s" % str(new_reaction.__to_dict__()))
+            logger.debug("old_reaction: %s" % str(reaction.__to_dict__()))
+            if reaction == new_reaction:
+                logger.debug("Reaction found.")
+                reaction_found = True
+        if not reaction_found:
+            logger.debug("Reaction not found, adding.")
+            self._reactions.append(new_reaction)
+            new_reaction.is_parsed = True
+        # if new_reaction not in self._reactions:
+        #     self._reactions.append(new_reaction)
         return
 
     def __remove_reaction__(self, target_reaction: SignalReaction) -> None:

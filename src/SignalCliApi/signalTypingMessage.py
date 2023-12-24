@@ -12,9 +12,9 @@ from .signalContact import SignalContact
 from .signalContacts import SignalContacts
 from .signalDevice import SignalDevice
 from .signalDevices import SignalDevices
-from .signalGroup import SignalGroup
 from .signalGroups import SignalGroups
 from .signalMessage import SignalMessage
+from .signalRecipient import SignalRecipient
 from .signalTimestamp import SignalTimestamp
 
 
@@ -31,11 +31,11 @@ class SignalTypingMessage(SignalMessage):
                  from_dict: Optional[dict[str, Any]] = None,
                  raw_message: Optional[dict[str, Any]] = None,
                  sender: Optional[SignalContact] = None,
-                 recipient: Optional[SignalContact | SignalGroup] = None,
+                 recipient: Optional[SignalRecipient] = None,
                  device: Optional[SignalDevice] = None,
                  timestamp: Optional[SignalTimestamp] = None,
                  action: TypingStates = TypingStates.NOT_SET,
-                 time_changed: Optional[SignalTimestamp] = None
+                 time_changed: Optional[SignalTimestamp] = None,
                  ) -> None:
         """
         Initialize a Typing Message.
@@ -104,6 +104,10 @@ class SignalTypingMessage(SignalMessage):
         else:
             self.action = TypingStates.NOT_SET
         self.time_changed = SignalTimestamp(timestamp=typing_dict['timestamp'])
+        if 'groupId' in typing_dict.keys():
+            group = self._groups.get_by_id(typing_dict['groupId'])
+            if group is not None:
+                self._recipient = group
         return
 
     def __to_dict__(self) -> dict[str, Any]:
