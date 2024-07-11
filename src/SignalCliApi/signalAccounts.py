@@ -198,8 +198,6 @@ class SignalAccounts(object):
         global ACCOUNTS
         self.logger.debug("__getitem__ started.")
         if isinstance(item, int):
-
-
             try:
                 return ACCOUNTS[item]  # Raises IndexError if index out of range.
             except IndexError as e:

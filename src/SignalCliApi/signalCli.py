@@ -11,10 +11,11 @@ from typing import Optional, Callable, Any, NoReturn
 from .signalAccount import SignalAccount
 from .signalAccounts import SignalAccounts
 from . import signalCommon
-from .signalCommon import (__type_error__, __find_signal__, __find_qrencode__, __parse_signal_return_code__,
-                           __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__,
-                           __socket_send__, phone_number_regex, __type_err_msg__, __parse_signal_response__,
-                           __check_response_for_error__)
+from .signalCommon import (__type_error__, __find_signal__, __find_qrencode__,
+                           __parse_signal_return_code__, __socket_create__,
+                           __socket_connect__, __socket_close__, __socket_receive_blocking__,
+                           __socket_send__, phone_number_regex, __type_err_msg__,
+                           __parse_signal_response__, __check_response_for_error__)
 from .runCallback import __run_callback__, __type_check_callback__
 from .runCallback import set_suppress_error as set_callback_suppress_error
 from .runCallback import type_string as callback_type_string
@@ -43,16 +44,19 @@ class SignalCli(object):
         Initialize signal-cli, starting the process if required.
         :param signal_config_path: Optional[str]: The path to the directory signal-cli should use.
         :param signal_exec_path: Optional[str]: The path to the signal-cli executable.
-        :param server_address: Optional[list[str , int] | tuple[str, int] | str]: If signal-cli is already started,
-            the address of the server, if a unix socket, use a str, otherwise use a tuple/list[hostname:str,port:int]
-        :param log_file_path: Optional[str]: The path to the signal log file, if None, no logging is preformed.
-        :param start_signal: Bool: True = start a signal-cli process, False = signal-cli is already running.
-        :param callback: Optional[tuple[Callable, Optional[list[Any]]]]: The call back as a tuple, the first element
-            being the callable, and the second element; If not None, is a list of any parameters to provide to the
-            callback.  The callback signature is: (status: str, *params)
-        :param callback_raises_error: bool: Should we suppress exceptions caused by callbacks? True, callback exceptions
-            will only be logged to the logging facility. False, the exception CallbackCausedError is raised with
-            the information and Exception object of what went wrong.
+        :param server_address: Optional[list[str , int] | tuple[str, int] | str]: If signal-cli is
+        already started, the address of the server, if a unix socket, use a str, otherwise use a
+        tuple/list[hostname:str,port:int]
+        :param log_file_path: Optional[str]: The path to the signal log file, if None, no logging
+        is preformed.
+        :param start_signal: Bool: True = start a signal-cli process, False = signal-cli is already
+        running.
+        :param callback: Optional[tuple[Callable, Optional[list[Any]]]]: The call back as a tuple,
+        the first element being the callable, and the second element; If not None, is a list of any
+        parameters to provide to the callback.  The callback signature is: (status: str, *params)
+        :param callback_raises_error: bool: Should we suppress exceptions caused by callbacks? True,
+         callback exceptions will only be logged to the logging facility. False, the exception
+         CallbackCausedError is raised with the information and Exception object of what went wrong.
         :param debug: Bool: Produce debug output on stdout.
         :raises TypeError: If a parameter is of invalid type.
         :raises FileNotFoundError: If a file / directory doesn't exist when it should.
@@ -167,7 +171,7 @@ class SignalCli(object):
             self._signal_exec_path = signal_exec_path
         elif start_signal:
             logger.debug("Finding signal_exec_path.")
-            self._signal_exec_path = __find_signal__()  # Raises FileNotFoundError if signal-cli not found.
+            self._signal_exec_path = __find_signal__()  # Raises FileNotFoundError if not found.
         else:
             logger.debug("Setting signal_exec_path to None.")
             self._signal_exec_path = None
@@ -783,6 +787,7 @@ class SignalCli(object):
                                      )
         thread.start()
         self._receive_threads[thread_id] = thread
+        account.is_receiving = True
         return thread
 
     def stop_receive(self, account: SignalAccount) -> bool:
@@ -810,6 +815,8 @@ class SignalCli(object):
         thread = self._receive_threads[thread_id]
         logger.debug("Stopping thread...")
         thread.stop()
+        thread.join()
+        account.is_receiving = False
         logger.debug("Thread stopped.")
         self._receive_threads[thread_id] = None
         logger.info("Reception stopped.")

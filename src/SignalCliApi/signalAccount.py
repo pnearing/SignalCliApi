@@ -223,6 +223,8 @@ class SignalAccount(object):
         """I don't know."""
         self.pni_account_data: Optional[dict[str, int | str]] = None
         """I don't know."""
+        self._is_receiving: bool = False
+        """Whether this account is current receiving messages."""
 
         # Do load:
         if do_load:
@@ -507,3 +509,13 @@ class SignalAccount(object):
         :return: str
         """
         return self.get_id()
+
+    @property
+    def is_receiving(self) -> bool:
+        return self._is_receiving
+
+    @is_receiving.setter
+    def is_receiving(self, value):
+        if not isinstance(value, bool):
+            raise TypeError("is_receiving must be of type bool")
+        self._is_receiving = value
