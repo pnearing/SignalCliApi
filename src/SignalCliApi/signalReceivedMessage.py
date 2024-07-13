@@ -31,7 +31,7 @@ from .signalTimestamp import SignalTimestamp
 from .signalSentMessage import SignalSentMessage
 
 # Define self:
-Self = TypeVar("Self", bound="ReceivedMessage")
+Self = TypeVar("Self", bound="SignalReceivedMessage")
 
 
 class SignalReceivedMessage(SignalMessage):
@@ -112,14 +112,16 @@ class SignalReceivedMessage(SignalMessage):
         """Any previews this message holds."""
 
         # Run super init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, None, None, None, None, MessageTypes.RECEIVED)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, None, None, None, None,
+                         MessageTypes.RECEIVED)
 
         # Mark this as delivered:
         if self.timestamp is not None:
             self.mark_delivered(self.timestamp)
 
-        # Check if this is a group invite, it'll be a group message with no: body, attachment, sticker etc.
+        # Check if this is a group invite, it'll be a group message with no: body, attachment,
+        # sticker, etc.
         self.is_group_invite = self.__check_invite__()
         if self.is_group_invite:
             self.body = "Group invite from: %s to group: %s" % (self.sender.get_display_name(),
@@ -141,7 +143,8 @@ class SignalReceivedMessage(SignalMessage):
             if self.expiration is None:
                 self.body = "%s disabled disappearing messages." % sender
             else:
-                self.body = "%s set the disappearing message timer to: %s" % (sender, str(self.expiration))
+                self.body = "%s set the disappearing message timer to: %s" % (sender,
+                                                                              str(self.expiration))
         return
 
     ######################
@@ -170,26 +173,31 @@ class SignalReceivedMessage(SignalMessage):
         if 'attachments' in data_message.keys():
             self.attachments = []
             for raw_attachment in data_message['attachments']:
-                attachment = SignalAttachment(config_path=self._config_path, raw_attachment=raw_attachment)
+                attachment = SignalAttachment(config_path=self._config_path,
+                                              raw_attachment=raw_attachment)
                 self.attachments.append(attachment)
 
         # Parse mentions:
         if 'mentions' in data_message.keys():
-            self.mentions = SignalMentions(contacts=self._contacts, raw_mentions=data_message['mentions'])
+            self.mentions = SignalMentions(contacts=self._contacts,
+                                           raw_mentions=data_message['mentions'])
 
         # Parse sticker:
         if 'sticker' in data_message.keys():
             self._sticker_packs.__update__()  # Update in case this is a new sticker.
-            self.sticker = self._sticker_packs.get_sticker(pack_id=data_message['sticker']['packId'],
-                                                           sticker_id=data_message['sticker']['stickerId'])
+            self.sticker = self._sticker_packs.get_sticker(
+                pack_id=data_message['sticker']['packId'],
+                sticker_id=data_message['sticker']['stickerId'])
         # Parse Quote
         if 'quote' in data_message.keys():
             if self.recipient_type == RecipientTypes.GROUP:
-                self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                         raw_quote=data_message['quote'], conversation=self.recipient)
+                self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts,
+                                         groups=self._groups, raw_quote=data_message['quote'],
+                                         conversation=self.recipient)
             elif self.recipient_type == RecipientTypes.CONTACT:
-                self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                         raw_quote=data_message['quote'], conversation=self.sender)
+                self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts,
+                                         groups=self._groups, raw_quote=data_message['quote'],
+                                         conversation=self.sender)
         # Parse preview:
         self.previews = []
         if 'previews' in data_message.keys():
@@ -367,37 +375,22 @@ class SignalReceivedMessage(SignalMessage):
         # Parse results:
         for result in result_obj['results']:
             if result['type'] != 'SUCCESS':
-                warning_message: str = "While sending result['type'] != 'SUCCESS'. result['type'] == %s" \
-                                       % result['type']
+                warning_message: str = ("While sending result['type'] != 'SUCCESS'. result['type']"
+                                        "== %s" % result['type'])
                 logger.warning(warning_message)
             else:
                 recipient: dict[str, str] = result['recipientAddress']
-                _, contact = self._contacts.__get_or_add__(number=recipient['number'], uuid=recipient['uuid'])
+                _, contact = self._contacts.__get_or_add__(number=recipient['number'],
+                                                           uuid=recipient['uuid'])
                 contact.__seen__(when)
         return True, when
 
     def __set_expiry__(self, time_opened: SignalTimestamp) -> None:
         """
         Set the expiration_timestamp property according to when it was opened.
-        :param time_opened: Optional[SignalTimestamp]: The timestamp of when opened; If None, NOW is used.
-        :return: None        if self.is_expiration_update:
-            # Set the recipient expiration:
-            self.recipient.expiration = self.expiration
-            # If it's a contact save the contact list:
-            if self.recipient.recipient_type == RecipientTypes.CONTACT:
-                self._contacts.__save__()
-            # Set the sender string:
-            sender: str
-            if self.sender == self._contacts.get_self():
-                sender = "You"
-            else:
-                sender = self.sender.get_display_name()
-            # Set the body:
-            if self.expiration is None:
-                self.body = "%s disabled disappearing messages." % sender
-            else:
-                self.body = "%s set the disappearing message timer to: %s" % (sender, str(self.expiration))
-
+        :param time_opened: Optional[SignalTimestamp]: The timestamp of when opened; If None,
+        NOW is used.
+        :return: None
         """
         if self.expiration is not None and self.expiration_timestamp is None:
             expiry_datetime = time_opened.datetime_obj + self.expiration
@@ -420,11 +413,10 @@ class SignalReceivedMessage(SignalMessage):
 
     def __check_expiry_update__(self) -> bool:
         """
-        Check if this an expiry update message, if it is, it's a message with no body, no sticker, etc, and a different
-            expiration time than the current recipient has.
-        :return: bool: True if this an expiration update.
+        Check if this an expiry update message, if it is, it's a message with no body, no sticker,
+        etc., and a different expiration time than the current recipient has.
+        :return: bool: True if this is an expiration update.
         """
-        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__check_expiry_update__.__name__)
         if self.body is None and len(self.mentions) == 0:
             if self.sticker is None and self.quote is None:
                 if self.attachments is None or len(self.attachments) == 0:
@@ -451,7 +443,8 @@ class SignalReceivedMessage(SignalMessage):
         :param when: SignalTimestamp: When the message was read; If this is None, NOW is used.
         :param send_receipt: bool: Send the read receipt; If this is True, 'when' is ignored.
         :returns: None
-        :raises TypeError: If when not a SignalTimestamp object, raised by super(), or if send_receipt is not a bool.
+        :raises TypeError: If when not a SignalTimestamp object, raised by super(), or if
+        send_receipt is not a bool.
         :raises RuntimeError: On error sending receipt.
         """
         # Setup logging:
@@ -481,7 +474,8 @@ class SignalReceivedMessage(SignalMessage):
         :param when: SignalTimestamp: When the message was viewed; If this is None, NOW is used.
         :param send_receipt: bool: Send a viewed receipt; If this is True, then when is ignored.
         :returns: None
-        :raises: TypeError: If when not a SignalTimestamp object, raised by super(), or if send_receipt is not a bool.
+        :raises: TypeError: If when not a SignalTimestamp object, raised by super(), or if
+        send_receipt is not a bool.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.mark_viewed.__name__)
@@ -514,13 +508,13 @@ class SignalReceivedMessage(SignalMessage):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_quote.__name__)
         quote: SignalQuote
         if self.recipient_type == RecipientTypes.CONTACT:
-            quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
-                                conversation=self.sender)
+            quote = SignalQuote(config_path=self._config_path, contacts=self._contacts,
+                                groups=self._groups, timestamp=self.timestamp, author=self.sender,
+                                text=self.body, mentions=self.mentions, conversation=self.sender)
         elif self.recipient_type == RecipientTypes.GROUP:
-            quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                timestamp=self.timestamp, author=self.sender, text=self.body, mentions=self.mentions,
-                                conversation=self.recipient)
+            quote = SignalQuote(config_path=self._config_path, contacts=self._contacts,
+                                groups=self._groups, timestamp=self.timestamp, author=self.sender,
+                                text=self.body, mentions=self.mentions, conversation=self.recipient)
         else:
             error_message: str = "invalid recipient_type: %s" % str(self.recipient_type)
             logger.critical("Raising ValueError(%s)." % error_message)
@@ -530,8 +524,8 @@ class SignalReceivedMessage(SignalMessage):
     def parse_mentions(self) -> Optional[str]:
         """
         Parse the mentions.
-        :returns: Optional[str]: The body with the mentions inserted; If 'mentions' is None, then the original
-            body is returned, if body is None, then None is returned.
+        :returns: Optional[str]: The body with the mentions inserted; If 'mentions' is None,
+        then the original body is returned, if body is None, then None is returned.
         """
         if self.mentions is None:
             return self.body
@@ -541,10 +535,10 @@ class SignalReceivedMessage(SignalMessage):
         """
         Create and send a Reaction to this message.
         :param emoji: str: The emoji to react with.
-        :returns: tuple[bool, SignalReaction | str]: The first element of the returned tuple is a bool, which is True or False
-            depending on success or failure.
-            The second element of the tuple will either be a SignalReaction object on success, or an error message stating
-            what went wrong on failure.
+        :returns: tuple[bool, SignalReaction | str]: The first element of the returned tuple is a
+        bool, which is True or False depending on success or failure.
+        The second element of the tuple will either be a SignalReaction object on success, or an
+        error message stating what went wrong on failure.
         :raises: TypeError: If emoji is not a string.
         :raises: ValueError: If emoji length is not one or two characters.
         """
@@ -564,17 +558,18 @@ class SignalReceivedMessage(SignalMessage):
         # Create reaction
         reaction: SignalReaction
         if self.recipient_type == RecipientTypes.CONTACT:
-            reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path,
-                                      contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                      this_device=self._this_device, recipient=self.sender, emoji=emoji,
-                                      target_author=self.sender,
+            reaction = SignalReaction(command_socket=self._command_socket,
+                                      account_id=self._account_id, config_path=self._config_path,
+                                      contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device,
+                                      recipient=self.sender, emoji=emoji, target_author=self.sender,
                                       target_timestamp=self.timestamp)
         elif self.recipient_type == RecipientTypes.GROUP:
-            reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path,
-                                      contacts=self._contacts, groups=self._groups, devices=self._devices,
-                                      this_device=self._this_device, recipient=self.recipient, emoji=emoji,
+            reaction = SignalReaction(command_socket=self._command_socket,
+                                      account_id=self._account_id, config_path=self._config_path,
+                                      contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device,
+                                      recipient=self.recipient, emoji=emoji,
                                       target_author=self.sender, target_timestamp=self.timestamp)
         else:
             error_message: str = "Invalid recipient type."
@@ -598,7 +593,8 @@ class SignalReceivedMessage(SignalMessage):
     # TODO: Reply to this message, create a sent message with this as an attached quote.
     def reply(self,
               body: Optional[str] = None,
-              attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str] = None,
+              attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | \
+                                    str] = None,
               mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
               sticker: Optional[SignalSticker] = None,
               preview: Optional[SignalPreview] = None,
@@ -606,16 +602,20 @@ class SignalReceivedMessage(SignalMessage):
         """
         Send a reply to this message.
         :param body: str: The body to reply with.
-        :param attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str]: Any attachments to the message.
-        :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Any mentions in this message.
+        :param attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | str]: Any
+        attachments to the message.
+        :param mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention]: Any
+        mentions in this message.
         :param sticker: Optional[SignalSticker]: The sticker to send as a message.
         :param preview: Optional[SignalPreview]: Any URL preview for this message.
-        :return: tuple[tuple[bool, SignalContact | SignalGroup, str | SentMessage], ...]: A tuple of tuples. One inner tuple per
-            recipient of the message.
-            The first element of the inner tuple is a bool which is True or False on success or failure.
-            The second element of the inner tuple is the SignalContact or SignalGroup that this message was sent to.
-            The third element of the inner tuple is either the SentMessage object on success or an error message on
-            failure.
+        :return: tuple[tuple[bool, SignalContact | SignalGroup, str | SentMessage], ...]: A tuple
+        of tuples.
+        One inner tuple per recipient of the message.
+        The first element of the inner tuple is a bool which is True or False on success or failure.
+        The second element of the inner tuple is the SignalContact or SignalGroup that this message
+        was sent to.
+        The third element of the inner tuple is either the SentMessage object on success or an error
+        message on failure.
         """
         raise NotImplementedError()
 

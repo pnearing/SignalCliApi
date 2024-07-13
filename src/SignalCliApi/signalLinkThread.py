@@ -17,7 +17,7 @@ from .signalCommon import (__socket_create__, __socket_connect__, __socket_close
                            __parse_signal_response__, __check_response_for_error__, __type_error__, __find_qrencode__,
                            LinkAccountCallbackStates, __socket_receive_non_blocking__)
 
-from .runCallback import __run_callback__, __type_check_callback__
+from .run_callback import __run_callback__, __type_check_callback__
 from .signalExceptions import CommunicationsError
 
 

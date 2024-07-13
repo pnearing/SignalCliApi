@@ -16,9 +16,9 @@ from .signalCommon import (__type_error__, __find_signal__, __find_qrencode__,
                            __socket_connect__, __socket_close__, __socket_receive_blocking__,
                            __socket_send__, phone_number_regex, __type_err_msg__,
                            __parse_signal_response__, __check_response_for_error__)
-from .runCallback import __run_callback__, __type_check_callback__
-from .runCallback import set_suppress_error as set_callback_suppress_error
-from .runCallback import type_string as callback_type_string
+from .run_callback import __run_callback__, __type_check_callback__
+from .run_callback import set_suppress_error as set_callback_suppress_error
+from .run_callback import type_string as callback_type_string
 from .signalLinkThread import SignalLinkThread
 from .signalReceiveThread import SignalReceiveThread
 from .signalSticker import SignalStickerPacks

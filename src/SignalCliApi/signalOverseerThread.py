@@ -11,7 +11,7 @@ import logging
 from subprocess import Popen, PIPE, CalledProcessError, TimeoutExpired
 from threading import Thread
 from typing import Optional, Callable, Any
-from .runCallback import __run_callback__, __type_check_callback__
+from .run_callback import __run_callback__, __type_check_callback__
 
 
 class OverseerThread(Thread):

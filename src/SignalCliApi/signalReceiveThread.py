@@ -14,8 +14,8 @@ from .signalCallMessage import SignalCallMessage
 from .signalCommon import __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, \
     __socket_send__, __type_error__, SyncTypes, __parse_signal_response__, __check_response_for_error__, \
     TypingStates, __socket_receive_non_blocking__, RecipientTypes
-from . import runCallback
-from .runCallback import __run_callback__, __type_check_callback__
+from . import run_callback
+from .run_callback import __run_callback__, __type_check_callback__
 from .signalGroupUpdate import SignalGroupUpdate
 from .signalMessage import SignalMessage
 from .signalReaction import SignalReaction
@@ -146,7 +146,7 @@ class SignalReceiveThread(threading.Thread):
             __type_error__("do_expunge", "bool", do_expunge)
 
         # Set suppress callback error.
-        runCallback.set_suppress_error(suppress_callback_error)
+        run_callback.set_suppress_error(suppress_callback_error)
 
         # Set internal variables:
         self._command_socket: socket.socket = command_socket

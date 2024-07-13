@@ -42,6 +42,7 @@ class SignalAccount(object):
                  contacts: Optional[SignalContacts] = None,
                  groups: Optional[SignalGroups] = None,
                  profile: Optional[SignalProfile] = None,
+                 messages: Optional[SignalMessages] = None,
                  ) -> None:
         """
         Initialize the SignalAccount.
@@ -59,6 +60,7 @@ class SignalAccount(object):
         :param contacts: Optional: The SignalContacts object for this account.
         :param groups: Optional: The SignalGroups object for this account.
         :param profile: Optional: The SignalProfile object for this account.
+        :param messages: Optional: The SignalMessages object for this account.
         :raises TypeError: If a parameter is of invalid type.
         :raises InvalidDataFile: If a file contains invalid JSON or a KeyError occurs during loading.
         """
@@ -160,6 +162,8 @@ class SignalAccount(object):
         """The account SignalGroups object."""
         self.profile: Optional[SignalProfile] = profile
         """The account SignalProfile object."""
+        self.messages: Optional[SignalMessages] = messages
+        """The account SignalMessages object."""
 
         # Version:
         self.version: Optional[int] = None
@@ -235,36 +239,41 @@ class SignalAccount(object):
 
             # Load devices from signal:
             logger.debug("Loading Devices...")
-            self.devices = SignalDevices(sync_socket=self._sync_socket, account_id=self.number, this_device=self.device_id,
-                                         do_sync=True)
+            self.devices = SignalDevices(sync_socket=self._sync_socket, account_id=self.number,
+                                         this_device=self.device_id, do_sync=True)
             # Set this device:
             self.device = self.devices.get_this_device()
 
             # Load contacts from signal:
             logger.debug("Loading Contacts...")
-            self.contacts = SignalContacts(command_socket=command_socket, sync_socket=self._sync_socket,
+            self.contacts = SignalContacts(command_socket=command_socket,
+                                           sync_socket=self._sync_socket,
                                            config_path=self.config_path, account_id=self.number,
-                                           account_path=self._account_path, do_load=True, do_sync=True)
+                                           account_path=self._account_path, do_load=True,
+                                           do_sync=True)
 
             # Load groups from signal:
             logger.debug("Loading SignalGroups...")
-            self.groups = SignalGroups(sync_socket=self._sync_socket, command_socket=self._command_socket,
+            self.groups = SignalGroups(sync_socket=self._sync_socket,
+                                       command_socket=self._command_socket,
                                        config_path=self.config_path, account_id=self.number,
                                        account_contacts=self.contacts, do_sync=True)
 
             # Load messages from file:
             logger.debug("Loading messages from disk....")
-            self.messages = SignalMessages(command_socket=self._command_socket, config_path=self.config_path,
-                                           account_id=self.number, account_path=self._account_path,
-                                           contacts=self.contacts, groups=self.groups, devices=self.devices,
+            self.messages = SignalMessages(command_socket=self._command_socket,
+                                           config_path=self.config_path, account_id=self.number,
+                                           account_path=self._account_path, contacts=self.contacts,
+                                           groups=self.groups, devices=self.devices,
                                            this_device=self.devices.get_this_device(),
                                            sticker_packs=self._sticker_packs, do_load=True)
 
             # Load profile from file and merge self-contact.
             logger.debug("Loading SignalProfile from disk...")
-            self.profile = SignalProfile(sync_socket=self._sync_socket, config_path=self.config_path, account_id=self.number,
-                                         contact_id=self.number, account_path=self._account_path, do_load=True,
-                                         is_account_profile=True)
+            self.profile = SignalProfile(sync_socket=self._sync_socket,
+                                         config_path=self.config_path, account_id=self.number,
+                                         contact_id=self.number, account_path=self._account_path,
+                                         do_load=True, is_account_profile=True)
 
             # Merge disk profile and self-contact profile.
             logger.debug("Merging account profiles...")
@@ -295,7 +304,8 @@ class SignalAccount(object):
         :return: None
         :raises InvalidDataFile: On key error while loading the data.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load_version_5__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__load_version_5__.__name__)
         logger.debug("Loading version 5 data...")
         try:
             self.number = raw_account['username']
@@ -307,7 +317,8 @@ class SignalAccount(object):
             self.pni = raw_account['pni']
             self.device_name = raw_account['deviceName']
             self.is_multi_device = raw_account['isMultiDevice']
-            self.last_received_timestamp = SignalTimestamp(timestamp=raw_account['lastReceiveTimestamp'])
+            self.last_received_timestamp = SignalTimestamp(
+                timestamp=raw_account['lastReceiveTimestamp'])
             self.password = raw_account['password']
             self.registration_id = raw_account['registrationId']
             self.pni_registration_id = raw_account['pniRegistrationId']
@@ -327,7 +338,8 @@ class SignalAccount(object):
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
             error_message: str = "KeyError while loading version 5 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s), File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s), File: %s" % (error_message,
+                                                                       self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
         logger.debug("Loaded.")
         return
@@ -350,7 +362,8 @@ class SignalAccount(object):
             self.device_name = raw_account['deviceName']
             self.device_id = raw_account['deviceId']
             self.is_multi_device = raw_account['isMultiDevice']
-            self.last_received_timestamp = SignalTimestamp(timestamp=raw_account['lastReceiveTimestamp'])
+            self.last_received_timestamp = SignalTimestamp(
+                timestamp=raw_account['lastReceiveTimestamp'])
             self.password = raw_account['password']
             self.registration_id = raw_account['registrationId']
             self.identity_private_key = raw_account['identityPrivateKey']
@@ -369,7 +382,8 @@ class SignalAccount(object):
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
             error_message: str = "KeyError while loading version 6 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
+                                                                       self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
         logger.debug("Data loaded.")
         return
@@ -381,7 +395,8 @@ class SignalAccount(object):
         :return: None
         :raises InvalidDataFile: If a KeyError occurs during the loading of data.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load_version_8__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__load_version_8__.__name__)
         logger.debug("Loading version 8 data...")
         try:
             self.service_environment = raw_account['serviceEnvironment']
@@ -400,7 +415,8 @@ class SignalAccount(object):
             self.profile_key = raw_account['profileKey']
         except KeyError as e:
             error_message: str = "KeyError while loading version 8 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
+                                                                       self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
         logger.debug("Data loaded.")
         return
@@ -416,24 +432,28 @@ class SignalAccount(object):
         # Load the account detail file:
         try:
             logger.debug("Loading detailed account data from %s." % self._account_file_path)
-            file_handle: TextIO = open(self._account_file_path, 'r')  # Try to open the file for reading:
-            raw_account: dict = json.loads(file_handle.read())  # Try to load the json from the file:
+            file_handle: TextIO = open(self._account_file_path, 'r')  # Open the file for reading.
+            raw_account: dict = json.loads(file_handle.read())  # Load the json from the file:
             file_handle.close()
         except (OSError, PermissionError, FileNotFoundError) as e:
-            error_message: str = "Couldn't open '%s' for reading: %s" % (self._account_file_path, str(e.args))
+            error_message: str = "Couldn't open '%s' for reading: %s" % (self._account_file_path,
+                                                                         str(e.args))
             logger.critical(error_message)
             raise RuntimeError(error_message)
         except json.JSONDecodeError as e:
             error_message: str = "Failed to load JSON: %s" % e.msg
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message, self._account_file_path))
+            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
+                                                                       self._account_file_path))
             raise InvalidDataFile(error_message, e, self._account_file_path)
 
         # Store and check version:
         self.version = raw_account['version']
-        if self.version not in self.supportedAccountFileVersions:  # Currently 5, 6, and 8. I missed 7.
+        if self.version not in self.supportedAccountFileVersions:  # Current 5, 6, and 8. Missed 7.
             error_message = "Account detail file '%s' is of version %i. Supported versions %s." \
-                            % (self._account_file_path, raw_account['version'], str(self.supportedAccountFileVersions))
-            logger.critical("Raising UnsupportedVersion(%s). File: %s" % (error_message, self._account_file_path))
+                            % (self._account_file_path, raw_account['version'],
+                               str(self.supportedAccountFileVersions))
+            logger.critical("Raising UnsupportedVersion(%s). File: %s" % (error_message,
+                                                                          self._account_file_path))
             raise UnsupportedVersion(error_message, self.version, self.supportedAccountFileVersions)
 
         # Set the properties according to the version:
@@ -453,8 +473,8 @@ class SignalAccount(object):
         Verify an account.
         :param code: str: The code sent via sms or voice call.
         :param pin: Optional[str]: The registered pin for this account.
-        :returns: tuple[bool, str]: Boolean represents success or failure, str is an error message on failure, or
-            "verification successful" on success.
+        :returns: tuple[bool, str]: Boolean represents success or failure, str is an error message
+        on failure, or "verification successful" on success.
         :raises InvalidServerResponse: On error decoding JSON.
         :raises CommunicationsError: On error during signal communications.
         """
@@ -489,7 +509,7 @@ class SignalAccount(object):
     def get_id(self) -> str:
         """
         Get the account's ID.
-        :return: str: Either the account's phone number or UUID if the number doesn't exist for some reason.
+        :return: str: Either the account's phone number or UUID if the number doesn't exist.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_id.__name__)
         if self.number is not None:

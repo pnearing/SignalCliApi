@@ -41,7 +41,7 @@ class SignalMessage(object):
                  ) -> None:
         """
         Initialize a message.
-        :param command_socket: socket.socket: The socket to preform command operations with
+        :param command_socket: Socket.socket: The socket to preform command operations with
         :param account_id: str: This account ID.
         :param config_path: str: The full path to the signal-cli config directory.
         :param contacts: SignalContacts: This accounts SignalContacts object.
@@ -51,10 +51,11 @@ class SignalMessage(object):
         :param from_dict: Optional[dict] = None: Load from a dict provided by __to_dict__()
         :param raw_message: Optional[dict] = None: Load from a dict provided by signal.
         :param sender: Optional[SignalContact] = None: The sender SignalContact of this message.
-        :param recipient: Optional[SignalContact | SignalGroup] = None: The recipient SignalContact | SignalGroup of this message.
+        :param recipient: Optional[SignalContact | SignalGroup] = None: The recipient
+        SignalContact | SignalGroup of this message.
         :param device: Optional[SignalDevice] = None: The device this message was sent from.
         :param timestamp: Optional[SignalTimestamp] = None: The timestamp object of this message.
-        :param message_type: int = TYPE_NOT_SET: The type of message this is.
+        :param message_type: Int = TYPE_NOT_SET: The type of message this is.
         :returns: None
         """
         # Super:
@@ -159,7 +160,7 @@ class SignalMessage(object):
             self.__from_raw_message__(raw_message)
             self.sender.__seen__(self.timestamp)
             self.device.__seen__(self.timestamp)
-            self.recipient.__seen__(self.timestamp)  # Both SignalGroup and SignalContact have a seen function.
+            self.recipient.__seen__(self.timestamp)  # SignalGroup and SignalContact have this func.
 
         # Set recipient type
         if self.recipient is not None:
@@ -175,7 +176,7 @@ class SignalMessage(object):
     def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
         """
         Load from a raw message dict provided by signal.
-        :param raw_message: dict[str, Any]: The dict to load from
+        :param raw_message: Dict[str, Any]: The dict to load from
         :return: None
         """
         # Parse Sender
@@ -187,15 +188,17 @@ class SignalMessage(object):
         # Parse recipient:
         self._recipient = None
         if 'dataMessage' in raw_message.keys():
-            dataMessage: dict[str, Any] = raw_message['dataMessage']
-            if 'groupInfo' in dataMessage.keys():
-                added, self._recipient = self._groups.__get_or_add__(group_id=dataMessage['groupInfo']['groupId'])
+            data_message: dict[str, Any] = raw_message['dataMessage']
+            if 'groupInfo' in data_message.keys():
+                added, self._recipient = self._groups.__get_or_add__(
+                    group_id=data_message['groupInfo']['groupId'])
                 self._recipient_type = RecipientTypes.GROUP
         if self.recipient is None:
             self._recipient = self._contacts.get_self()
             self._recipient_type = RecipientTypes.CONTACT
         # Parse device:
-        added, self._device = self.sender.devices.__get_or_add__(device_id=raw_message['sourceDevice'])
+        added, self._device = self.sender.devices.__get_or_add__(
+            device_id=raw_message['sourceDevice'])
         if added:
             self._contacts.__save__()
         # Parse Timestamp:
@@ -230,7 +233,7 @@ class SignalMessage(object):
     def __to_dict__(self) -> dict[str, Any]:
         """
         Create a JSON friendly dict.
-        :return: dict[str, Any]: The dict to send to __from_dict__()
+        :return: Dict[str, Any]: The dict to send to __from_dict__()
         """
         message_dict = {
             'sender': None,
@@ -265,7 +268,7 @@ class SignalMessage(object):
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         """
         Load from a JSON friendly dict.
-        :param from_dict: dict[str, Any] The dict created by __to_dict__()
+        :param from_dict: Dict[str, Any] The dict created by __to_dict__()
         :return: None
         """
         # Parse sender:
@@ -275,7 +278,8 @@ class SignalMessage(object):
         # Parse recipient:
         if from_dict['recipient'] is not None:
             if self.recipient_type == RecipientTypes.CONTACT:
-                _, self._recipient = self._contacts.__get_or_add__(contact_id=from_dict['recipient'])
+                _, self._recipient = self._contacts.__get_or_add__(
+                    contact_id=from_dict['recipient'])
             elif self.recipient_type == RecipientTypes.GROUP:
                 _, self._recipient = self._groups.__get_or_add__(group_id=from_dict['recipient'])
         # Parse device:
@@ -347,7 +351,7 @@ class SignalMessage(object):
         if when is not None and not isinstance(when, SignalTimestamp):
             logger.critical("Raising TypeError:")
             __type_error__('when', 'SignalTimestamp', when)
-        # If we're already read do nothing:
+        # If we're already read, do nothing:
         if self.is_read:
             return
         # Mark as read:
