@@ -18,7 +18,7 @@ from .signalExceptions import CommunicationsError, SignalError, InvalidServerRes
 ###################
 # Version:
 ###################
-VERSION: Final[str] = '0.5.4'
+VERSION: Final[str] = '0.5.5'
 """Version of the library"""
 
 ########################################

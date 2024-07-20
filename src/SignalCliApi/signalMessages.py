@@ -519,45 +519,43 @@ class SignalMessages(object):
         messages = [message for message in self.messages if message.sender == sender]
         return messages
 
-    def get_received_messages(self) -> list[SignalMessage]:
-        return [message for message in self.messages
-                if message.message_type == MessageTypes.RECEIVED]
+    def get_received_messages(self) -> list[SignalReceivedMessage]:
+        return [message for message in self.messages if isinstance(message, SignalReceivedMessage)]
 
-    def get_sent_messages(self) -> list[SignalMessage]:
-        return [message for message in self.messages
-                if message.message_type == MessageTypes.SENT]
+    def get_sent_messages(self) -> list[SignalSentMessage]:
+        return [message for message in self.messages if isinstance(message, SignalSentMessage)]
 
-    def get_received_unread(self, sender: Optional[SignalContact]) -> list[SignalMessage]:
+    def get_received_unread(self, sender: Optional[SignalContact] = None) -> list[SignalMessage]:
         """
 
         This method returns a list of unread Signal messages received by the user.
 
         Parameters:
-        - sender (Optional[SignalContact]): The sender of the messages. If None is passed, all received unread messages will be returned.
+        - sender (Optional[SignalContact]): The sender of the messages. If None is passed, all
+        received unread messages will be returned.
 
         Returns:
         - list[SignalMessage]: A list of unread SignalMessage objects.
 
         Note:
         - If the 'sender' parameter is None, all received unread messages will be considered.
-        - If the 'sender' parameter is not None, only the unread messages from the specified sender will be considered.
+        - If the 'sender' parameter is not None, only the unread messages from the specified sender
+        will be considered.
 
-        Example usage:
-        ```python
-        unread_messages = get_received_unread(sender)
-        for message in unread_messages:
-            print(message.text)
-        ```
         """
         if sender is None:
             messages = self.get_received_messages()
-            return [message for message in messages if message.is_read is False]
         else:
             messages = self.get_by_sender(sender)
-            return [message for message in messages if message.is_read is False]
+        return [message for message in messages if message.is_read is False]
 
-    def get_sent_unread(self, sender: Optional[SignalContact]) -> list[SignalMessage]:
-        messages = self.get_sent_messages()
+    def get_sent_unread(self,
+                        recipient: Optional[SignalContact | SignalGroup] = None,
+                        ) -> list[SignalMessage]:
+        if recipient is None:
+            messages = self.get_sent_messages()
+        else:
+            messages = self.get_by_recipient(recipient)
         return [message for message in messages if message.is_read is False]
 
     def get_conversation(self,
@@ -681,12 +679,19 @@ class SignalMessages(object):
                     return message
         return None
 
-    def get_sent(self) -> list[SignalSentMessage]:
-        """
-        Returns all messages that are SentMessage objects.
-        :returns: list[SentMessage]: All the sent messages.
-        """
-        return [message for message in self.messages if isinstance(message, SignalSentMessage)]
+    def get_mentioned(self, contact: Optional[SignalContact]) -> list[SignalReceivedMessage]:
+        if contact is None:
+            contact = self._contacts.get_self()
+
+        messages: list[SignalReceivedMessage] = self.get_received_messages()
+        mentioned: list[SignalReceivedMessage] = []
+        for message in messages:
+            if message.mentions.contact_mentioned(contact):
+                mentioned.append(message)
+        return mentioned
+
+
+
 
     ##################################
     # Methods:
@@ -1118,3 +1123,11 @@ class SignalMessages(object):
         :returns: bool: Sending status. True if sending, False if not.
         """
         return self._sending
+
+    @property
+    def num_received_unread(self) -> int:
+        return len(self.get_received_unread())
+
+    @property
+    def num_sent_unread(self) -> int:
+        return len(self.get_sent_unread())
