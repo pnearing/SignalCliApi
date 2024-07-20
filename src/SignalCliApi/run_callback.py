@@ -130,8 +130,8 @@ def __type_check_callback__(
     The second element is either the string 'SUCCESS' or an error message stating what failed the
     test.
     """
-    passed: bool
-    reason: str
+    passed: bool = True
+    reason: str = ""
     # If callback is None, everything is good.
     if callback is None:
         return True, 'SUCCESS'
