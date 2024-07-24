@@ -828,7 +828,7 @@ class SignalCli(object):
                           png_qr_file_path: Optional[str] = None,
                           device_name: Optional[str] = None,
                           wait_time: float = 0.25,
-                          ) -> None:
+                          ) -> SignalLinkThread:
         """
         Create and return the signal link thread.
         :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The callback to call with the status
@@ -854,7 +854,7 @@ class SignalCli(object):
             wait_time=wait_time
         )
         self._link_thread.start()
-        return
+        return self._link_thread
 
     def stop_link_thread(self) -> None:
         """
