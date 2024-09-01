@@ -5,5 +5,5 @@ rm -rf docs/html
 echo "Creating documentation..."
 pdoc --footer-text 'Version 1.0' \
 --output-directory 'docs/html/' \
-src/SignalCliApi/*.py
+src/signal_cli_api/*.py
 echo "Complete."
