@@ -3,14 +3,17 @@
 File: signal_account.py
 Store account information.
 """
-from typing import Optional, Any, TextIO
+# pylint: disable=R0902, R0913, R0914, R0912, R0915, W0511
+
+from typing import Optional, Any
 import os
 import json
 import socket
 import logging
 
-from .signal_common import __socket_receive_blocking__, __socket_send__, __type_error__, __type_err_msg__, \
-    __parse_signal_response__, __check_response_for_error__
+from .signal_common import (__socket_receive_blocking__, __socket_send__, __type_error__,
+                            __type_err_msg__, __parse_signal_response__,
+                            __check_response_for_error__)
 from .signal_device import SignalDevice
 from .signal_devices import SignalDevices
 from .signal_contacts import SignalContacts
@@ -22,7 +25,7 @@ from .signal_timestamp import SignalTimestamp
 from .signal_exceptions import InvalidDataFile, UnsupportedVersion
 
 
-class SignalAccount(object):
+class SignalAccount:
     """Class to store an account."""
     supportedAccountFileVersions: tuple[int, int] = (5, 6, 8)
     """Supported account detail file versions."""
@@ -297,7 +300,6 @@ class SignalAccount(object):
             # Set profile to None
             self.profile = None
         logger.info("Initialization complete.")
-        return
 
     def __load_version_5__(self, raw_account: dict[str, Any]) -> None:
         """
@@ -339,12 +341,11 @@ class SignalAccount(object):
             self.profile_key = raw_account['profileKey']
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
-            error_message: str = "KeyError while loading version 5 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s), File: %s" % (error_message,
-                                                                       self._account_file_path))
-            raise InvalidDataFile(error_message, e, self._account_file_path)
+            error_message: str = f"KeyError while loading version 5 data: {str(e.args)}."
+            logger.critical("Raising InvalidDataFile(%s), File: %s", error_message,
+                            self._account_file_path)
+            raise InvalidDataFile(error_message, e, self._account_file_path) from e
         logger.debug("Loaded.")
-        return
 
     def __load_version_6__(self, raw_account: dict[str, Any]) -> None:
         """
@@ -384,12 +385,11 @@ class SignalAccount(object):
             self.registered = raw_account['registered']
             self.configuration_store = raw_account['configurationStore']
         except KeyError as e:
-            error_message: str = "KeyError while loading version 6 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
-                                                                       self._account_file_path))
-            raise InvalidDataFile(error_message, e, self._account_file_path)
+            error_message: str = f"KeyError while loading version 6 data: {str(e.args)}."
+            logger.critical("Raising InvalidDataFile(%s). File: %s", error_message,
+                            self._account_file_path)
+            raise InvalidDataFile(error_message, e, self._account_file_path) from e
         logger.debug("Data loaded.")
-        return
 
     def __load_version_8__(self, raw_account: dict[str, Any]) -> None:
         """
@@ -417,12 +417,11 @@ class SignalAccount(object):
             self.storage_key = raw_account['storageKey']
             self.profile_key = raw_account['profileKey']
         except KeyError as e:
-            error_message: str = "KeyError while loading version 8 data: %s." % str(e.args)
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
-                                                                       self._account_file_path))
-            raise InvalidDataFile(error_message, e, self._account_file_path)
+            error_message: str = "KeyError while loading version 8 data: {str(e.args)}."
+            logger.critical("Raising InvalidDataFile(%s). File: %s", error_message,
+                            self._account_file_path)
+            raise InvalidDataFile(error_message, e, self._account_file_path) from e
         logger.debug("Data loaded.")
-        return
 
     def __do_load__(self) -> None:
         """
@@ -434,30 +433,30 @@ class SignalAccount(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__do_load__.__name__)
         # Load the account detail file:
         try:
-            logger.debug("Loading detailed account data from %s." % self._account_file_path)
-            file_handle: TextIO = open(self._account_file_path, 'r')  # Open the file for reading.
-            raw_account: dict = json.loads(file_handle.read())  # Load the json from the file:
-            file_handle.close()
+            logger.debug("Loading detailed account data from %s.", self._account_file_path)
+            with open(self._account_file_path, 'r', encoding='utf') as file_handle:  # Open for read
+                raw_account: dict = json.loads(file_handle.read())  # Load the json from the file:
         except (OSError, PermissionError, FileNotFoundError) as e:
-            error_message: str = "Couldn't open '%s' for reading: %s" % (self._account_file_path,
-                                                                         str(e.args))
+            error_message: str = (f"Couldn't open '{self._account_file_path}' for"
+                                  f"reading: {str(e.args)}")
             logger.critical(error_message)
-            raise RuntimeError(error_message)
+            raise RuntimeError(error_message) from e
         except json.JSONDecodeError as e:
-            error_message: str = "Failed to load JSON: %s" % e.msg
-            logger.critical("Raising InvalidDataFile(%s). File: %s" % (error_message,
-                                                                       self._account_file_path))
-            raise InvalidDataFile(error_message, e, self._account_file_path)
+            error_message: str = f"Failed to load JSON: {e.msg}"
+            logger.critical("Raising InvalidDataFile(%s). File: %s", error_message,
+                            self._account_file_path)
+            raise InvalidDataFile(error_message, e, self._account_file_path) from e
 
         # Store and check version:
         self.version = raw_account['version']
         if self.version not in self.supportedAccountFileVersions:  # Current 5, 6, and 8. Missed 7.
-            error_message = "Account detail file '%s' is of version %i. Supported versions %s." \
-                            % (self._account_file_path, raw_account['version'],
-                               str(self.supportedAccountFileVersions))
-            logger.critical("Raising UnsupportedVersion(%s). File: %s" % (error_message,
-                                                                          self._account_file_path))
-            raise UnsupportedVersion(error_message, self.version, self.supportedAccountFileVersions)
+            error_message = (f"Account detail file '{self._account_file_path}' is of"
+                             f"version {raw_account['version']}."
+                             f"Supported versions {str(self.supportedAccountFileVersions)}.")
+            logger.critical("Raising UnsupportedVersion(%s). File: %s", error_message,
+                            self._account_file_path)
+            raise UnsupportedVersion(error_message, self.version,
+                                     self.supportedAccountFileVersions) from e
 
         # Set the properties according to the version:
         if self.version == 5:
@@ -466,7 +465,6 @@ class SignalAccount(object):
             self.__load_version_6__(raw_account)
         elif self.version == 8:
             self.__load_version_8__(raw_account)
-        return
 
     ##########################
     # Methods:
@@ -504,7 +502,7 @@ class SignalAccount(object):
         # TODO: Check for response error codes, usually -1 is a good assumption.
         if error_occurred:
             if error_code == -1:  # TODO: CHECK ERROR.
-                return False, "verification failed."
+                return False, f"verification failed: {error_message}"
 
         logger.info("Verification successful.")
         return True, "verification successful"
@@ -517,15 +515,15 @@ class SignalAccount(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.get_id.__name__)
         if self.number is not None:
             return self.number
-        elif self.uuid is not None:
+        if self.uuid is not None:
             return self.uuid
         error_message: str = "invalid account, no number and no uuid."
-        logger.critical("Raising RuntimeError(%s)." % error_message)
+        logger.critical("Raising RuntimeError(%s).", error_message)
         raise RuntimeError(error_message)
 
-################################
-# Overrides:
-################################
+    ################################
+    # Overrides:
+    ################################
     def __str__(self) -> str:
         """
         call str on this SignalAccount, get the ID.
@@ -535,6 +533,7 @@ class SignalAccount(object):
 
     @property
     def is_receiving(self) -> bool:
+        """Is this account receiving?"""
         return self._is_receiving
 
     @is_receiving.setter

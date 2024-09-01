@@ -3,24 +3,25 @@
 File: signal_accounts.py
 Maintain and manage a list of accounts.
 """
-from typing import Optional, Iterator, TextIO
+# pylint: disable=W0603, R0913
+from typing import Optional, Iterator
 import os
 import json
 import socket
 import logging
 
-from .signal_common import phone_number_regex, uuid_regex, __type_error__, UUID_FORMAT_STR, __type_err_msg__, \
+from .signal_common import phone_number_regex, uuid_regex, __type_error__, UUID_FORMAT_STR, \
+    __type_err_msg__, \
     NUMBER_FORMAT_STR
 from .signal_account import SignalAccount
 from .signal_sticker import SignalStickerPacks
-
 
 ACCOUNTS: list[SignalAccount] = []
 """The main accounts list."""
 
 
 # noinspection SpellCheckingInspection
-class SignalAccounts(object):
+class SignalAccounts:
     """
     Class to store the known accounts.
     """
@@ -42,9 +43,6 @@ class SignalAccounts(object):
         :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
         :param do_load: bool: Load from disk right away; Defaults to False.
         """
-        # Super:
-        object.__init__(self)
-
         # Setup logging:
         self.logger = logging.getLogger(__name__)
         self.logger.info("Initialize")
@@ -56,7 +54,8 @@ class SignalAccounts(object):
             __type_error__("sync_socket", "socket.socket", sync_socket)
         if not isinstance(command_socket, socket.socket):
             self.logger.critical("TypeError:")
-            self.logger.critical(__type_err_msg__('command_socket', 'socket.socket', command_socket))
+            self.logger.critical(
+                __type_err_msg__('command_socket', 'socket.socket', command_socket))
             __type_error__("command_socket", "socket.socket", command_socket)
         if not isinstance(config_path, str):
             self.logger.critical("TypeError:")
@@ -77,9 +76,9 @@ class SignalAccounts(object):
         """The known sticker packs."""
         self._accounts_file_path: str = os.path.join(config_path, 'data', 'accounts.json')
         """The full path to the accounts.json file."""
+        self.version: int = -1
         if do_load:
             self.__do_load__()
-        return
 
     def __load_accounts_file__(self) -> dict[str, int | list[dict[str, str]]]:
         """
@@ -90,27 +89,27 @@ class SignalAccounts(object):
         # Load the accounts.json file:
         try:
             self.logger.info("Loading accounts.json...")
-            file_handle: TextIO = open(self._accounts_file_path, 'r')  # Try to open the accounts.json file.
-            response_obj: dict[str, int | list[dict[str, str]]] = json.loads(file_handle.read())  # Load the json.
-            file_handle.close()  # Close the file.
+            with open(self._accounts_file_path, 'r', encoding='utf-8') as file_handle:
+                response_obj: dict[str, int | list[dict[str, str]]] = json.loads(file_handle.read())
         except (OSError, FileNotFoundError, PermissionError) as e:
-            error_message = "Failed to open '%s' for reading: %s" % (self._accounts_file_path, str(e.args))
+            error_message = (f"Failed to open '{self._accounts_file_path}' for"
+                             f"reading: {str(e.args)}")
             self.logger.critical(error_message)
-            raise RuntimeError(error_message)
+            raise RuntimeError(error_message) from e
         except json.JSONDecodeError as e:
-            error_message = "Failed to load JSON from '%s': %s" % (self._accounts_file_path, e.msg)
+            error_message = f"Failed to load JSON from '{self._accounts_file_path}': {e.msg}"
             self.logger.critical(error_message)
-            raise RuntimeError(error_message)
+            raise RuntimeError(error_message) from e
 
         # Store account.json version and check to see if supported:
-        self.version: int = response_obj['version']
-        self.logger.debug("Version check accounts.json file: '%i' in '%s'."
-                          % (self.version, str(self.supported_accounts_versions)))
+        self.version = response_obj['version']
+        self.logger.debug("Version check accounts.json file: '%i' in '%s'.", self.version,
+                          str(self.supported_accounts_versions))
         if self.version not in self.supported_accounts_versions:
-            error_message = "Version %i is not supported. Currently supported versions: '%s'." % (
-                response_obj['version'], str(self.supported_accounts_versions))
+            error_message = (f"Version {response_obj['version']} is not supported. Currently"
+                             f"supported versions: '{str(self.supported_accounts_versions)}'.")
             self.logger.critical(error_message)
-            raise RuntimeError(error_message)
+            raise RuntimeError(error_message) from e
         return response_obj
 
     def __do_load__(self) -> None:
@@ -127,22 +126,24 @@ class SignalAccounts(object):
         count: int = 0
         for raw_account in accounts_dict['accounts']:
             count += 1
-            account = SignalAccount(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                    config_path=self._config_path, sticker_packs=self._sticker_packs,
-                                    signal_account_path=raw_account['path'], environment=raw_account['environment'],
-                                    number=raw_account['number'], uuid=raw_account['uuid'], do_load=True
+            account = SignalAccount(sync_socket=self._sync_socket,
+                                    command_socket=self._command_socket,
+                                    config_path=self._config_path,
+                                    sticker_packs=self._sticker_packs,
+                                    signal_account_path=raw_account['path'],
+                                    environment=raw_account['environment'],
+                                    number=raw_account['number'], uuid=raw_account['uuid'],
+                                    do_load=True
                                     )
-            self.logger.info("Loaded account: '%s'" % account.number)
+            self.logger.info("Loaded account: '%s'", account.number)
             ACCOUNTS.append(account)
-        self.logger.info("Loaded %i accounts." % count)
-        return
+        self.logger.info("Loaded %i accounts.", count)
 
     def __sync__(self) -> list[SignalAccount]:
         """
         Reread the accounts.json and load any new accounts.
         :return: list[SignalAccount]: The list of new accounts, an empty list if none found.
         """
-        global ACCOUNTS
         self.logger.info("Accounts sync started...")
         new_accounts: list[SignalAccount] = []
         # Load accounts file:
@@ -154,16 +155,19 @@ class SignalAccounts(object):
                 if account.number == raw_account['number']:
                     account_found = True
             if not account_found:
-                new_account: SignalAccount = SignalAccount(sync_socket=self._sync_socket, command_socket=self._command_socket,
-                                                           config_path=self._config_path, sticker_packs=self._sticker_packs,
+                new_account: SignalAccount = SignalAccount(sync_socket=self._sync_socket,
+                                                           command_socket=self._command_socket,
+                                                           config_path=self._config_path,
+                                                           sticker_packs=self._sticker_packs,
                                                            signal_account_path=raw_account['path'],
-                                                           environment=raw_account['environment'], number=raw_account['number'],
+                                                           environment=raw_account['environment'],
+                                                           number=raw_account['number'],
                                                            uuid=raw_account['uuid'], do_load=True
                                                            )
-                self.logger.info("New account found: '%s'" % new_account.number)
+                self.logger.info("New account found: '%s'", new_account.number)
                 ACCOUNTS.append(new_account)
                 new_accounts.append(new_account)
-        self.logger.info("Found %i new accounts." % len(new_accounts))
+        self.logger.info("Found %i new accounts.", len(new_accounts))
         return new_accounts
 
     ##############################
@@ -174,7 +178,6 @@ class SignalAccounts(object):
         Return an iterator over the accounts.
         :return: Iterator[SignalAccount]: The iterator.
         """
-        global ACCOUNTS
         return iter(ACCOUNTS)
 
     def __len__(self) -> int:
@@ -182,7 +185,6 @@ class SignalAccounts(object):
         Return the length or number of accounts.
         :return: int: The len of ACCOUNTS.
         """
-        global ACCOUNTS
         return len(ACCOUNTS)
 
     def __getitem__(self, item: int | str) -> SignalAccount:
@@ -195,23 +197,23 @@ class SignalAccounts(object):
         :raises TypeError: If item is not an int or str.
         :raises ValueError: If iteme is a str and is not in proper phone number format.
         """
-        global ACCOUNTS
         self.logger.debug("__getitem__ started.")
         if isinstance(item, int):
             try:
                 return ACCOUNTS[item]  # Raises IndexError if index out of range.
             except IndexError as e:
-                self.logger.error("IndexError: %s" % str(e.args))
+                self.logger.error("IndexError: %s", str(e.args))
                 raise e
         elif isinstance(item, str):
             try:
-                account = self.get_by_number(item)  # Raises ValueError if the number is not in proper format.
+                account = self.get_by_number(
+                    item)  # Raises ValueError if the number is not in proper format.
             except ValueError as e:
-                self.logger.error("ValueError: %s" % str(e.args))
+                self.logger.error("ValueError: %s", str(e.args))
                 raise e
             if account is None:
-                error_message: str = "Key '%s' not found." % item
-                self.logger.error("KeyError: %s" % error_message)
+                error_message: str = f"Key '{item}' not found."
+                self.logger.error("KeyError: %s", error_message)
                 raise KeyError(error_message)
             return account
         self.logger.error("TypeError:")
@@ -227,7 +229,6 @@ class SignalAccounts(object):
         Get accounts that are both known and registered.
         :return: list[SignalAccount]: The registerd accounts, or an empty list if none found.
         """
-        global ACCOUNTS
         return [acct for acct in ACCOUNTS if acct.registered is True]
 
     @staticmethod
@@ -236,7 +237,6 @@ class SignalAccounts(object):
         Get accounts that are unregistered, but known.
         :returns: list[SignalAccount]: The unregistered accounts, or an empty list if none found.
         """
-        global ACCOUNTS
         return [acct for acct in ACCOUNTS if acct.registered is False]
 
     def get_by_number(self, number: str) -> Optional[SignalAccount]:
@@ -247,7 +247,6 @@ class SignalAccounts(object):
         :raises: TypeError: If number is not a string.
         :raises: ValueError: If number not in proper format.
         """
-        global ACCOUNTS
         self.logger.debug("get_by_number started.")
         # Type check:
         if not isinstance(number, str):
@@ -257,15 +256,15 @@ class SignalAccounts(object):
         # Value check:
         number_match = phone_number_regex.match(number)
         if number_match is None:
-            error_message = "number: '%s', must be in format: %s" % (number, NUMBER_FORMAT_STR)
-            self.logger.critical("ValueError: %s" % error_message)
+            error_message = f"number: '{number}', must be in format: {NUMBER_FORMAT_STR}"
+            self.logger.critical("ValueError: %s", error_message)
             raise ValueError(error_message)
         # Search for the account:
         for account in ACCOUNTS:
             if account.number == number:
-                self.logger.debug("Account number '%s' found." % number)
+                self.logger.debug("Account number '%s' found.", number)
                 return account
-        self.logger.debug("Account number '%s' NOT found." % number)
+        self.logger.debug("Account number '%s' NOT found.", number)
         return None
 
     def get_by_uuid(self, uuid: str) -> Optional[SignalAccount]:
@@ -276,7 +275,6 @@ class SignalAccounts(object):
         :raises TypeError: if the uuid is not a string.
         :raises ValueError: if the uuid is not in the correct format.
         """
-        global ACCOUNTS
         self.logger.debug("get_by_uuid started.")
         # Type check:
         if not isinstance(uuid, str):
@@ -286,15 +284,15 @@ class SignalAccounts(object):
         # Value check:
         uuid_match = uuid_regex.match(uuid)
         if uuid_match is None:
-            error_message = "UUID: '%s',  must be in format: %s" % (uuid, UUID_FORMAT_STR)
-            self.logger.critical("ValueError: %s" % error_message)
+            error_message = f"UUID: '{uuid}',  must be in format: {UUID_FORMAT_STR}"
+            self.logger.critical("ValueError: %s", error_message)
             raise ValueError(error_message)
         # Search for the account:
         for account in ACCOUNTS:
             if account.uuid == uuid:
-                self.logger.debug("Account uuid '%s' found." % uuid)
+                self.logger.debug("Account uuid '%s' found.", uuid)
                 return account
-        self.logger.debug("Account uuid '%s' NOT found." % uuid)
+        self.logger.debug("Account uuid '%s' NOT found.", uuid)
         return None
 
     def get_by_username(self, username: str) -> Optional[SignalAccount]:
@@ -304,7 +302,6 @@ class SignalAccounts(object):
         :return: Optional[SignalAccount]: The SignalAccount object or None if not found.
         :raises TypeError: If username is not a string.
         """
-        global ACCOUNTS
         self.logger.debug("get_by_username started.")
         # Type check:
         if not isinstance(username, str):
@@ -314,7 +311,7 @@ class SignalAccounts(object):
         # Search for the account:
         for account in ACCOUNTS:
             if account.username == username:
-                self.logger.debug("Account username '%s' found." % username)
+                self.logger.debug("Account username '%s' found.", username)
                 return account
         self.logger.debug("Account username '%s' NOT found.")
         return None
@@ -328,7 +325,7 @@ class SignalAccounts(object):
         The total number of accounts.
         :return: int: The total number of accounts.
         """
-        return self.__len__()
+        return len(ACCOUNTS)
 
     @property
     def num_registered(self) -> int:

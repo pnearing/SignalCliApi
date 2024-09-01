@@ -1,4 +1,8 @@
 """File: __init__.py"""
+__version__: str = '0.5.6'
+__author__: str = 'Peter Nearing'
+__email__: str = 'me@peternearing.ca'
+
 from .signal_account import SignalAccount
 from .signal_accounts import SignalAccounts
 from .signal_attachment import SignalAttachment
