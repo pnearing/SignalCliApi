@@ -3,6 +3,7 @@
 File: signal_attachment.py
 Store and manage a signal attachment.
 """
+# pylint: disable=R0902, R0912, R0913, R0915
 import logging
 from typing import TypeVar, Optional, Any
 import mimetypes
@@ -19,7 +20,7 @@ dict_keys: list[str] = [
     'contentType', 'id', 'filename', 'size', 'height', 'width', 'caption', 'localPath', 'thumbnail',
 ]
 
-class SignalAttachment(object):
+class SignalAttachment:
     """
     Class to store an attachment.
     """
@@ -39,9 +40,6 @@ class SignalAttachment(object):
         :param local_path: Optional[str]: The local path of this attachment.
         :param thumbnail: Optional[SignalThumbnail]: The SignalThumbnail object for this attachment.
         """
-        # Super:
-        object.__init__(self)
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -72,18 +70,20 @@ class SignalAttachment(object):
             if param is not None:
                 not_nones += 1
         if not_nones == 0:
-            error_message: str = "At least one of 'from_dict', 'raw_attachment', or 'local_path' must be defined."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            error_message: str = ("At least one of 'from_dict', 'raw_attachment', or 'local_path'"
+                                  "must be defined.")
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
-        elif not_nones >= 2:
-            error_message: str = "Only one of 'from_dict', 'raw_attachment', and local_path' can be defined at once."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+        if not_nones >= 2:
+            error_message: str = ("Only one of 'from_dict', 'raw_attachment', and 'local_path' can"
+                                  "be defined at once.")
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Value checks:
         if local_path is not None and not os.path.exists(local_path):
-            error_message: str = "'local_path' %s, does not exist." % local_path
-            logger.critical("Raising FileNotFoundError(%s)." % error_message)
+            error_message: str = f"'local_path' {local_path}, does not exist."
+            logger.critical("Raising FileNotFoundError(%s).", error_message)
             raise FileNotFoundError(error_message)
 
         # Set internal vars:
@@ -119,7 +119,7 @@ class SignalAttachment(object):
             logger.debug("Loading from dict.")
             verified, message = self.__verify_dict__(from_dict)
             if not verified:
-                raise ValueError("Invalid from_dict: %s." % message)
+                raise ValueError(f"Invalid from_dict: {message}.")
             self.__from_dict__(from_dict)
 
         # Parse from raw Attachment
@@ -128,13 +128,13 @@ class SignalAttachment(object):
             self.__from_raw_attachment__(raw_attachment)
 
         # Set properties from the local path:
-        elif local_path is not None:  # We've checked that local_path exists earlier and Failed if it doesn't.
+        # We've checked that local_path exists earlier and Failed if it doesn't.
+        elif local_path is not None:
             logger.debug("'local_path' been passed in.")
             self.content_type = mimetypes.guess_type(local_path)
             self.exists = os.path.exists(local_path)
             self.filename = os.path.split(local_path)[-1]
             self.size = os.path.getsize(local_path)
-        return
 
     def __from_raw_attachment__(self, raw_attachment: dict[str, Any]) -> None:
         """
@@ -142,8 +142,9 @@ class SignalAttachment(object):
         :param raw_attachment: dict[str, Any]: The dict to load from.
         :return: None
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_attachment__.__name__)
-        logger.debug("raw attachment: %s" % str(raw_attachment))
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__from_raw_attachment__.__name__)
+        logger.debug("raw attachment: %s", str(raw_attachment))
 
         # Load content type:
         self.content_type = None
@@ -183,7 +184,8 @@ class SignalAttachment(object):
         # Set the thumbnail:
         self.thumbnail = None
         if 'thumbnail' in raw_attachment.keys():
-            self.thumbnail = SignalThumbnail(config_path=self._config_path, raw_thumbnail=raw_attachment['thumbnail'])
+            self.thumbnail = SignalThumbnail(config_path=self._config_path,
+                                             raw_thumbnail=raw_attachment['thumbnail'])
 
         # Set the local path:
         self.local_path = None
@@ -192,9 +194,8 @@ class SignalAttachment(object):
             self.local_path = os.path.join(self._config_path, 'attachments', self.filename)
             self.exists = os.path.exists(self.local_path)
         elif self.id is not None:
-                self.local_path = os.path.join(self._config_path, 'attachments', self.id)
-                self.exists = os.path.exists(self.local_path)
-        return
+            self.local_path = os.path.join(self._config_path, 'attachments', self.id)
+            self.exists = os.path.exists(self.local_path)
 
     #########################
     # To / From Dict:
@@ -245,8 +246,8 @@ class SignalAttachment(object):
             self.exists = False
         self.thumbnail = None
         if from_dict['thumbnail'] is not None:
-            self.thumbnail = SignalThumbnail(config_path=self._config_path, from_dict=from_dict['thumbnail'])
-        return
+            self.thumbnail = SignalThumbnail(config_path=self._config_path,
+                                             from_dict=from_dict['thumbnail'])
 
     ########################
     # Getters:
@@ -274,3 +275,4 @@ class SignalAttachment(object):
                 return True
             except CalledProcessError:
                 return False
+        return False

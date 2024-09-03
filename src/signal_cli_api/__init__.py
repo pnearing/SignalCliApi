@@ -1,5 +1,5 @@
 """File: __init__.py"""
-__version__: str = '0.5.6'
+__version__: str = '0.5.6.2'
 __author__: str = 'Peter Nearing'
 __email__: str = 'me@peternearing.ca'
 

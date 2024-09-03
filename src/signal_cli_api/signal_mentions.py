@@ -7,7 +7,7 @@ import logging
 from typing import Optional, Iterable, Iterator, Any
 import re
 
-from .signal_common import __type_error__, phone_number_regex, uuid_regex
+from .signal_common import __type_error__, PHONE_NUMBER_REGEX, UUID_REGEX
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
 from .signal_mention import SignalMention
@@ -334,8 +334,8 @@ class SignalMentions(object):
         for match, contact_id, _, _ in match_list:
             # Figure out what matched:
             match_type: Optional[str] = None
-            phone_number_match = phone_number_regex.match(contact_id)
-            uuid_match = uuid_regex.match(contact_id)
+            phone_number_match = PHONE_NUMBER_REGEX.match(contact_id)
+            uuid_match = UUID_REGEX.match(contact_id)
             if phone_number_match is not None:
                 match_type = "phoneNumber"
             elif uuid_match is not None:

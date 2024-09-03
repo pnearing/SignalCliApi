@@ -1,32 +1,26 @@
 #!/usr/bin/env python3
 """
 File: signal_common.py
-    Common Constants, Vars, and helper functions. Common display strings are put here for future localization in case
-    this takes off.
+    Common Constants, Vars, and helper functions. Common display strings are put here for future
+    localization in case this takes off.
 """
-
+# pylint: disable= R1702, W0511, W0603
 import json
 from subprocess import check_output, CalledProcessError
-from typing import Pattern, NoReturn, Optional, Any, Final, Callable
+from typing import Pattern, NoReturn, Optional, Any, Final
 import socket
 import select
 import re
 import logging
 from enum import IntEnum, auto, Enum, IntFlag
-from .signal_exceptions import CommunicationsError, SignalError, InvalidServerResponse, CallbackCausedError
-
-###################
-# Version:
-###################
-__version__: Final[str] = '0.5.6'
-"""Version of the library"""
+from .signal_exceptions import (CommunicationsError, SignalError, InvalidServerResponse)
 
 ########################################
 # Regex:
 ########################################
-phone_number_regex: Final[Pattern] = re.compile(r'(?P<number>\+\d+)')
+PHONE_NUMBER_REGEX: Final[Pattern] = re.compile(r'(?P<number>\+\d+)')
 """Regex matching a phone number."""
-uuid_regex: Final[Pattern] = re.compile(
+UUID_REGEX: Final[Pattern] = re.compile(
     r'(?P<uuid>[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-f0-9]{12})'
 )
 """Regex matching a UUID."""
@@ -40,11 +34,11 @@ NUMBER_FORMAT_STR: Final[str] = "+nnnnnnn..."
 SELF_CONTACT_NAME: Final[str] = 'Note-To-Self \u2318'
 """The contact name for the self-contact."""
 UNKNOWN_CONTACT_NAME: Final[str] = '<UNKNOWN-CONTACT>'
-"""The default name for an unknown contact. If this the contact name it signals the library to update it if ever an
-    actual name for the contact comes up."""
+"""The default name for an unknown contact. If this the contact name it signals the library to
+update it if ever an actual name for the contact comes up."""
 UNKNOWN_GROUP_NAME: Final[str] = '<UNKNOWN-GROUP>'
-"""The default name for an unknown group. If this is the group name it signals the library to update it if even an
-    actual group name comes up."""
+"""The default name for an unknown group. If this is the group name it signals the library to
+update it if even an actual group name comes up."""
 UNKNOWN_DEVICE_NAME: Final[str] = '<UNKNOWN-DEVICE>'
 """The default name for an unknown device."""
 PRIMARY_DEVICE_ID: Final[int] = 1
@@ -74,7 +68,8 @@ CALLBACK_RAISES_ERROR: bool = False
 _CLOSING_SOCKET: bool = False
 """Are we closing a socket right now?"""
 _OPEN_SOCKETS: list[dict[str, socket.socket | str | tuple[str, int]]] = []
-"""A list of open sockets, and the server they're associated with so we can automatically reconnect them."""
+"""A list of open sockets, and the server they're associated with so we can automatically
+reconnect them."""
 SERVER_ADDRESS: Optional[str | tuple[str, int]] = None
 """The current server address."""
 HONOUR_VIEW_ONCE: bool = True
@@ -113,17 +108,18 @@ def valid_message_filter(message_filter: int) -> bool:
     :return: bool: True the fileter if valid, False it is not.
     """
     max_value: int = (
-        MessageFilter.READ | MessageFilter.NOT_READ |
-        MessageFilter.VIEWED | MessageFilter.NOT_VIEWED |
-        MessageFilter.DELIVERED | MessageFilter.NOT_DELIVERED
+            MessageFilter.READ | MessageFilter.NOT_READ |
+            MessageFilter.VIEWED | MessageFilter.NOT_VIEWED |
+            MessageFilter.DELIVERED | MessageFilter.NOT_DELIVERED
     )
     if (message_filter < 0) or (message_filter > max_value):
         return False
-    elif (message_filter & MessageFilter.READ) and (message_filter & MessageFilter.NOT_READ):
+    if (message_filter & MessageFilter.READ) and (message_filter & MessageFilter.NOT_READ):
         return False
-    elif (message_filter & MessageFilter.VIEWED) and (message_filter & MessageFilter.NOT_VIEWED):
+    if (message_filter & MessageFilter.VIEWED) and (message_filter & MessageFilter.NOT_VIEWED):
         return False
-    elif (message_filter & MessageFilter.DELIVERED) and (message_filter & MessageFilter.NOT_DELIVERED):
+    if (message_filter & MessageFilter.DELIVERED) and (message_filter &
+                                                       MessageFilter.NOT_DELIVERED):
         return False
     return True
 
@@ -278,7 +274,7 @@ def __find_xdgopen__() -> Optional[str]:
     xdgopen_path: Optional[str]
     try:
         xdgopen_path = check_output(['which', 'xdg-open'], text=True).rstrip()
-        logger.debug("xdg-open found at '%s'." % xdgopen_path)
+        logger.debug("xdg-open found at '%s'.", xdgopen_path)
     except CalledProcessError:
         logger.warning("xdg-open not found, the functions named display() will do nothing.")
         xdgopen_path = None
@@ -295,7 +291,7 @@ def __find_qrencode__() -> Optional[str]:
     qrencode_path: Optional[str]
     try:
         qrencode_path = check_output(['which', 'qrencode'], text=True).rstrip()
-        logger.debug("qrencode found at: %s" % qrencode_path)
+        logger.debug("qrencode found at: %s", qrencode_path)
     except CalledProcessError:
         qrencode_path = None
         logger.warning("qrencode not found, cannot generate link qr-codes.")
@@ -312,7 +308,7 @@ def __find_convert__() -> Optional[str]:
     convert_path: Optional[str]
     try:
         convert_path = check_output(['which', 'convert'], text=True).rstrip()
-        logger.debug("convert found at: %s" % convert_path)
+        logger.debug("convert found at: %s", convert_path)
         return convert_path
     except CalledProcessError:
         logger.warning("convert not found, cannot generate thumbnails.")
@@ -331,7 +327,7 @@ def __find_signal__() -> str | NoReturn:
         logger.debug("Searching for signal-cli...")
         signal_path = check_output(['which', 'signal-cli'], text=True)
         signal_path = signal_path.strip()
-        logger.debug("signal-cli found at: %s" % signal_path)
+        logger.debug("signal-cli found at: %s", signal_path)
         return signal_path
     except CalledProcessError:
         logger.debug("signal-cli not found.")
@@ -340,7 +336,7 @@ def __find_signal__() -> str | NoReturn:
         logger.debug("Searching for signal-cli-native...")
         signal_path = check_output(['which', 'signal-cli-native'], text=True)
         signal_path = signal_path.strip()
-        logger.debug("signal-cli-native found at: %s" % signal_path)
+        logger.debug("signal-cli-native found at: %s", signal_path)
         return signal_path
     except CalledProcessError:
         logger.debug("signal-cli-native not found.")
@@ -349,18 +345,20 @@ def __find_signal__() -> str | NoReturn:
         logger.debug("Searching for signal-cli-jre...")
         signal_path = check_output(['which', 'signal-cli-jre'], text=True)
         signal_path = signal_path.strip()
-        logger.debug("signal-cli-jre found at: %s" % signal_path)
+        logger.debug("signal-cli-jre found at: %s", signal_path)
         return signal_path
     except CalledProcessError:
         logger.debug("signal-cli-jre not found.")
     # Exit if we couldn't find signal
-    error_message: str = ("FATAL: Could not find [ signal-cli | signal-cli-native | signal-cli-jre ].  "
-                          "Please ensure it's installed and in your $PATH environment variable.")
+    error_message: str = ("FATAL: Could not find [ signal-cli | signal-cli-native |"
+                          "signal-cli-jre ]. Please ensure it's installed and in your "
+                          "$PATH environment variable.")
     logger.critical(error_message)
     raise FileNotFoundError(error_message)
 
 
-def __parse_signal_return_code__(return_code: int, command_line: str | list[str], output: str) -> NoReturn:
+def __parse_signal_return_code__(return_code: int, command_line: str | list[str], output: str
+                                 ) -> NoReturn:
     """
     Parse the signal return code.
     :param return_code: int: The return code from signal.
@@ -370,35 +368,35 @@ def __parse_signal_return_code__(return_code: int, command_line: str | list[str]
     """
     logger_name = __name__ + '.' + __parse_signal_return_code__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
-    logger.error("signal-cli returned non-zero return code: %i" % return_code)
+    logger.error("signal-cli returned non-zero return code: %i", return_code)
     if return_code == 1:
-        error_message = "Exit code 1: Invalid command line: %s" % str(command_line)
-        logger.critical("Raising SignalError(%s)." % error_message)
+        error_message = f"Exit code 1: Invalid command line: {str(command_line)}"
+        logger.critical("Raising SignalError(%s).", error_message)
         raise SignalError(error_message, return_code)
-    elif return_code == 2:
-        error_message = "Exit Code 2: Unexpected error. %s" % output
-        logger.critical("Raising SignalError(%s)." % error_message)
+    if return_code == 2:
+        error_message = f"Exit Code 2: Unexpected error. {output}"
+        logger.critical("Raising SignalError(%s).", error_message)
         raise SignalError(error_message, return_code)
-    elif return_code == 3:
-        error_message = "Exit Code 3: Server / Network error. Try again later: %s" % output
-        logger.critical("Raising SignalError(%s)." % error_message)
+    if return_code == 3:
+        error_message = f"Exit Code 3: Server / Network error. Try again later: {output}"
+        logger.critical("Raising SignalError(%s).", error_message)
         raise SignalError(error_message, return_code)
-    elif return_code == 4:
-        error_message = "Exit Code 4: Operation failed due to untrusted key: %s" % output
-        logger.critical("Raising SignalError(%s)." % error_message)
+    if return_code == 4:
+        error_message = f"Exit Code 4: Operation failed due to untrusted key: {output}"
+        logger.critical("Raising SignalError(%s).", error_message)
         raise SignalError(error_message, return_code)
-    else:
-        error_message = "Exit Code %i: Unknown / unhandled error. Running '%s' returned output: %s" \
-                        % (return_code, str(command_line), output)
-        logger.critical("Raising SignalError(%s)." % error_message)
-        raise SignalError(error_message, return_code)
+
+    error_message = (f"Exit Code {return_code}: Unknown / unhandled error. Running "
+                     f"'{str(command_line)}' returned output: {output}")
+    logger.critical("Raising SignalError(%s).", error_message)
+    raise SignalError(error_message, return_code)
 
 
 ####################################
 # Socket helpers:
 ####################################
-def __find_socket_dict_by_socket__(sock: socket.socket) -> Optional[dict[str, socket.socket | str | tuple[str, int]]]:
-    global _OPEN_SOCKETS
+def __find_socket_dict_by_socket__(sock: socket.socket) -> Optional[dict[str, socket.socket | str |
+                                                                              tuple[str, int]]]:
     for socket_dict in _OPEN_SOCKETS:
         if socket_dict['socket'] == sock:
             return socket_dict
@@ -408,12 +406,11 @@ def __find_socket_dict_by_socket__(sock: socket.socket) -> Optional[dict[str, so
 def __socket_create__(server_address: Optional[tuple[str, int] | str] = None) -> socket.socket:
     """
     Create a socket.socket object based on the server address type.
-    :param server_address: tuple[str, str] | str: The server address, either (HOSTNAME, PORT) or "PATH_TO_SOCKET".
+    :param server_address: tuple[str, str] | str: The server address, either (HOSTNAME, PORT) or
+        "PATH_TO_SOCKET".
     :return: socket.socket: The created socket.
     :raises CommunicationsError: On failure to create socket.
     """
-    global _OPEN_SOCKETS, SERVER_ADDRESS
-
     if server_address is None:
         server_address = SERVER_ADDRESS
 
@@ -428,17 +425,17 @@ def __socket_create__(server_address: Optional[tuple[str, int] | str] = None) ->
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as e:
-            error_message: str = "Failed to create INET socket: %s" % str(e.args)
-            logger.critical("Raising CommunicationsError(%s)." % error_message)
-            raise CommunicationsError(error_message, e)
+            error_message: str = f"Failed to create INET socket: {str(e.args)}"
+            logger.critical("Raising CommunicationsError(%s).", error_message)
+            raise CommunicationsError(error_message, e) from e
     elif isinstance(server_address, str):
         logger.debug("Creating UNIX socket.")
         try:
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         except socket.error as e:
-            error_message: str = "Failed to create UNIX socket: %s" % str(e.args)
-            logger.critical("Raising CommunicationsError(%s)." % error_message)
-            raise CommunicationsError(error_message, e)
+            error_message: str = f"Failed to create UNIX socket: {str(e.args)}"
+            logger.critical("Raising CommunicationsError(%s).", error_message)
+            raise CommunicationsError(error_message, e) from e
     else:
         logger.critical("Raising TypeError:")
         logger.critical(__type_err_msg__('server_address', 'tuple[str, int] | str', server_address))
@@ -453,16 +450,16 @@ def __socket_create__(server_address: Optional[tuple[str, int] | str] = None) ->
     return sock
 
 
-def __socket_connect__(sock: socket.socket, server_address: Optional[tuple[str, int] | str] = None) -> None:
+def __socket_connect__(sock: socket.socket, server_address: Optional[tuple[str, int] | str] = None
+                       ) -> None:
     """
     Connect a socket to a server address.
     :param sock: socket.socket: The socket to connect with.
-    :param server_address: tuple[str, int] | str: The server address: (HOSTNAME, PORT) or "PATH_TO_SOCKET"
+    :param server_address: tuple[str, int] | str: The server address: (HOSTNAME, PORT) or
+        "PATH_TO_SOCKET"
     :return: None
     :raises CommunicationsError: On failure to connect.
     """
-    global _OPEN_SOCKETS, SERVER_ADDRESS
-
     if server_address is None:
         server_address = SERVER_ADDRESS
     if server_address is None:
@@ -473,36 +470,32 @@ def __socket_connect__(sock: socket.socket, server_address: Optional[tuple[str, 
     try:
         # logger.debug("Connecting to: %s" % str(server_address))
         # sock.connect(server_address)
-        logger.debug("Connecting to: %s" % str(server_address))
+        logger.debug("Connecting to: %s", str(server_address))
         sock.connect(server_address)
     except socket.error as e:
-        error_message = "Couldn't connect to socket: %s" % (str(e.args))
-        logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
-        raise CommunicationsError(error_message, e)
+        error_message = f"Couldn't connect to socket: {str(e.args)}"
+        logger.critical("socket.error: %s, Raising CommunicationsError.", error_message)
+        raise CommunicationsError(error_message, e) from e
     socket_dict = __find_socket_dict_by_socket__(sock)
     socket_dict['status'] = 'connected'
-    # logger.debug("Connected to: %s" % str(server_address))
-    logger.debug("Connected to: %s" % str(server_address))
-    return
+    logger.debug("Connected to: %s", str(server_address))
 
 
 def __socket_reconnect__(sock: socket.socket) -> None:
-    global _OPEN_SOCKETS
     logger: logging.Logger = logging.getLogger(__name__ + '.' + __socket_reconnect__.__name__)
     socket_dict = __find_socket_dict_by_socket__(sock)
     if socket_dict['status'] == 'connected':
         try:
             __socket_close__(sock)
-        except socket.error as e:
+        except socket.error:
             warning_message = "Error while closing socket, ignoring."
             logger.warning(warning_message)
         try:
             __socket_connect__(sock, socket_dict['server'])
         except socket.error as e:
-            error_message = "Couldn't reconnect the socket: %s" % (str(e.args))
-            logger.critical("socket.error: %s, raising CommunicationsError." % error_message)
-            raise CommunicationsError(error_message, e)
-    return
+            error_message = f"Couldn't reconnect the socket: {str(e.args)}"
+            logger.critical("socket.error: %s, raising CommunicationsError.", error_message)
+            raise CommunicationsError(error_message, e) from e
 
 
 def __socket_send__(sock: socket.socket, message: str) -> int:
@@ -516,24 +509,25 @@ def __socket_send__(sock: socket.socket, message: str) -> int:
     logger_name: str = __name__ + '.' + __socket_send__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
-        logger.debug("Sending message: %s" % message)
+        logger.debug("Sending message: %s", message)
         bytes_sent = sock.send(message.encode())
     except socket.error as e:
         if e.args[0] == 32:
             logger.warning("Error while sending message. Broken pipe. Reconnecting.")
             __socket_reconnect__(sock)
             try:
-                logger.debug("Resending message: %s" % message)
+                logger.debug("Resending message: %s", message)
                 bytes_sent = sock.send(message.encode())
-            except socket.error as e:
-                error_message = "Sending still failed: %s" % str(e.args)
-                logger.critical("resending message failed: %s, raising CommunicationsError." % error_message)
-                raise CommunicationsError(error_message, e)
+            except socket.error as err:
+                error_message = f"Sending still failed: {str(e.args)}"
+                logger.critical("resending message failed: %s, raising CommunicationsError.",
+                                error_message)
+                raise CommunicationsError(error_message, e) from err
         else:
-            error_message = "Couldn't send to socket: %s" % (str(e.args))
-            logger.critical("socket.error: %s, Raising CommunicationsError." % error_message)
-            raise CommunicationsError(error_message, e)
-    logger.debug("Sent %i bytes." % bytes_sent)
+            error_message = f"Couldn't send to socket: {str(e.args)}"
+            logger.critical("socket.error: %s, Raising CommunicationsError.", error_message)
+            raise CommunicationsError(error_message, e) from e
+    logger.debug("Sent %i bytes.", bytes_sent)
     return bytes_sent
 
 
@@ -544,7 +538,6 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
     :return: str: The read message.
     :raises CommunicationsError: On failure to read from the socket.
     """
-    global _CLOSING_SOCKET
     logger_name: str = __name__ + '.' + __socket_receive_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
@@ -561,19 +554,19 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
                     byte_count += 1
                     try:
                         if data.decode() == '\n':
-                            logger.debug("Received %i bytes." % byte_count)
+                            logger.debug("Received %i bytes.", byte_count)
                             break
                     except UnicodeDecodeError:
                         pass
-                logger.debug("Returning message: %s" % message.decode())
+                logger.debug("Returning message: %s", message.decode())
                 return message.decode()
     except socket.error as e:
-        error_message = "Failed to read from socket: %s" % (str(e.args))
+        error_message = f"Failed to read from socket: {str(e.args)}"
         if _CLOSING_SOCKET and e.args[0] == 9:
             logger.info("Read error received while closing socket. This is normal during shutdown.")
         else:
-            logger.critical("socket.error: %s" % error_message)
-        raise CommunicationsError(error_message, e)
+            logger.critical("socket.error: %s", error_message)
+        raise CommunicationsError(error_message, e) from e
 
 
 def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1) -> Optional[str]:
@@ -584,7 +577,6 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1)
     :return: Optional[str]: The read message, or None if wait_time elapsed.
     :raises CommunicationsError: On failure to read from the socket.
     """
-    global _CLOSING_SOCKET
     logger_name: str = __name__ + '.' + __socket_receive_non_blocking__.__name__
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
@@ -600,19 +592,20 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1)
                 byte_count += 1
                 try:
                     if data.decode() == '\n':
-                        logger.debug("Received %i bytes." % byte_count)
+                        logger.debug("Received %i bytes.", byte_count)
                         break
                 except UnicodeDecodeError:
                     pass
-            logger.debug("Returning message: %s" % message.decode())
+            logger.debug("Returning message: %s", message.decode())
             return message.decode()
     except socket.error as e:
-        error_message = "Failed to read from socket: %s" % (str(e.args))
+        error_message = f"Failed to read from socket: {str(e.args)}"
         if _CLOSING_SOCKET:
-            logger.warning("Socket read error while closing socket. This is normal during shutdown.")
+            logger.warning("Socket read error while closing socket."
+                           "This is normal during shutdown.")
         else:
-            logger.critical("socket.error: %s" % error_message)
-        raise CommunicationsError(error_message, e)
+            logger.critical("socket.error: %s", error_message)
+        raise CommunicationsError(error_message, e) from e
     return None
 
 
@@ -631,12 +624,11 @@ def __socket_close__(sock: socket.socket) -> None:
     try:
         sock.close()
     except socket.error as e:
-        error_message = "Couldn't close socket connection: %s" % (str(e.args))
+        error_message = f"Couldn't close socket connection: {str(e.args)}"
         logger.critical(error_message)
-        raise CommunicationsError(error_message, e)
+        raise CommunicationsError(error_message, e) from e
     _CLOSING_SOCKET = False
     logger.debug("Socket closed successfully.")
-    return None
 
 
 ################################
@@ -652,34 +644,38 @@ def __parse_signal_response__(response_str: str) -> dict[str, Any] | NoReturn:
     try:
         return json.loads(response_str)
     except json.JSONDecodeError as e:
-        error_message: str = "Failed to load JSON from server response: %s" % e.msg
-        logger.critical("Raising InvalidServerResponse(%s)." % error_message)
-        raise InvalidServerResponse(error_message, e)
+        error_message: str = f"Failed to load JSON from server response: {e.msg}"
+        logger.critical("Raising InvalidServerResponse(%s).", error_message)
+        raise InvalidServerResponse(error_message, e) from e
 
 
 def __check_response_for_error__(response_obj: dict[str, Any],
-                                 non_fatal_errors: list[int] = [],
+                                 non_fatal_errors: list[int] | tuple[int, ...] = (),
                                  ) -> tuple[bool, int, str] | NoReturn:
     """
     Check the signal response object for error.
     :param response_obj: dict[str, Any]: The response object from signal.
     :param non_fatal_errors: list[int]: Any non-fatal error codes.
-    :return: tuple[bool, int, str] | NoReturn: If no error occurs, returns the tuple: (False, 0, 'no error'); If a
-        non-fatal error occurs, return the tuple (True, error_code: int, error_message: str); If a fatal error occurs
-        then SignalError is raised.
+    :return: tuple[bool, int, str] | NoReturn: If no error occurs, returns the tuple:
+        (False, 0, 'no error'); If a non-fatal error occurs, returns the tuple
+        (True, error_code: int, error_message: str); If a fatal error occurs then SignalError is
+        raised.
     :raises: SignalError: On fatal error.
     """
-    logger: logging.Logger = logging.getLogger(__name__ + '.' + __check_response_for_error__.__name__)
+    logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                               __check_response_for_error__.__name__)
     if 'error' in response_obj.keys():
         error: dict[str, Any] = response_obj['error']
         if error['code'] in non_fatal_errors:
-            warning_message: str = "Signal error, code: %i, message: %s" % (error['code'], error['message'])
+            warning_message: str = (f"Signal error, code: {error['code']}, "
+                                    f"message: {error['message']}")
             logger.warning(warning_message)
             return True, error['code'], error['message']
-        else:
-            error_message: str = "Signal error, code: %i, message: %s" % (error['code'], error['message'])
-            logger.error("Raising SignalError(%s)" % error_message)
-            raise SignalError(response_obj['error']['message'], response_obj['error']['code'], error_message)
+
+        error_message: str = f"Signal error, code: {error['code']}, message: {error['message']}"
+        logger.error("Raising SignalError(%s)", error_message)
+        raise SignalError(response_obj['error']['message'], response_obj['error']['code'],
+                          error_message)
     return False, 0, 'no error'
 
 
@@ -694,7 +690,7 @@ def __type_err_msg__(var_name: str, valid_type_names: str, var: Any) -> str:
     :param var: Any: The received type.
     :return: str: The received objet.
     """
-    return "'%s' is of type '%s', expected: '%s'." % (var_name, str(type(var)), valid_type_names)
+    return f"'{var_name}' is of type '{str(type(var))}', expected: '{valid_type_names}'."
 
 
 def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
@@ -707,5 +703,5 @@ def __type_error__(var_name: str, valid_type_name: str, var: Any) -> NoReturn:
     """
     logger: logging.Logger = logging.getLogger(__name__ + '.' + __type_error__.__name__)
     error_message: str = __type_err_msg__(var_name, valid_type_name, var)
-    logger.critical("--> TypeError(%s)." % error_message)
+    logger.critical("--> TypeError(%s).", error_message)
     raise TypeError(error_message)

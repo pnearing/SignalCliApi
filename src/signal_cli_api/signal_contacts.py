@@ -9,7 +9,7 @@ import json
 import socket
 import logging
 
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, phone_number_regex, uuid_regex, \
+from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, PHONE_NUMBER_REGEX, UUID_REGEX, \
     NUMBER_FORMAT_STR, UUID_FORMAT_STR, SELF_CONTACT_NAME, __parse_signal_response__, __check_response_for_error__, \
     UNKNOWN_CONTACT_NAME, SyncTypes
 from .signal_contact import SignalContact
@@ -157,8 +157,8 @@ class SignalContacts(object):
         if isinstance(index, int):
             return self._contacts[index]  # Raises IndexError
         elif isinstance(index, str):
-            number_match = phone_number_regex.match(index)
-            uuid_match = uuid_regex.match(index)
+            number_match = PHONE_NUMBER_REGEX.match(index)
+            uuid_match = UUID_REGEX.match(index)
             if number_match is not None:
                 contact = self.get_by_number(index)
                 if contact is not None:
@@ -395,13 +395,13 @@ class SignalContacts(object):
 
         # Value checks:
         if number is not None:
-            number_match: Match = phone_number_regex.match(number)
+            number_match: Match = PHONE_NUMBER_REGEX.match(number)
             if number_match is None:
                 error_message: str = "'number' must be in format: '%s'" % NUMBER_FORMAT_STR
                 logger.critical("Raising ValueError(%s)." % error_message)
                 raise ValueError(error_message)
         if uuid is not None:
-            uuid_match: Match = uuid_regex.match(uuid)
+            uuid_match: Match = UUID_REGEX.match(uuid)
             if uuid_match is None:
                 error_message: str = "'uuid' must be in format: '%s'" % UUID_FORMAT_STR
                 logger.critical("Raising ValueError(%s)." % error_message)
@@ -409,8 +409,8 @@ class SignalContacts(object):
 
         # Check the contact_id values, and set number / uuid accordingly:
         if contact_id is not None:
-            number_match = phone_number_regex.match(contact_id)
-            uuid_match = uuid_regex.match(contact_id)
+            number_match = PHONE_NUMBER_REGEX.match(contact_id)
+            uuid_match = UUID_REGEX.match(contact_id)
             if number_match is not None:
                 number = contact_id
             elif uuid_match is not None:
@@ -484,7 +484,7 @@ class SignalContacts(object):
             logger.critical("Raising TypeError:")
             __type_error__("number", "str", number)
         # Value check number:
-        number_match = phone_number_regex.match(number)
+        number_match = PHONE_NUMBER_REGEX.match(number)
         if number_match is None:
             error_message = "number must be in format '%s'" % NUMBER_FORMAT_STR
             logger.critical("Raising ValueError(%s)." % error_message)
@@ -509,7 +509,7 @@ class SignalContacts(object):
         if not isinstance(uuid, str):
             logger.critical("Raising TypeError:")
             __type_error__("uuid", "str", uuid)
-        uuid_match = uuid_regex.match(uuid)
+        uuid_match = UUID_REGEX.match(uuid)
         # Value check uuid:
         if uuid_match is None:
             error_message = "uuid must be in format: '%s'" % UUID_FORMAT_STR
@@ -536,8 +536,8 @@ class SignalContacts(object):
             logger.critical("Raising TypeError:")
             __type_error__("contact_id", "str", contact_id)
         # Match contact Values:
-        number_match: Match = phone_number_regex.match(contact_id)
-        uuid_match: Match = uuid_regex.match(contact_id)
+        number_match: Match = PHONE_NUMBER_REGEX.match(contact_id)
+        uuid_match: Match = UUID_REGEX.match(contact_id)
         if number_match is not None:
             return self.get_by_number(contact_id)
         elif uuid_match is not None:
@@ -617,8 +617,8 @@ class SignalContacts(object):
             __type_error__("expiration", "Optional[int]", expiration)
 
         # Value Checks:
-        phone_number_match = phone_number_regex.match(contact_id)
-        uuid_match = uuid_regex.match(contact_id)
+        phone_number_match = PHONE_NUMBER_REGEX.match(contact_id)
+        uuid_match = UUID_REGEX.match(contact_id)
         if phone_number_match is None and uuid_match is None:
             error_message = "'contact_id' must be in format '%s' or '%s'." % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
             logger.critical("Raising ValueError(%s)." % error_message)

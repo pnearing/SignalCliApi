@@ -10,7 +10,7 @@ import json
 import socket
 import logging
 
-from .signal_common import phone_number_regex, uuid_regex, __type_error__, UUID_FORMAT_STR, \
+from .signal_common import PHONE_NUMBER_REGEX, UUID_REGEX, __type_error__, UUID_FORMAT_STR, \
     __type_err_msg__, \
     NUMBER_FORMAT_STR
 from .signal_account import SignalAccount
@@ -254,7 +254,7 @@ class SignalAccounts:
             self.logger.critical(__type_err_msg__('number', 'str', number))
             __type_error__("number", "str", number)
         # Value check:
-        number_match = phone_number_regex.match(number)
+        number_match = PHONE_NUMBER_REGEX.match(number)
         if number_match is None:
             error_message = f"number: '{number}', must be in format: {NUMBER_FORMAT_STR}"
             self.logger.critical("ValueError: %s", error_message)
@@ -282,7 +282,7 @@ class SignalAccounts:
             self.logger.critical(__type_err_msg__('uuid', 'str', uuid))
             __type_error__('uuid', 'str', uuid)
         # Value check:
-        uuid_match = uuid_regex.match(uuid)
+        uuid_match = UUID_REGEX.match(uuid)
         if uuid_match is None:
             error_message = f"UUID: '{uuid}',  must be in format: {UUID_FORMAT_STR}"
             self.logger.critical("ValueError: %s", error_message)

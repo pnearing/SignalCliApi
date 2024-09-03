@@ -5,8 +5,8 @@ File: signal_recipient.py
 """
 from typing import TypeVar, Any, Optional
 import uuid
-from SignalCliApi.signalCommon import RecipientTypes, __type_error__
-from SignalCliApi.signalTimestamp import SignalTimestamp
+from signal_cli_api.signal_common import RecipientTypes, __type_error__
+from signal_cli_api.signal_timestamp import SignalTimestamp
 
 Self = TypeVar("Self", bound="SignalRecipient")
 
