@@ -3,19 +3,21 @@
 File: signal_devices.py
 Handle a list of Devices.
 """
+# pylint: disable=R0913
 from typing import Optional, Any, Iterator
 import json
 import socket
 import logging
 
-from .signal_common import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_DEVICE_NAME
+from .signal_common import (__socket_receive_blocking__, __socket_send__, __type_error__,
+                            __parse_signal_response__, __check_response_for_error__,
+                            UNKNOWN_DEVICE_NAME)
 from .signal_device import SignalDevice
 from .signal_timestamp import SignalTimestamp
-from .signal_exceptions import SignalError
+# from .signal_exceptions import SignalError
 
 
-class SignalDevices(object):
+class SignalDevices:
     """An object containing the devices list."""
     def __init__(self,
                  sync_socket: socket.socket,
@@ -29,7 +31,8 @@ class SignalDevices(object):
         :param sync_socket: socket.socket: The socket to use for syncing.
         :param account_id: str, The account ID.
         :param this_device: Optional[int]: The device we're currently using.
-        :param from_dict: Optional[dict[str, Any]]: Load this device from the given dict created by __to_dict__()
+        :param from_dict: Optional[dict[str, Any]]: Load this device from the given dict created
+            by __to_dict__()
         :param do_sync: bool: Sync the device info with signal, defaults to False
         """
         # Setup logging:
@@ -71,7 +74,6 @@ class SignalDevices(object):
         elif do_sync:
             logger.debug("Syncing with signal.")
             self.__sync__()
-        return
 
     ###############################
     # Overrides:
@@ -98,7 +100,7 @@ class SignalDevices(object):
         Generate a JSON friendly dict.
         :return: dict[str, Any]: The JSON friendly dict to pass to __from_dict__()
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__to_dict__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__to_dict__.__name__)
         devices_dict: dict[str, Any] = {
             'devices': []
         }
@@ -123,8 +125,7 @@ class SignalDevices(object):
                                   this_device=self._this_device, from_dict=device_dict)
             self._devices.append(device)
             device_count += 1
-        logger.debug("Loaded %i devices from dict." % device_count)
-        return
+        logger.debug("Loaded %i devices from dict.", device_count)
 
     ##############################
     # Sync with signal:
@@ -138,7 +139,7 @@ class SignalDevices(object):
         :raises SignalError: On signal returning an error.
         """
         # Setup logging:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__sync__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__sync__.__name__)
 
         # Create list devices command Obj:
         list_devices_command_obj = {
@@ -153,8 +154,10 @@ class SignalDevices(object):
 
         # Communicate with the socket:
         __socket_send__(self._sync_socket, json_command)  # Raises CommunicationsError.
-        response_string = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationsError.
-        response_obj: dict[str, Any] = __parse_signal_response__(response_string)  # Raises InvalidServerResponse
+        # Raises CommunicationsError:
+        response_string = __socket_receive_blocking__(self._sync_socket)
+        # Raises InvalidServerResponse:
+        response_obj: dict[str, Any] = __parse_signal_response__(response_string)
         __check_response_for_error__(response_obj)  # Raises Signal Error on any error
 
         # Parse devices response:
@@ -171,26 +174,33 @@ class SignalDevices(object):
             # Add the device if not found:
             if not device_found:
                 self._devices.append(new_device)
-        return
 
     #################################
     # Helpers:
     #################################
-    def __get_or_add__(self, device_id: int, name: str = UNKNOWN_DEVICE_NAME) -> tuple[bool, SignalDevice]:
+    def __get_or_add__(self,
+                       device_id: int,
+                       name: str = UNKNOWN_DEVICE_NAME
+                       ) -> tuple[bool, SignalDevice]:
         """
         Get a device from the device list, or if not found, add it to the device list.
         :param device_id: int: The device ID.
         :param name: str: The name of the device; Defaults to UNKNOWN_DEVICE_NAME
-        :return: tuple[bool, SignalDevice]: The first element is if the device was added to the device list; And the second
-            element is the existing device if found, or the new device if not found.
+        :return: tuple[bool, SignalDevice]: The first element is if the device was added to the
+            device list; And the second element is the existing device if found, or the new device
+            if not found.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__get_or_add__.__name__)
         for device in self._devices:
             if device.id == device_id:
                 logger.debug("Device found.")
                 return False, device
-        device = SignalDevice(sync_socket=self._sync_socket, account_id=self._account_id, this_device=self._this_device,
-                              device_id=device_id, name=name, created=SignalTimestamp(now=True))
+        device = SignalDevice(sync_socket=self._sync_socket,
+                              account_id=self._account_id,
+                              this_device=self._this_device,
+                              device_id=device_id,
+                              name=name,
+                              created=SignalTimestamp(now=True))
         self._devices.append(device)
         logger.debug("Device created and added.")
         return True, device
@@ -201,8 +211,8 @@ class SignalDevices(object):
     def get_this_device(self) -> Optional[SignalDevice]:
         """
         Get the device associated with the current account.
-        :returns: Optional[SignalDevice]: Returns the device, or None if not found, which would happen for the devices of a
-                                    contact.
+        :returns: Optional[SignalDevice]: Returns the device, or None if not found, which would
+            happen for the devices of a contact.
         """
         for device in self._devices:
             if device.is_this_device:

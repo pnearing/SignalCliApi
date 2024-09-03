@@ -22,8 +22,7 @@ class Error(Exception):
         Exception.__init__(self, message, error, *args)
         self._message: str = self.args[0]
         self._error: Optional[Exception] = self.args[1]
-        return
-    
+
     @property
     def message(self) -> str:
         """
@@ -54,7 +53,6 @@ class SignalError(Error):
         """
         Error.__init__(self, message, None, *args)
         self._code: int = code
-        return
 
     @property
     def code(self) -> int:
@@ -76,7 +74,6 @@ class ParameterError(Error):
         :param args: tuple[*Any]: Any additional arguments to the Exception.
         """
         Error.__init__(self, message, None, *args)
-        return
 
 
 class InvalidServerResponse(Error):
@@ -95,7 +92,6 @@ class InvalidServerResponse(Error):
         self._json_msg: Optional[str] = None
         if error is not None:
             self._json_msg = error.msg
-        return
 
     @property
     def json_msg(self) -> Optional[str]:
@@ -118,14 +114,17 @@ class CommunicationsError(Error):
         :param args: tuple[Any]: Any additional arguments to add to the Exception.
         """
         Error.__init__(self, message, error, *args)
-        return
 
 
 class InvalidDataFile(Error):
     """
     Exception to throw when an error occurs while loading a signal-cli data file.
     """
-    def __init__(self, message: str, error: json.JSONDecodeError | KeyError, file_path: str, *args) -> None:
+    def __init__(self,
+                 message: str,
+                 error: json.JSONDecodeError | KeyError,
+                 file_path: str, *args
+                 ) -> None:
         """
         Initialize an InvalidDataFile Error.
         :param message: str: The error message.
@@ -138,7 +137,6 @@ class InvalidDataFile(Error):
         self._json_msg: Optional[str] = None
         if isinstance(error, json.JSONDecodeError):
             self._json_msg = error.msg
-        return
 
     @property
     def file_path(self) -> str:
@@ -172,7 +170,6 @@ class UnsupportedVersion(Error):
         Error.__init__(self, message, None, *args)
         self._version: int = version
         self._supported_versions: tuple = supported_versions
-        return
 
     @property
     def version(self) -> int:
@@ -201,7 +198,6 @@ class LinkInProgress(Error):
         :param args: tuple[*Any]: Any additional arguments to store in the Exception.
         """
         Error.__init__(self, "Link already in progress.", None, *args)
-        return
 
 
 class LinkNotStarted(Error):
@@ -214,25 +210,29 @@ class LinkNotStarted(Error):
         :param args: tuple[*Any]: Any additional arguments to store in the exception.
         """
         Error.__init__(self, "Link not started.", None, *args)
-        return
 
 
 class CallbackCausedError(Error):
     """
     Exception to throw when a callback causes an error.
     """
-    def __init__(self, callback_name: str, params: tuple[Any, ...], error: Exception,  *args) -> None:
+    def __init__(self,
+                 callback_name: str,
+                 params: tuple[Any, ...],
+                 error: Exception,
+                 *args
+                 ) -> None:
         """
         Initialize a CallbackCausedError exception.
         :param callback_name: str: The __name__ of the callback.
         :param error: Exception: The error the callback caused.
         :param args: tuple[Any]: Any additional arguments to store in the exception.
         """
-        message: str = "Callback: '%s', caused an exception of type: '%s', with arguments: '%s'." \
-                       % (callback_name, str(type(error)), str(error.args))
+        message: str = (f"Callback: '{callback_name}', caused an exception of "
+                        f"type: '{str(type(error))}', with arguments: '{str(error.args)}'.")
         self._callback_name: str = callback_name
+        self._params: tuple[Any, ...] = params
         Error.__init__(self, message, error, *args)
-        return
 
     @property
     def callback_name(self) -> str:
@@ -241,6 +241,14 @@ class CallbackCausedError(Error):
         :return: str
         """
         return self._callback_name
+
+    @property
+    def params(self) -> tuple[Any, ...]:
+        """
+        The parameters to the callback that caused the exception.
+        :return: tuple[Any]
+        """
+        return self._params
 
 
 class SignalAlreadyRunningError(Error):
@@ -253,4 +261,3 @@ class SignalAlreadyRunningError(Error):
         """
         message: str = "An instance of signal-cli is already running."
         super().__init__(message, None, *args)
-        return

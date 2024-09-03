@@ -3,14 +3,16 @@
 File: signal_contact.py
 Store and manage a single contact.
 """
+# pylint: disable=R0902, R0912, R0913, R0915, C0206
 import logging
 from datetime import timedelta
 from typing import TypeVar, Optional, Any
 import socket
 import json
 
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates, RecipientTypes
+from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
+                            __parse_signal_response__, __check_response_for_error__,
+                            UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates, RecipientTypes)
 from .signal_profile import SignalProfile
 from .signal_recipient import SignalRecipient
 from .signal_timestamp import SignalTimestamp
@@ -80,7 +82,8 @@ class SignalContact(SignalRecipient):
             __type_error__('from_dict', 'Optional[dict[str, Any]]', from_dict)
         if raw_contact is not None and not isinstance(raw_contact, dict):
             logger.critical("Raising TypeError:")
-            __type_error__('raw_contact', 'Optional[dict[str, Any]]', raw_contact)
+            __type_error__('raw_contact', 'Optional[dict[str, Any]]',
+                           raw_contact)
         if name is not None and not isinstance(name, str):
             logger.critical("Raising TypeError:")
             __type_error__('name', 'Optional[str]', name)
@@ -95,7 +98,8 @@ class SignalContact(SignalRecipient):
             __type_error__('is_blocked', 'bool', is_blocked)
         if expiration is not None and not isinstance(expiration, (int, timedelta)):
             logger.critical("Raising TypeError:")
-            __type_error__('expiration', 'Optional[int | timedelta]', expiration)
+            __type_error__('expiration', 'Optional[int | timedelta]',
+                           expiration)
         if color is not None and not isinstance(color, str):
             logger.critical("Raising TypeError:")
             __type_error__('color', 'Optional[str]', color)
@@ -160,7 +164,8 @@ class SignalContact(SignalRecipient):
         if self.name == UNKNOWN_CONTACT_NAME:
             if self.profile is not None:
                 self.set_name(self.profile.name)
-                self.name = self.profile.name  # Force the name for this session if setting it failed.
+                # Force the name for this session if setting it failed:
+                self.name = self.profile.name
 
         # If 'devices' isn't created yet, create empty devices:
         if self.devices is None:
@@ -169,7 +174,6 @@ class SignalContact(SignalRecipient):
         # Validate that this is a valid contact:
         if self.number is None and self.uuid is None:
             raise RuntimeError("Invalid contact created, has no number and no uuid.")
-        return
 
     ##################
     # Init:
@@ -200,8 +204,6 @@ class SignalContact(SignalRecipient):
             self.set_name(self.profile.name)
             self.name = self.profile.name
 
-        return
-
     ##########################
     # Overrides:
     ##########################
@@ -225,8 +227,7 @@ class SignalContact(SignalRecipient):
         String representation of this contact.
         :return: str
         """
-        return_val: str = "%s(%s)" % (self.name, self.get_id())
-        return return_val
+        return f"{self.name}({self.get_id()})"
 
     #########################
     # To / From Dict:
@@ -263,7 +264,7 @@ class SignalContact(SignalRecipient):
 
         # Add recipient data:
         recipient_dict = super().__to_dict__()
-        for key in recipient_dict.keys():
+        for key in recipient_dict:
             contact_dict[key] = recipient_dict[key]
 
         return contact_dict
@@ -290,13 +291,17 @@ class SignalContact(SignalRecipient):
         self.profile = None
         if from_dict['profile'] is not None:
             if self.number == self._account_id:
-                self.profile = SignalProfile(sync_socket=self._sync_socket, config_path=self._config_path,
+                self.profile = SignalProfile(sync_socket=self._sync_socket,
+                                             config_path=self._config_path,
                                              account_id=self._account_id,
-                                             contact_id=self.get_id(), from_dict=from_dict['profile'])
+                                             contact_id=self.get_id(),
+                                             from_dict=from_dict['profile'])
             else:
-                self.profile = SignalProfile(sync_socket=self._sync_socket, config_path=self._config_path,
+                self.profile = SignalProfile(sync_socket=self._sync_socket,
+                                             config_path=self._config_path,
                                              account_id=self._account_id,
-                                             contact_id=self.get_id(), from_dict=from_dict['profile'])
+                                             contact_id=self.get_id(),
+                                             from_dict=from_dict['profile'])
         # Load Devices:
         self.devices = None
         if from_dict['devices'] is not None:
@@ -312,7 +317,6 @@ class SignalContact(SignalRecipient):
         self.last_seen = None
         if from_dict['lastSeen'] is not None:
             self.last_seen = SignalTimestamp(from_dict=from_dict['lastSeen'])
-        return
 
     ########################
     # Getters:
@@ -329,17 +333,18 @@ class SignalContact(SignalRecipient):
     def get_display_name(self, proper_self: bool = True) -> str:
         """
         Get a display version of the contact name.
-        :param proper_self: bool: If this is the self contact, return the proper name, otherwise return 'note-to-self'.
+        :param proper_self: bool: If this is the self contact, return the proper name,
+            otherwise return 'note-to-self'.
         :returns: str: The display name.
         """
         if not proper_self and self.is_self:
             return SELF_CONTACT_NAME
-        elif self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME and \
+        if self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME and \
                 self.name != 'Note-To-Self':
             return self.name
-        elif self.profile is not None and self.profile.name != '':
+        if self.profile is not None and self.profile.name != '':
             return self.profile.name
-        elif self.number is not None:
+        if self.number is not None:
             return self.number
         return UNKNOWN_CONTACT_NAME
 
@@ -374,7 +379,7 @@ class SignalContact(SignalRecipient):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
-        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1])
+        error_occurred, error_code, _ = __check_response_for_error__(response_obj, [-1])
 
         if error_occurred:
             if error_code == -1:  # Can't update on linked accounts.
@@ -401,7 +406,6 @@ class SignalContact(SignalRecipient):
             self.profile.__update__(other.profile)
         elif self.profile is None and other.profile is not None:
             self.profile = other.profile
-        return
 
     def __parse_typing_message__(self, message) -> None:
         """
@@ -409,18 +413,19 @@ class SignalContact(SignalRecipient):
         :param message: SignalTypingMessage: The message to parse.
         :return: None
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_typing_message__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__parse_typing_message__.__name__)
         if message.action == TypingStates.STARTED:
             self.is_typing = True
         elif message.action == TypingStates.STOPPED:
             self.is_typing = False
         else:
-            error_message: str = "invalid SignalTypingMessage, can't parse typing action: %s" % str(message.action)
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            error_message: str = (f"invalid SignalTypingMessage, can't parse typing"
+                                  f"action: {str(message.action)}")
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
         self.last_typing_change = message.time_changed
         self.__seen__(message.time_changed)
-        return
 
     ############################
     # Methods:
@@ -440,4 +445,3 @@ class SignalContact(SignalRecipient):
                 self.last_seen = time_seen
         else:
             self.last_seen = time_seen
-        return

@@ -3,6 +3,7 @@
 File: signal_errors.py
 Store enums and other error stuff.
 """
+# pylint: disable=W0511
 from enum import Enum
 
 

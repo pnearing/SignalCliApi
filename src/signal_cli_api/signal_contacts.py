@@ -3,20 +3,22 @@
 File: signal_contacts.py
 Manage the signal contacts.
 """
-from typing import Optional, Iterator, TextIO, Any, Match
+# pylint: disable=R0902, R0912, R0913, R0914, R0915, W0511
+from typing import Optional, Iterator, Any, Match
 import os
 import json
 import socket
 import logging
 
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, PHONE_NUMBER_REGEX, UUID_REGEX, \
-    NUMBER_FORMAT_STR, UUID_FORMAT_STR, SELF_CONTACT_NAME, __parse_signal_response__, __check_response_for_error__, \
-    UNKNOWN_CONTACT_NAME, SyncTypes
+from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
+                            PHONE_NUMBER_REGEX, UUID_REGEX, NUMBER_FORMAT_STR, UUID_FORMAT_STR,
+                            SELF_CONTACT_NAME, __parse_signal_response__,
+                            __check_response_for_error__, UNKNOWN_CONTACT_NAME, SyncTypes)
 from .signal_contact import SignalContact
 from .signal_exceptions import ParameterError, InvalidDataFile
 
 
-class SignalContacts(object):
+class SignalContacts:
     """Object to contain a contact list."""
 
     def __init__(self,
@@ -38,9 +40,6 @@ class SignalContacts(object):
         :param do_load: bool: Load contacts from disk.
         :param do_sync: bool: Load contact from signal, and merge with existing contacts.
         """
-        # Super:
-        object.__init__(self)
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         logger.info("Initialize.")
@@ -71,12 +70,12 @@ class SignalContacts(object):
 
         # Value checks:
         if not os.path.exists(config_path):
-            error_message: str = "config_path: '%s', does not exist." % config_path
-            logger.critical("Raising ValueError(%s)." % error_message)
+            error_message: str = f"config_path: '{config_path}', does not exist."
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         if not os.path.exists(account_path):
-            error_message: str = "account_path: '%s', does not exist." % account_path
-            logger.critical("Raising ValueError(%s)." % error_message)
+            error_message: str = f"account_path: '{account_path}', does not exist."
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Set internal vars:
@@ -103,7 +102,8 @@ class SignalContacts(object):
                 logger.debug("Contacts JSON file exists, loading contacts from disk.")
                 self.__load__()
             else:
-                warning_message: str = "Creating empty contacts.json file for account: %s" % self._account_id
+                warning_message: str = (f"Creating empty contacts.json file for"
+                                        f"account: {self._account_id}")
                 logger.warning(warning_message)
                 self.__save__()
 
@@ -121,11 +121,10 @@ class SignalContacts(object):
             logger.debug("No self-contact found, adding...")
             self.add(SELF_CONTACT_NAME, self._account_id)
         else:
-            logger.debug("self-contact found, ensuring name is '%s'" % SELF_CONTACT_NAME)
+            logger.debug("self-contact found, ensuring name is '%s'", SELF_CONTACT_NAME)
             self_contact.set_name(SELF_CONTACT_NAME)
         self.__save__()
         logger.info("Initialization complete.")
-        return
 
     ##########################
     # Overrides:
@@ -156,30 +155,31 @@ class SignalContacts(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__getitem__.__name__)
         if isinstance(index, int):
             return self._contacts[index]  # Raises IndexError
-        elif isinstance(index, str):
+        if isinstance(index, str):
             number_match = PHONE_NUMBER_REGEX.match(index)
             uuid_match = UUID_REGEX.match(index)
             if number_match is not None:
                 contact = self.get_by_number(index)
                 if contact is not None:
                     return contact
-                error_message: str = "number '%s' not found" % index
-                logger.critical("Raising IndexError(%s)." % error_message)
+                error_message: str = f"number '{index}' not found"
+                logger.critical("Raising IndexError(%s).", error_message)
                 raise IndexError(error_message)
-            elif uuid_match is not None:
+            if uuid_match is not None:
                 contact = self.get_by_uuid(index)
                 if contact is not None:
                     return contact
-                error_message: str = "UUID '%s' not found." % index
-                logger.critical("Raising IndexError(%s)." % error_message)
+                error_message: str = f"UUID '{index}' not found."
+                logger.critical("Raising IndexError(%s).", error_message)
                 raise IndexError(error_message)
-            else:
-                error_message: str = "index must be of format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
-                logger.critical("Raising ValueError(%s)." % error_message)
-                raise ValueError(error_message)
-        else:
-            logger.critical("Raising TypeError:")
-            __type_error__(index, "int | str", index)
+
+            error_message: str = (f"index must be of format '{NUMBER_FORMAT_STR}' "
+                                  f"or '{UUID_FORMAT_STR}'")
+            logger.critical("Raising ValueError(%s).", error_message)
+            raise ValueError(error_message)
+
+        logger.critical("Raising TypeError:")
+        __type_error__(index, "int | str", index)
 
     ##########################
     # To / From Dict:
@@ -197,7 +197,7 @@ class SignalContacts(object):
         for contact in self._contacts:
             contacts_dict['contacts'].append(contact.__to_dict__())
             count += 1
-        logger.debug("Stored %i contacts in the dict." % count)
+        logger.debug("Stored %i contacts in the dict.", count)
         return contacts_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -210,13 +210,15 @@ class SignalContacts(object):
         self._contacts = []
         count: int = 0
         for contact_dict in from_dict['contacts']:
-            contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                                    config_path=self._config_path, account_id=self._account_id,
-                                    account_path=self._account_path, from_dict=contact_dict)
+            contact = SignalContact(command_socket=self._command_socket,
+                                    sync_socket=self._sync_socket,
+                                    config_path=self._config_path,
+                                    account_id=self._account_id,
+                                    account_path=self._account_path,
+                                    from_dict=contact_dict)
             self._contacts.append(contact)
             count += 1
-        logger.debug("Loaded %i contacts from the dict." % count)
-        return
+        logger.debug("Loaded %i contacts from the dict.", count)
 
     ##############################
     # Load / Save:
@@ -228,25 +230,23 @@ class SignalContacts(object):
         :raises RuntimeError: On an error while opening file.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__save__.__name__)
-        logger.info("Saving contacts to disk: '%s'." % self._json_file_path)
+        logger.info("Saving contacts to disk: '%s'.", self._json_file_path)
         # Create the 'contacts' object, and json string:
         contacts_obj: dict[str, Any] = self.__to_dict__()
         contacts_json: str = json.dumps(contacts_obj, indent=4)
         # Try to open the file and write the JSON:
         try:
             logger.debug("Opening file...")
-            file_handle: TextIO = open(self._json_file_path, 'w')
-            logger.debug("Writing JSON to file...")
-            file_handle.write(contacts_json)
-            file_handle.close()
+            with open(self._json_file_path, 'w', encoding='utf-8') as file_handle:
+                logger.debug("Writing JSON to file...")
+                file_handle.write(contacts_json)
             logger.debug("File closed.")
         except (OSError, PermissionError) as e:
-            error_message: str = "Couldn't open contacts file '%s' for writing: %s" \
-                                 % (self._json_file_path, str(e.args))
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
+            error_message: str = (f"Couldn't open contacts file '{self._json_file_path}' for "
+                                  f"writing: {str(e.args)}")
+            logger.critical("Raising RuntimeError(%s).", error_message)
+            raise RuntimeError(error_message) from e
         logger.info("Contacts successfully saved to disk.")
-        return
 
     def __load__(self) -> None:
         """
@@ -256,24 +256,23 @@ class SignalContacts(object):
         :raises InvalidDataFile: On failure to load JSON from the file.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__load__.__name__)
-        logger.info("Loading contacts from disk: '%s'" % self._json_file_path)
+        logger.info("Loading contacts from disk: '%s'", self._json_file_path)
         # Try and open the file for reading:
         try:
-            file_handle: TextIO = open(self._json_file_path, 'r')
-            contacts_dict: dict[str, Any] = json.loads(file_handle.read())
-            file_handle.close()
+            with open(self._json_file_path, 'r', encoding='utf-8') as file_handle:
+                contacts_dict: dict[str, Any] = json.loads(file_handle.read())
         except (FileNotFoundError, OSError, PermissionError) as e:
-            error_message: str = "Couldn't open '%s' for reading: %s" % (self._json_file_path, str(e.args))
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
+            error_message: str = (f"Couldn't open '{self._json_file_path}' for"
+                                  f"reading: {str(e.args)}")
+            logger.critical("Raising RuntimeError(%s).", error_message)
+            raise RuntimeError(error_message) from e
         except json.JSONDecodeError as e:
-            error_message = "Couldn't load json from file '%s': %s" % (self._json_file_path, e.msg)
-            logger.critical("Raising InvalidDataFile(%s)." % error_message)
-            raise InvalidDataFile(error_message, e, self._json_file_path)
+            error_message = f"Couldn't load json from file '{self._json_file_path}': {e.msg}"
+            logger.critical("Raising InvalidDataFile(%s).", error_message)
+            raise InvalidDataFile(error_message, e, self._json_file_path) from e
         # Load the 'contacts' object:
         self.__from_dict__(contacts_dict)
         logger.info("Contacts successfully loaded.")
-        return
 
     ######################
     # Sync with signal:
@@ -307,9 +306,12 @@ class SignalContacts(object):
         new_count: int = 0
         for raw_contact in response_obj['result']:
             # Create new contact:
-            new_contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                                        config_path=self._config_path, account_id=self._account_id,
-                                        account_path=self._account_path, raw_contact=raw_contact)
+            new_contact = SignalContact(command_socket=self._command_socket,
+                                        sync_socket=self._sync_socket,
+                                        config_path=self._config_path,
+                                        account_id=self._account_id,
+                                        account_path=self._account_path,
+                                        raw_contact=raw_contact)
             # Increment total count:
             total_count += 1
             # Check for existing contact:
@@ -323,7 +325,7 @@ class SignalContacts(object):
                 new_count += 1
                 self._contacts.append(new_contact)
                 new_contacts.append(new_contact)
-        logger.info("%i contact synced %i new contacts found." % (total_count, new_count))
+        logger.info("%i contact synced %i new contacts found.", total_count, new_count)
         return new_contacts
 
     ##################################
@@ -335,20 +337,22 @@ class SignalContacts(object):
         :param sync_message: SignalSyncMessage: The sync message object to check.
         :return: None
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__parse_sync_message__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__parse_sync_message__.__name__)
         if sync_message.sync_type == SyncTypes.BLOCKS:
             for contact_id in sync_message.blocked_contacts:
-                added, contact = self.__get_or_add__(contact_id=contact_id)
+                _, contact = self.__get_or_add__(contact_id=contact_id)
                 contact.is_blocked = True
             self.__save__()
         elif sync_message.sync_type == SyncTypes.CONTACTS:
-            new_contacts = self.__sync__()
+            # new_contacts = self.__sync__()
+            self.__sync__()
             self.__save__()
         else:
-            error_message: str = "SignalContacts can only parse messages of types: SyncTypes.BLOCKS or SyncTypes.CONTACTS."
-            logger.critical("Raising TypeError(%s)." % error_message)
+            error_message: str = ("SignalContacts can only parse messages of types:"
+                                  "SyncTypes.BLOCKS or SyncTypes.CONTACTS.")
+            logger.critical("Raising TypeError(%s).", error_message)
             raise TypeError(error_message)
-        return
 
     def __get_or_add__(self,
                        name: str = UNKNOWN_CONTACT_NAME,
@@ -362,8 +366,9 @@ class SignalContacts(object):
         :param number: Optional[str]: The known phone number of the contact.
         :param uuid: Optional[str]: The known uuid of the contact.
         :param contact_id: Optional[str] The contact ID, either uuid or number formats.
-        :return: tuple[bool, SignalContact]: The first element, the boolean, is if the contact was added to signal or not.
-            The second element is the SignalContact object for the given info.
+        :return: tuple[bool, SignalContact]: The first element, the boolean, is if the contact
+            was added to signal or not. The second element is the SignalContact object for the
+            given info.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__get_or_add__.__name__)
@@ -371,12 +376,12 @@ class SignalContacts(object):
         # Parameter checks:
         if number is None and uuid is None and contact_id is None:
             error_message: str = "Either number, uuid, or contact_id must be defined."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         if contact_id is not None and (number is not None or uuid is not None):
             error_message: str = "Cannot define contact_id and uuid / number at the same time."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Type checks:
@@ -397,14 +402,14 @@ class SignalContacts(object):
         if number is not None:
             number_match: Match = PHONE_NUMBER_REGEX.match(number)
             if number_match is None:
-                error_message: str = "'number' must be in format: '%s'" % NUMBER_FORMAT_STR
-                logger.critical("Raising ValueError(%s)." % error_message)
+                error_message: str = f"'number' must be in format: '{NUMBER_FORMAT_STR}'"
+                logger.critical("Raising ValueError(%s).", error_message)
                 raise ValueError(error_message)
         if uuid is not None:
             uuid_match: Match = UUID_REGEX.match(uuid)
             if uuid_match is None:
-                error_message: str = "'uuid' must be in format: '%s'" % UUID_FORMAT_STR
-                logger.critical("Raising ValueError(%s)." % error_message)
+                error_message: str = f"'uuid' must be in format: '{UUID_FORMAT_STR}'"
+                logger.critical("Raising ValueError(%s).", error_message)
                 raise ValueError(error_message)
 
         # Check the contact_id values, and set number / uuid accordingly:
@@ -416,8 +421,9 @@ class SignalContacts(object):
             elif uuid_match is not None:
                 uuid = contact_id
             else:
-                error_message = "contact_id must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
-                logger.critical("Raising ValueError(%s)." % error_message)
+                error_message = (f"contact_id must be in format '{NUMBER_FORMAT_STR}' "
+                                 f"or '{UUID_FORMAT_STR}'")
+                logger.critical("Raising ValueError(%s).", error_message)
                 raise ValueError(error_message)
 
         # Search for contact:
@@ -427,10 +433,11 @@ class SignalContacts(object):
             if number is not None and contact.number == number:
                 found_contact = contact
                 break
-            elif uuid is not None and contact.uuid == uuid:
+            if uuid is not None and contact.uuid == uuid:
                 found_contact = contact
                 break
-            elif number is not None and uuid is not None and (contact.number == number or contact.uuid == uuid):
+            if number is not None and uuid is not None and (contact.number == number or
+                                                              contact.uuid == uuid):
                 found_contact = contact
                 break
 
@@ -486,8 +493,8 @@ class SignalContacts(object):
         # Value check number:
         number_match = PHONE_NUMBER_REGEX.match(number)
         if number_match is None:
-            error_message = "number must be in format '%s'" % NUMBER_FORMAT_STR
-            logger.critical("Raising ValueError(%s)." % error_message)
+            error_message = f"number must be in format '{NUMBER_FORMAT_STR}'"
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         # Search for contact:
         for contact in self._contacts:
@@ -512,8 +519,8 @@ class SignalContacts(object):
         uuid_match = UUID_REGEX.match(uuid)
         # Value check uuid:
         if uuid_match is None:
-            error_message = "uuid must be in format: '%s'" % UUID_FORMAT_STR
-            logger.critical("Raising ValueError(%s)." % error_message)
+            error_message = f"uuid must be in format: '{UUID_FORMAT_STR}'"
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         # Search for contact:
         for contact in self._contacts:
@@ -540,13 +547,14 @@ class SignalContacts(object):
         uuid_match: Match = UUID_REGEX.match(contact_id)
         if number_match is not None:
             return self.get_by_number(contact_id)
-        elif uuid_match is not None:
+        if uuid_match is not None:
             return self.get_by_uuid(contact_id)
-        else:
-            # Value error:
-            errorMessage: str = "'contact_id' must be in format '%s' or '%s'" % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
-            logger.critical("Raising ValueError(%s)." % errorMessage)
-            raise ValueError(errorMessage)
+
+        # Value error:
+        error_message: str = (f"'contact_id' must be in format '{NUMBER_FORMAT_STR}' "
+                             f"or '{UUID_FORMAT_STR}'")
+        logger.critical("Raising ValueError(%s).", error_message)
+        raise ValueError(error_message)
 
     def get_self(self) -> Optional[SignalContact]:
         """
@@ -577,7 +585,7 @@ class SignalContacts(object):
         # Value Check:
         if name == '':
             error_message = 'name cannot be an empty string.'
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         # Search for contact:
         for contact in self._contacts:
@@ -588,17 +596,21 @@ class SignalContacts(object):
     #########################
     # Methods:
     #########################
-    def add(self, name: str, contact_id: str, expiration: Optional[int] = None) -> tuple[bool, SignalContact, Optional[str]]:
+    def add(self,
+            name: str,
+            contact_id: str,
+            expiration: Optional[int] = None
+            ) -> tuple[bool, SignalContact, Optional[str]]:
         """
         Add a contact.
         :param name: str: The name to assign to the contact.
         :param contact_id: str: The id of the contact, either a phone number or an uuid.
         :param expiration: Optional[int]: The message expiration time in seconds.
-        :returns: tuple(bool, SignalContact, Optional[str]): The first element, the bool indicates if the contact was
-            successfully added to signal.
-            The second element is the new SignalContact object, or existing SignalContact object if the contact already exists.
-            The third element, the Optional string, will be None if the first element is True, otherwise it will be a
-            reason the contact wasn't added to signal.
+        :returns: tuple(bool, SignalContact, Optional[str]): The first element, the bool indicates
+            if the contact was successfully added to signal. The second element is the new
+            SignalContact object, or existing SignalContact object if the contact already exists.
+            The third element, the Optional string, will be None if the first element is True,
+            otherwise it will be a reason the contact wasn't added to signal.
         :raises: TypeError: If a parameter is of an invalid type.
         :raises: ValueError: If the contact id not in phone number or uuid formats.
         """
@@ -620,9 +632,10 @@ class SignalContacts(object):
         phone_number_match = PHONE_NUMBER_REGEX.match(contact_id)
         uuid_match = UUID_REGEX.match(contact_id)
         if phone_number_match is None and uuid_match is None:
-            error_message = "'contact_id' must be in format '%s' or '%s'." % (NUMBER_FORMAT_STR, UUID_FORMAT_STR)
-            logger.critical("Raising ValueError(%s)." % error_message)
-            ValueError(error_message)
+            error_message = (f"'contact_id' must be in format '{NUMBER_FORMAT_STR}' "
+                             f"or '{UUID_FORMAT_STR}'.")
+            logger.critical("Raising ValueError(%s).", error_message)
+            raise ValueError(error_message)
 
         # Check if contact already exists:
         old_contact = self.get_by_id(contact_id)
@@ -648,27 +661,35 @@ class SignalContacts(object):
         __socket_send__(self._sync_socket, json_command_str)
         response_str = __socket_receive_blocking__(self._sync_socket)
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
-        error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [-1, ])
+        error_occurred, error_code, error_message = __check_response_for_error__(response_obj,
+                                                                                 [-1, ])
 
         # Parse Error:
         exit_message: Optional[str] = None
         if error_occurred:
-            logger.debug("Non-fatal error occurred: Code: %i, Message: %s" % (error_code, error_message))
+            logger.debug("Non-fatal error occurred: Code: %i, Message: %s", error_code,
+                         error_message)
             if error_code == -1:  # TODO: Check error. Might be linked account error.
                 exit_message = error_message
 
         # Create a new contact object:
         new_contact: SignalContact
         if phone_number_match is not None:  # Reuse phone number match from value check.
-            new_contact = SignalContact(command_socket=self._command_socket, sync_socket=self._sync_socket,
-                                        config_path=self._config_path, account_id=self._account_id,
-                                        account_path=self._account_path, name=name, number=contact_id
-                                        )
+            new_contact = SignalContact(command_socket=self._command_socket,
+                                        sync_socket=self._sync_socket,
+                                        config_path=self._config_path,
+                                        account_id=self._account_id,
+                                        account_path=self._account_path,
+                                        name=name,
+                                        number=contact_id )
         else:
-            new_contact = SignalContact(command_socket=self._sync_socket, sync_socket=self._sync_socket,
-                                        config_path=self._config_path, account_id=self._account_id,
-                                        account_path=self._account_path, name=name, uuid=contact_id
-                                        )
+            new_contact = SignalContact(command_socket=self._sync_socket,
+                                        sync_socket=self._sync_socket,
+                                        config_path=self._config_path,
+                                        account_id=self._account_id,
+                                        account_path=self._account_path,
+                                        name=name,
+                                        uuid=contact_id )
 
         # Store the contact:
         self._contacts.append(new_contact)
@@ -685,7 +706,8 @@ class SignalContacts(object):
         :param include_self: bool: Should we include the self-contact?
         :return: list[SignalContact]: The blocked contacts, or an empty list if none found.
         """
-        contact_list: list[SignalContact] = [contact for contact in self._contacts if contact.is_blocked is True]
+        contact_list: list[SignalContact] = [contact for contact in self._contacts
+                                             if contact.is_blocked is True]
         if include_self:
             return contact_list
         try:
@@ -700,7 +722,8 @@ class SignalContacts(object):
         :param include_self: bool: Should we include the self-contact?
         :return: list[SignalContact]: The unblocked contacts, or an empty list if none found.
         """
-        contact_list: list[SignalContact] = [contact for contact in self._contacts if contact.is_blocked is False]
+        contact_list: list[SignalContact] = [contact for contact in self._contacts
+                                             if contact.is_blocked is False]
         if include_self:
             return contact_list
         contact_list.remove(self.get_self())

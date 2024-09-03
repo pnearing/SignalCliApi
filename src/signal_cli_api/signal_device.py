@@ -3,6 +3,7 @@
 File: signal_device.py
 Store and handle a single device.
 """
+# pylint: disable=R0902, R0912, R0913, R0915
 import logging
 from typing import TypeVar, Optional, Any
 import socket
@@ -12,7 +13,7 @@ from .signal_common import __type_error__, PRIMARY_DEVICE_ID
 Self = TypeVar("Self", bound="SignalDevice")
 
 
-class SignalDevice(object):
+class SignalDevice:
     """
     Class to store a device.
     """
@@ -32,16 +33,16 @@ class SignalDevice(object):
         :param sync_socket: socket.socket: The socket to use for sync operations.
         :param account_id: str: This account ID.
         :param this_device: Optional[int]: The device ID of the device we're on.
-        :param raw_device: Optional[dict[str, Any]]: Load this device from a raw device dict from signal.
-        :param from_dict: Optional[dict[str, Any]]: Load this device from a dict created by __to_dict__().
+        :param raw_device: Optional[dict[str, Any]]: Load this device from a raw device dict
+            from signal.
+        :param from_dict: Optional[dict[str, Any]]: Load this device from a dict created
+            by __to_dict__().
         :param device_id: Optional[int]: The device ID of this device.
         :param name: Optional[str]: The name of this device.
         :param created: Optional[SignalTimestamp]: When this device was created.
         :param last_seen: Optional[SignalTimestamp]: When this device was last seen.
         :raises RuntimeError: On invalid final device configuration.
         """
-        # Super:
-        object.__init__(self)
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Argument checks
@@ -104,18 +105,18 @@ class SignalDevice(object):
         elif from_dict is not None:
             logger.debug("Loading from dict.")
             self.__from_dict__(from_dict)
-        # Otherwise, assume all values have been specified, and check that the ID at least is defined:
+        # Otherwise, assume all values have been specified, and check that the ID at
+        # least is defined:
         else:
             if self.id is None:
                 error_message: str = "Invalid device configuration, no device ID."
-                logger.critical("Raising RuntimeError(%s)." % error_message)
+                logger.critical("Raising RuntimeError(%s).", error_message)
                 raise RuntimeError(error_message)
             # Set properties:
             if this_device is not None and self.id == this_device:
                 self.is_this_device = True
             if self.id == PRIMARY_DEVICE_ID:
                 self.is_primary_device = True
-        return
 
     def __from_raw_device__(self, raw_device: dict[str, Any]) -> None:
         """
@@ -133,7 +134,6 @@ class SignalDevice(object):
             self.last_seen = SignalTimestamp(timestamp=raw_device['lastSeenTimestamp'])
         else:
             self.last_seen = None
-        return
 
     def __merge__(self, other: Self) -> None:
         """
@@ -150,7 +150,6 @@ class SignalDevice(object):
                 self.last_seen = other.last_seen
             elif self.last_seen is None and other.last_seen is not None:
                 self.last_seen = other.last_seen
-        return
 
     ##########################
     # To / From dict:
@@ -192,7 +191,6 @@ class SignalDevice(object):
             self.last_seen = None
         self.is_this_device = from_dict['isAccountDevice']
         self.is_primary_device = from_dict['isPrimaryDevice']
-        return
 
     #########################
     # Overrides:
@@ -228,14 +226,12 @@ class SignalDevice(object):
             logger.critical("Raising TypeError:")
             __type_error__("time_seen", "SignalTimestamp", time_seen)
         if self.last_seen is not None:
-            if self.last_seen < time_seen:
-                self.last_seen = time_seen
+            self.last_seen = max(self.last_seen, time_seen)
         else:
             self.last_seen = time_seen
-        return
 
     def get_display_name(self) -> str:
         """
         Return a pretty name to display.
         """
-        return "%s<%i>" % (self.name, self.id)
+        return f"{self.name}<{self.id}>"

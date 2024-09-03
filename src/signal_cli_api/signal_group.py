@@ -3,6 +3,7 @@
 File: signal_group.py
 Manage and maintain a single group.
 """
+# pylint: disable=R0902, R0912, R0913, R0914, R0915, C0206
 import logging
 from datetime import timedelta
 from typing import TypeVar, Optional, Any
@@ -10,8 +11,9 @@ import socket
 import json
 
 # from . import SignalTypingMessage
-from .signal_common import __socket_receive_blocking__, __socket_send__, __type_error__, __parse_signal_response__, \
-    __check_response_for_error__, UNKNOWN_GROUP_NAME, RecipientTypes, TypingStates
+from .signal_common import (__socket_receive_blocking__, __socket_send__, __type_error__,
+                            __parse_signal_response__, __check_response_for_error__,
+                            UNKNOWN_GROUP_NAME, RecipientTypes, TypingStates)
 from .signal_contacts import SignalContacts
 from .signal_contact import SignalContact
 from .signal_recipient import SignalRecipient
@@ -37,11 +39,11 @@ class SignalGroup(SignalRecipient):
                  is_member: bool = False,
                  expiration: Optional[int | timedelta] = None,
                  link: Optional[str] = None,
-                 members: list[SignalContact] = [],
-                 pending_members: list[SignalContact] = [],
-                 requesting_members: list[SignalContact] = [],
-                 admins: list[SignalContact] = [],
-                 banned: list[SignalContact] = [],
+                 members: list[SignalContact] = None,
+                 pending_members: list[SignalContact] = None,
+                 requesting_members: list[SignalContact] = None,
+                 admins: list[SignalContact] = None,
+                 banned: list[SignalContact] = None,
                  permission_add_member: Optional[str] = None,
                  permission_edit_details: Optional[str] = None,
                  permission_send_message: Optional[str] = None,
@@ -128,7 +130,7 @@ class SignalGroup(SignalRecipient):
             for i, member in enumerate(members):
                 if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("members[%i]" % i, "SignalContact", member)
+                    __type_error__(f"members[{i}]", "SignalContact", member)
         if pending_members is not None and not isinstance(pending_members, list):
             logger.critical("Raising TypeError:")
             __type_error__("pending_members", "Optional[list[SignalContact]]", pending_members)
@@ -136,15 +138,16 @@ class SignalGroup(SignalRecipient):
             for i, member in enumerate(pending_members):
                 if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("pending_members[%i]" % i, "SignalContact", member)
+                    __type_error__(f"pending_members[{i}]", "SignalContact", member)
         if requesting_members is not None and not isinstance(requesting_members, list):
             logger.critical("Raising TypeError:")
-            __type_error__("requesting_members", "Optional[list[SignalContact]]", requesting_members)
+            __type_error__("requesting_members", "Optional[list[SignalContact]]",
+                           requesting_members)
         elif requesting_members is not None:
             for i, member in enumerate(requesting_members):
                 if not isinstance(member, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("requesting_members[%i]" % i, "SignalContact", member)
+                    __type_error__(f"requesting_members[{i}]", "SignalContact", member)
         if admins is not None and not isinstance(admins, list):
             logger.critical("Raising TypeError:")
             __type_error__("admins", "Optional[list[str]]", admins)
@@ -152,7 +155,7 @@ class SignalGroup(SignalRecipient):
             for i, admin in enumerate(admins):
                 if not isinstance(admin, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("admins[%i]" % i, "SignalContact", admin)
+                    __type_error__(f"admins[{i}]", "SignalContact", admin)
         if banned is not None and not isinstance(banned, list):
             logger.critical("Raising TypeError:")
             __type_error__("banned", "Optional[list[SignalContact]]", banned)
@@ -160,7 +163,7 @@ class SignalGroup(SignalRecipient):
             for i, contact in enumerate(banned):
                 if not isinstance(contact, SignalContact):
                     logger.critical("Raising TypeError:")
-                    __type_error__("banned[%i]", "SignalContact", contact)
+                    __type_error__(f"banned[{i}]", "SignalContact", contact)
         if permission_add_member is not None and not isinstance(permission_add_member, str):
             logger.critical("Raising TypeError:")
             __type_error__("permission_add_member", "Optional[str]", permission_add_member)
@@ -208,16 +211,26 @@ class SignalGroup(SignalRecipient):
                 self.expiration = expiration
         self.link: Optional[str] = link
         """The join link of this group."""
-        self.members: list[SignalContact] = members
+        self.members: list[SignalContact] = []
         """The current members of this group."""
-        self.pending: list[SignalContact] = pending_members
+        if members is not None:
+            self.members = members
+        self.pending: list[SignalContact] = []
         """The pending members of this group."""
-        self.requesting: list[SignalContact] = requesting_members
+        if pending_members is not None:
+            self.pending = pending_members
+        self.requesting: list[SignalContact] = []
         """The requesting members of the group."""
-        self.admins: list[SignalContact] = admins
+        if requesting_members is not None:
+            self.requesting = requesting_members
+        self.admins: list[SignalContact] = []
         """The admins of the group."""
-        self.banned: list[SignalContact] = banned
+        if admins is not None:
+            self.admins = admins
+        self.banned: list[SignalContact] = []
         """The banned members of the group."""
+        if banned is not None:
+            self.banned = banned
         self.permission_add_member: str = permission_add_member
         """The permissions to add a member."""
         self.permission_edit_details: str = permission_edit_details
@@ -237,14 +250,14 @@ class SignalGroup(SignalRecipient):
         elif raw_group is not None:
             logger.debug("Loading from raw group.")
             self.__from_raw_group__(raw_group)
-        # SignalGroup object was created without raw_group or from_dict, see if we can get details from signal:
+        # SignalGroup object was created without raw_group or from_dict, see if we can get
+        # details from signal:
         else:
             if self.id is not None:
                 self.__sync__()
                 self._is_valid = True
             else:
                 self._is_valid = False
-        return
 
     #################
     # Init:
@@ -279,29 +292,33 @@ class SignalGroup(SignalRecipient):
         # Parse members:
         self.members = []
         for contact_dict in raw_group['members']:
-            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'], uuid=contact_dict['uuid'])
+            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'],
+                                                       uuid=contact_dict['uuid'])
             self.members.append(contact)
         # Parse pending:
         self.pending = []
         for contact_dict in raw_group['pendingMembers']:
-            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'], uuid=contact_dict['uuid'])
+            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'],
+                                                       uuid=contact_dict['uuid'])
             self.pending.append(contact)
         # Parse requesting:
         self.requesting = []
         for contact_dict in raw_group['requestingMembers']:
-            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'], uuid=contact_dict['uuid'])
+            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'],
+                                                       uuid=contact_dict['uuid'])
             self.requesting.append(contact)
         # Parse admins:
         self.admins = []
         for contact_dict in raw_group['admins']:
-            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'], uuid=contact_dict['uuid'])
+            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'],
+                                                       uuid=contact_dict['uuid'])
             self.admins.append(contact)
         # Parse banned:
         self.banned = []
         for contact_dict in raw_group['banned']:
-            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'], uuid=contact_dict['uuid'])
+            _, contact = self._contacts.__get_or_add__(number=contact_dict['number'],
+                                                       uuid=contact_dict['uuid'])
             self.banned.append(contact)
-        return
 
     ######################
     # Overrides:
@@ -416,7 +433,6 @@ class SignalGroup(SignalRecipient):
         self.last_seen = None
         if from_dict['lastSeen'] is not None:
             self.last_seen = SignalTimestamp(from_dict=from_dict['lastSeen'])
-        return
 
     #################
     # Helpers:
@@ -447,7 +463,6 @@ class SignalGroup(SignalRecipient):
                 self.last_seen = other.last_seen
         elif self.last_seen is None and other.last_seen is not None:
             self.last_seen = other.last_seen
-        return
 
     def __parse_typing_message__(self, message) -> None:  # Message type: SignalTypingMessage
         """
@@ -461,7 +476,6 @@ class SignalGroup(SignalRecipient):
         elif message.action == TypingStates.STOPPED:
             if message.sender in self.typing_members:
                 self.typing_members.remove(message.sender)
-        return
 
     ########################
     # Sync:
@@ -485,13 +499,13 @@ class SignalGroup(SignalRecipient):
         # Communicate with signal:
         __socket_send__(self._sync_socket, json_command_str)  # Raises CommunicationError.
         response_str = __socket_receive_blocking__(self._sync_socket)  # Raises CommunicationsError.
-        response_obj: dict[str, Any] = __parse_signal_response__(response_str)  # Raises InvalidServerResponse.
+        # Raises InvalidServerResponse:
+        response_obj: dict[str, Any] = __parse_signal_response__(response_str)
         __check_response_for_error__(response_obj)  # Raises SignalError on all signal errors.
 
         # Get the result and update:
         raw_group: dict[str, Any] = response_obj['result'][0]
         self.__from_raw_group__(raw_group)
-        return
 
     ########################################
     # Getters:
@@ -520,7 +534,7 @@ class SignalGroup(SignalRecipient):
             __type_error__("max_len", "Optional[int]", max_len)
         elif max_len is not None and max_len <= 0:
             error_message: str = "'max_len' must be greater than zero"
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         display_name = ''
         if self.name is not None and self.name != '' and self.name != UNKNOWN_GROUP_NAME:
@@ -551,11 +565,14 @@ class SignalGroup(SignalRecipient):
                 self.last_seen = time_seen
         else:
             self.last_seen = time_seen
-        return
 
 ####################################################
 # Properties:
 ####################################################
     @property
     def is_typing(self) -> bool:
+        """
+        Is anybody typing in the group?
+        :return: bool
+        """
         return len(self.typing_members) > 0

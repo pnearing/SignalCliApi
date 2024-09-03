@@ -3,6 +3,7 @@
 File: signal_group_update.py
 Store and handle a group update message.
 """
+# pylint: disable=R0913
 from typing import Optional
 import socket
 
@@ -33,22 +34,20 @@ class SignalGroupUpdate(SignalMessage):
         # Set external properties:
         self.body: str = ''
         # Run super init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, None, None, None, None, MessageTypes.GROUP_UPDATE)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, None, None, None,
+                         None, MessageTypes.GROUP_UPDATE)
         # Generate the body.
-        self.__updateBody__()
-        return
+        self.__update_body__()
 
-    def __updateBody__(self) -> None:
+    def __update_body__(self) -> None:
         """
         Update the body of the message to reflect the change that was made.
         :return: None
         """
         if self.sender is not None and self.recipient is not None:
-            self.body = "At %s, %s updated the group %s." % (self.timestamp.get_display_time(),
-                                                             self.sender.get_display_name(),
-                                                             self.recipient.get_display_name()
-                                                             )
+            self.body = (f"At {self.timestamp.get_display_time()}, "
+                         f"{self.sender.get_display_name()} "
+                         f"updated the group {self.recipient.get_display_name()}.")
         else:
             self.body = "Invalid group update."
-        return
