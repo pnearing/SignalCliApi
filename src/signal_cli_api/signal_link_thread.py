@@ -3,7 +3,7 @@
 File: signal_link_thread.py
     Run the link process in a separate Thread.
 """
-import curses
+# pylint: disable=R0902, R0911, R0912, R0913, R0914, R0915
 import json
 import logging
 import subprocess
@@ -13,9 +13,11 @@ from typing import Callable, Optional, Any
 
 from .signal_account import SignalAccount
 from .signal_accounts import SignalAccounts
-from .signal_common import (__socket_create__, __socket_connect__, __socket_close__, __socket_send__,
-                            __parse_signal_response__, __check_response_for_error__, __type_error__, __find_qrencode__,
-                            LinkAccountCallbackStates, __socket_receive_non_blocking__)
+from .signal_common import (__socket_create__, __socket_connect__, __socket_close__,
+                            __socket_send__, __parse_signal_response__,
+                            __check_response_for_error__, __type_error__,
+                            __find_qrencode__, LinkAccountCallbackStates,
+                            __socket_receive_non_blocking__)
 
 from .run_callback import __run_callback__, __type_check_callback__
 from .signal_exceptions import CommunicationsError
@@ -39,11 +41,13 @@ class SignalLinkThread(threading.Thread):
         Initialize the SignalLinkThread.
         :param server_address: tuple[str, int] | str: The server address to connect to.
         :param accounts: SignalAccounts: The loaded signal accounts.\\ll
-        :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The call back to call for status
-            updates.
+        :param callback: tuple[Callable, Optional[list[Any] | tuple[Any, ...]]]: The call back to
+            call for status updates.
         :param gen_text_qr: bool: Should we generate a text qr-code?
-        :param png_qr_file_path: Optional[str]: Path to the png qr-code file. If None, the qr-code is not generated.
-        :param device_name: Optional[str]: The device name. If None, the default set by signal-cli is used.
+        :param png_qr_file_path: Optional[str]: Path to the png qr-code file. If None, the qr-code
+            is not generated.
+        :param device_name: Optional[str]: The device name. If None, the default set by signal-cli
+            is used.
         :param wait_time: float: The amount of time to give the socket to respond.
         """
         # Super the thread.
@@ -107,7 +111,6 @@ class SignalLinkThread(threading.Thread):
         self._link_socket: socket.socket = __socket_create__(server_address)
         """The socket to run the link process on."""
         __socket_connect__(self._link_socket, server_address)
-        return
 
     def __call_callback__(self,
                           status: LinkAccountCallbackStates,
@@ -132,12 +135,13 @@ class SignalLinkThread(threading.Thread):
         # Check if the socket has been used up:
         if self._is_cancelled or self._complete:
             error_message: str = "Socket has been closed."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
 
         # Start by calling the callback to state we're generating the link:
         logger.debug("Calling generate URI start callback.")
-        return_value: Optional[bool] = self.__call_callback__(LinkAccountCallbackStates.GENERATE_URI_START, None)
+        return_value: Optional[bool] = self.__call_callback__(
+            LinkAccountCallbackStates.GENERATE_URI_START, None)
         if return_value is True:
             self.cancel()
             return
@@ -161,7 +165,8 @@ class SignalLinkThread(threading.Thread):
             while response_str is None:
                 if not first_loop:
                     logger.debug("Calling waiting callback.")
-                    return_value = self.__call_callback__(LinkAccountCallbackStates.LINK_WAITING, None)
+                    return_value = self.__call_callback__(
+                        LinkAccountCallbackStates.LINK_WAITING, None)
                     if return_value is True:
                         self.cancel()
                         return
@@ -180,13 +185,15 @@ class SignalLinkThread(threading.Thread):
 
         # Call the link generation complete:
         logger.debug("Calling generate URI stop callback.")
-        return_value = self.__call_callback__(LinkAccountCallbackStates.GENERATE_URI_STOP, self._link_uri)
+        return_value = self.__call_callback__(LinkAccountCallbackStates.GENERATE_URI_STOP,
+                                              self._link_uri)
         if return_value is True:
             self.cancel()
             return
 
         # Call the qr-code generate start callback:
-        if self._qrencode_exec_path is not None and (self._gen_text_qr or self._png_qr_file_path is not None):
+        if self._qrencode_exec_path is not None and (self._gen_text_qr or
+                                                     self._png_qr_file_path is not None):
             return_value = self.__call_callback__(LinkAccountCallbackStates.GENERATE_QR_START, None)
             if return_value is True:
                 self.cancel()
@@ -194,7 +201,8 @@ class SignalLinkThread(threading.Thread):
 
         # Generate the text qr-code:
         if self._qrencode_exec_path is not None and self._gen_text_qr:
-            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8', '-m', '1', self._link_uri]
+            command_line: list[str] = [self._qrencode_exec_path, '-o', '-', '--type=UTF8',
+                                       '-m', '1', self._link_uri]
             logger.debug("Attempting to generate qr-code...")
             try:
                 bytes_qr_code: bytes = subprocess.check_output(command_line)
@@ -203,26 +211,27 @@ class SignalLinkThread(threading.Thread):
                 border_string: str = '\u2584' * len(text_qr_code.splitlines(keepends=False)[0])
                 self._text_qr = border_string + '\n' + text_qr_code
                 logger.debug("text qr-code successfully generated.")
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as e:
                 error_message: str = "Failed to generate UTF8 qr-code."
-                logger.critical("Raising RuntimeError(%s)." % error_message)
-                raise RuntimeError(error_message)
+                logger.critical("Raising RuntimeError(%s).", error_message)
+                raise RuntimeError(error_message) from e
 
         # Generate the png qr-code:
         if self._qrencode_exec_path is not None and self._png_qr_file_path is not None:
             logger.debug("Attempting to generate png qr-code.")
             try:
-                subprocess.check_call([self._qrencode_exec_path, '-o', self._png_qr_file_path, self._link_uri])
+                subprocess.check_call([self._qrencode_exec_path, '-o', self._png_qr_file_path,
+                                       self._link_uri])
                 logger.debug("Successfully generated png qr-code.")
-            except subprocess.CalledProcessError:
+            except subprocess.CalledProcessError as e:
                 error_message: str = "Failed to generate png qr-code."
-                logger.warning("Raising RuntimeError(%s)." % error_message)
-                raise RuntimeError(error_message)
+                logger.warning("Raising RuntimeError(%s).", error_message)
+                raise RuntimeError(error_message) from e
 
         # Call the qr-code generate finished callback:
         if self._qrencode_exec_path and (self._gen_text_qr or self._png_qr_file_path is not None):
-            return_value = self.__call_callback__(LinkAccountCallbackStates.GENERATE_QR_STOP, (self._text_qr,
-                                                                                               self._png_qr_file_path))
+            return_value = self.__call_callback__(LinkAccountCallbackStates.GENERATE_QR_STOP,
+                                                  (self._text_qr, self._png_qr_file_path))
             if return_value is True:
                 self.cancel()
                 return
@@ -258,7 +267,8 @@ class SignalLinkThread(threading.Thread):
             while response_str is None:
                 if not first_loop:
                     logger.debug("Waiting for signal.")
-                    return_value = self.__call_callback__(LinkAccountCallbackStates.LINK_WAITING, None)
+                    return_value = self.__call_callback__(
+                        LinkAccountCallbackStates.LINK_WAITING, None)
                     if return_value is True:
                         self.cancel()
                         return
@@ -271,7 +281,8 @@ class SignalLinkThread(threading.Thread):
         response_obj = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [-1, -2, -3])
+        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj,
+                                                                                   [-1, -2, -3])
         if error_occurred:
             if signal_code == -1:
                 logger.debug("Calling exists error callback.")
@@ -287,19 +298,18 @@ class SignalLinkThread(threading.Thread):
 
         # Link successful:
         linked_number: str = response_obj['result']['number']
-        logger.debug("Link successful for account: %s" % linked_number)
+        logger.debug("Link successful for account: %s", linked_number)
 
         new_accounts = self._accounts.__sync__()
         if len(new_accounts) == 0:
             error_message: str = "Unable to find new account."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
 
         # Call callback with success, and account.
         self.__call_callback__(LinkAccountCallbackStates.LINK_SUCCESS, new_accounts[0])
         __socket_close__(self._link_socket)
         self._complete = True
-        return
 
     def cancel(self) -> None:
         """
@@ -309,7 +319,6 @@ class SignalLinkThread(threading.Thread):
         self._is_cancelled = True
         __socket_close__(self._link_socket)
         self.__call_callback__(LinkAccountCallbackStates.LINK_CANCELED, None)
-        return
 
 #####################################
 # Properties:

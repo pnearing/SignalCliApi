@@ -3,18 +3,21 @@
 File: signal_mention.py
 Class to store and handle a mention.
 """
+# pylint: disable=R0913
 import logging
 from typing import TypeVar, Optional, Any
 from .signal_contacts import SignalContacts
 from .signal_contact import SignalContact
 from .signal_common import __type_error__
+
 Self = TypeVar("Self", bound="SignalMention")
 
 
-class SignalMention(object):
+class SignalMention:
     """
     Object for a mention.
     """
+
     def __init__(self,
                  contacts: SignalContacts,
                  from_dict: Optional[dict[str, Any]] = None,
@@ -32,9 +35,6 @@ class SignalMention(object):
         :param start: Optional[int]: Where in the body the mention starts.
         :param length: Optional[int]: How long the mention is.
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -76,7 +76,6 @@ class SignalMention(object):
         # Parse from raw Mention:
         elif raw_mention is not None:
             self.__from_raw_mention__(raw_mention)
-        return
 
     ########################
     # Init:
@@ -87,12 +86,12 @@ class SignalMention(object):
         :param raw_mention: dict[str, Any]: The dict to load from.
         :return: None
         """
-        added, self.contact = self._contacts.__get_or_add__(name=raw_mention['name'], number=raw_mention['number'],
-                                                            uuid=raw_mention['uuid'])
+        _, self.contact = self._contacts.__get_or_add__(name=raw_mention['name'],
+                                                        number=raw_mention['number'],
+                                                        uuid=raw_mention['uuid'])
         self._contacts.__save__()
         self.start = raw_mention['start']
         self.length = raw_mention['length']
-        return
 
     ######################
     # Overrides:
@@ -102,7 +101,7 @@ class SignalMention(object):
         String representation of the mention.
         :return:
         """
-        return "%i:%i:%s" % (self.start, self.length, self.contact.get_id())
+        return f"{self.start}:{self.length}:{self.contact.get_id()}"
 
     def __eq__(self, other: Self) -> bool:
         """
@@ -110,16 +109,15 @@ class SignalMention(object):
         :param other: SignalMention: The mention to compare with.
         :return: bool
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
         if isinstance(other, SignalMention):
             if self.start != other.start:
                 return False
-            elif self.length != other.length:
+            if self.length != other.length:
                 return False
-            elif self.contact != other.contact:
+            if self.contact != other.contact:
                 return False
-            else:
-                return True
+            return True
         return False
 
     ######################
@@ -143,8 +141,7 @@ class SignalMention(object):
         :param from_dict: dict[str, Any]: The dict created by __to_dict__().
         :return: None
         """
-        added, self.contact = self._contacts.__get_or_add__(contact_id=from_dict['contactId'])
+        _, self.contact = self._contacts.__get_or_add__(contact_id=from_dict['contactId'])
         self._contacts.__save__()
         self.start = from_dict['start']
         self.length = from_dict['length']
-        return

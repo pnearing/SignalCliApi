@@ -3,18 +3,17 @@
 File: signal_messages.py
 Store and handle message lists.
 """
+# pylint: disable=R0902, R0912, R0913, R0914, R0915, W0511, W1116, C0302
 import logging
-from typing import Optional, Iterable, Any, TextIO
+from typing import Optional, Iterable, Any
 import os
 import socket
 import json
-from syslog import syslog, LOG_INFO
 from .signal_attachment import SignalAttachment
 from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, \
     MessageTypes, \
     __parse_signal_response__, \
     __check_response_for_error__, RecipientTypes, SyncTypes, MessageFilter, __socket_create__, \
-    SERVER_ADDRESS, \
     __socket_connect__, __socket_close__, HONOUR_VIEW_ONCE, HONOUR_EXPIRY
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
@@ -40,7 +39,7 @@ from .signal_typing_message import SignalTypingMessage
 from .signal_exceptions import InvalidDataFile, ParameterError
 
 
-class SignalMessages(object):
+class SignalMessages:
     """Class to hold all messages, and act like a list."""
 
     def __init__(self,
@@ -68,9 +67,6 @@ class SignalMessages(object):
         :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
         :param do_load: bool: True, load from disk, False, do not.
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -142,7 +138,6 @@ class SignalMessages(object):
             else:
                 logger.debug("Creating empty messages.json")
                 self.__save__()
-        return
 
     ################################
     # To / From Dict:
@@ -212,8 +207,8 @@ class SignalMessages(object):
                                                 sticker_packs=self._sticker_packs,
                                                 from_dict=message_dict)
             else:
-                warning_message: str = ("Invalid message type in messages from_dict: %s"
-                                        % from_dict['message_type'])
+                warning_message: str = (f"Invalid message type in messages "
+                                        f"from_dict: {from_dict['message_type']}")
                 logger.warning(warning_message)
                 continue
             self.messages.append(message)
@@ -236,7 +231,7 @@ class SignalMessages(object):
                                             from_dict=message_dict)
             else:
                 warning_message: str = ("Invalid message type in for sync messages:"
-                                        "message type: %i" % message_dict['messageType'])
+                                        f"message type: {message_dict['messageType']}")
                 logger.warning(warning_message)
                 continue
             self.sync.append(message)
@@ -252,8 +247,8 @@ class SignalMessages(object):
                                               this_device=self._this_device, from_dict=message_dict)
                 self.typing.append(message)
             else:
-                warning_message: str = "Invalid message type in typing messages: MessageType: %i" \
-                                       % message_dict['messageType']
+                warning_message: str = (f"Invalid message type in typing messages: "
+                                        f"MessageType: {message_dict['messageType']}")
                 logger.warning(warning_message)
         # Load Story Messages:
         self.story = []
@@ -266,8 +261,8 @@ class SignalMessages(object):
                                              this_device=self._this_device, from_dict=message_dict)
                 self.story.append(message)
             else:
-                warning_message: str = "Invalid message type in story messages: MessageType: %i" \
-                                       % message_dict['messageType']
+                warning_message: str = ("Invalid message type in story messages: "
+                                        f"MessageType: {message_dict['messageType']}")
                 logger.warning(warning_message)
 
         # Load unparsed receipts:
@@ -278,8 +273,7 @@ class SignalMessages(object):
                                     config_path=self._config_path, contacts=self._contacts,
                                     groups=self._groups, devices=self._devices,
                                     this_device=self._this_device, from_dict=receipt_dict)
-
-        return
+            self.__parse_receipt__(receipt)
 
     #################################
     # Load / save:
@@ -294,21 +288,19 @@ class SignalMessages(object):
         logger.debug("Loading messages from disk.")
         # Try to open the file:
         try:
-            file_handle: TextIO = open(self._file_path, 'r')
-            messages_dict: dict[str, Any] = json.loads(file_handle.read())
-            file_handle.close()
+            with open(self._file_path, 'r', encoding='utf-8') as file_handle:
+                messages_dict: dict[str, Any] = json.loads(file_handle.read())
         except (OSError, FileNotFoundError, PermissionError) as e:
-            error_message = "Couldn't open '%s' for reading: %s" % (self._file_path, str(e.args))
-            logger.critical("Raising RuntimeError(%s)" % error_message)
-            raise RuntimeError(error_message)
+            error_message = f"Couldn't open '{self._file_path}' for reading: {str(e.args)}"
+            logger.critical("Raising RuntimeError(%s)", error_message)
+            raise RuntimeError(error_message) from e
         except json.JSONDecodeError as e:
-            error_message = "Couldn't load json from '%s': %s" % (self._file_path, e.msg)
-            logger.critical("Raising InvalidDataFile(%s)" % error_message)
-            raise InvalidDataFile(error_message, e, self._file_path)
+            error_message = f"Couldn't load json from '{self._file_path}': {e.msg}"
+            logger.critical("Raising InvalidDataFile(%s)", error_message)
+            raise InvalidDataFile(error_message, e, self._file_path) from e
         # Load the dict:
         self.__from_dict__(messages_dict)
         logger.debug("Messages loaded from disk.")
-        return
 
     def __save__(self) -> None:
         """
@@ -323,13 +315,11 @@ class SignalMessages(object):
         json_messages_str: str = json.dumps(messages_dict, indent=4)
         # Open the file and save the JSON:
         try:
-            file_handle = open(self._file_path, 'w')
-            file_handle.write(json_messages_str)
-            file_handle.close()
+            with open(self._file_path, 'w', encoding='utf-8') as file_handle:
+                file_handle.write(json_messages_str)
         except (OSError, FileNotFoundError, PermissionError) as e:
-            error_message = "Failed to open '%s' for writing: %s" % (self._file_path, str(e.args))
-            raise RuntimeError(error_message)
-        return
+            error_message = f"Failed to open '{self._file_path}' for writing: {str(e.args)}"
+            raise RuntimeError(error_message) from e
 
     ##################################
     # Helpers:
@@ -355,7 +345,7 @@ class SignalMessages(object):
         else:
             # Invalid recipient type:
             error_message = "Invalid reaction cannot parse."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
         # Find the message that was reacted to:
         reacted_message: Optional[SignalSentMessage | SignalReceivedMessage | SignalMessage] = None
@@ -388,7 +378,7 @@ class SignalMessages(object):
         for _receipt in receipts:
             # Parse receipts:
             receipt_parsed: bool = False
-            for message in self.get_sent():
+            for message in self.get_sent_messages():
                 for timestamp in _receipt.timestamps:
                     if message.timestamp == timestamp:
                         message.__parse_receipt__(_receipt)
@@ -399,7 +389,6 @@ class SignalMessages(object):
                 self._unparsed_receipts.append(_receipt)
         if should_save:
             self.__save__()
-        return
 
     def __parse_read_message_sync__(self, sync_message: SignalSyncMessage) -> None:
         """
@@ -426,7 +415,6 @@ class SignalMessages(object):
                             message.mark_read(when=sync_message.timestamp)
         if should_save:
             self.__save__()
-        return
 
     def __parse_sent_message_sync__(self, sync_message: SignalSyncMessage) -> None:
         """
@@ -442,7 +430,6 @@ class SignalMessages(object):
                                     raw_message=sync_message.raw_sent_message)
         message.mark_delivered()
         self.append(message)
-        return
 
     def __parse_sent_reaction_sync__(self, sync_message: SignalSyncMessage) -> None:
         reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
@@ -451,7 +438,6 @@ class SignalMessages(object):
                                   this_device=self._this_device,
                                   sync_message=sync_message.raw_sent_message)
         self.__parse_reaction__(reaction)
-        return
 
     def __parse_sync_message__(self, sync_message: SignalSyncMessage) -> None:
         """
@@ -471,11 +457,10 @@ class SignalMessages(object):
             self.__parse_sent_reaction_sync__(sync_message)
         else:
             error_message = ("Can only parse SyncTypes.READ_MESSAGES, SyncTypes.SENT_MESSAGES,"
-                             " and SyncTypes.SENT_REACTION, not: %s" % str(sync_message.sync_type))
-            logger.critical("Raising TypeError(%s)." % error_message)
+                             f" and SyncTypes.SENT_REACTION, not: {str(sync_message.sync_type)}")
+            logger.critical("Raising TypeError(%s).", error_message)
             raise TypeError(error_message)
         self.__save__()
-        return
 
     ##################################
     # Getters:
@@ -520,9 +505,15 @@ class SignalMessages(object):
         return messages
 
     def get_received_messages(self) -> list[SignalReceivedMessage]:
+        """
+        Get a list of received messages, returns an empty list if none found.
+        """
         return [message for message in self.messages if isinstance(message, SignalReceivedMessage)]
 
     def get_sent_messages(self) -> list[SignalSentMessage]:
+        """
+        Get a list of sent messages, returns an empty list if none found.
+        """
         return [message for message in self.messages if isinstance(message, SignalSentMessage)]
 
     def get_received_unread(self, sender: Optional[SignalContact] = None) -> list[SignalMessage]:
@@ -552,6 +543,9 @@ class SignalMessages(object):
     def get_sent_unread(self,
                         recipient: Optional[SignalContact | SignalGroup] = None,
                         ) -> list[SignalMessage]:
+        """
+        Get a list of unread sent messages, return an empty list if none found.
+        """
         if recipient is None:
             messages = self.get_sent_messages()
         else:
@@ -657,7 +651,7 @@ class SignalMessages(object):
                 return message
         return None
 
-    def get_quoted(self, quote: SignalQuote) -> Optional[SignalSentMessage | SignalReceivedMessage \
+    def get_quoted(self, quote: SignalQuote) -> Optional[SignalSentMessage | SignalReceivedMessage
                                                          | SignalMessage]:
         """
         Get a message that contains a given SignalQuote.
@@ -680,6 +674,19 @@ class SignalMessages(object):
         return None
 
     def get_mentioned(self, contact: Optional[SignalContact]) -> list[SignalReceivedMessage]:
+        """
+        Retrieves a list of messages in which the specified contact is mentioned.
+
+        If the contact is not provided, the method defaults to using the instance's own contact.
+
+        Parameters:
+            contact (Optional[SignalContact]): The contact to check for mentions. If None, the
+                instance's own contact is used.
+
+        Returns:
+            list[SignalReceivedMessage]: A list of received messages where the given contact is
+                mentioned.
+        """
         if contact is None:
             contact = self._contacts.get_self()
 
@@ -689,9 +696,6 @@ class SignalMessages(object):
             if message.mentions.contact_mentioned(contact):
                 mentioned.append(message)
         return mentioned
-
-
-
 
     ##################################
     # Methods:
@@ -707,7 +711,6 @@ class SignalMessages(object):
                 saved_messages.append(message)
         self.messages = saved_messages
         self.__save__()
-        return
 
     def append(self, message: SignalMessage) -> None:
         """
@@ -741,7 +744,6 @@ class SignalMessages(object):
 
         # Save the messages.
         self.__save__()
-        return
 
     def send_message(self,
                      recipients: Iterable[
@@ -799,20 +801,20 @@ class SignalMessages(object):
             target_recipients = [recipients]
         elif isinstance(recipients, Iterable):
             target_recipients = []
-            checkType = None
+            check_type = None
             for i, recipient in enumerate(recipients):
                 if not isinstance(recipient, (SignalContact, SignalGroup)):
                     logger.critical("Raising TypeError:")
-                    __type_error__("recipients[%i]" % i, "SignalContact | SignalGroup", recipient)
+                    __type_error__(f"recipients[{i}]", "SignalContact | SignalGroup", recipient)
                 if i == 0:
-                    checkType = type(recipient)
+                    check_type = type(recipient)
                     if isinstance(recipient, SignalContact):
                         recipient_type = RecipientTypes.CONTACT
                     else:
                         recipient_type = RecipientTypes.GROUP
-                elif not isinstance(recipient, checkType):
+                elif not isinstance(recipient, check_type):
                     logger.critical("Raising TypeError:")
-                    __type_error__("recipients[%i]", str(checkType), recipient)
+                    __type_error__(f"recipients[{i}]", str(check_type), recipient)
                 target_recipients.append(recipient)
         else:
             logger.critical("Raising TypeError:")
@@ -821,7 +823,7 @@ class SignalMessages(object):
                            recipients)
         if len(target_recipients) == 0:
             error_message: str = "recipients cannot be of zero length"
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Validate body Type and value:
@@ -830,7 +832,7 @@ class SignalMessages(object):
             __type_error__("body", "str | None", body)
         elif body is not None and len(body) == 0:
             error_message: str = "body cannot be empty string"
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Validate attachments:
@@ -846,7 +848,7 @@ class SignalMessages(object):
                 for i, attachment in enumerate(attachments):
                     if not isinstance(attachment, (SignalAttachment, str)):
                         logger.critical("Raising TypeError:")
-                        __type_error__("attachments[%i]" % i, "SignalAttachment | str", attachment)
+                        __type_error__(f"attachments[{i}]", "SignalAttachment | str", attachment)
                     if isinstance(attachment, SignalAttachment):
                         target_attachments.append(attachment)
                     else:
@@ -859,7 +861,7 @@ class SignalMessages(object):
                                attachments)
         if target_attachments is not None and len(target_attachments) == 0:
             error_message: str = "attachments cannot be empty"
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Validate mentions:
@@ -874,7 +876,7 @@ class SignalMessages(object):
                 for i, mention in enumerate(mentions):
                     if not isinstance(mention, SignalMention):
                         logger.critical("Raising TypeError:")
-                        __type_error__("mentions[%i]" % i, "SignalMention", mention)
+                        __type_error__(f"mentions[{i}]", "SignalMention", mention)
                     target_mentions.append(mention)
             else:
                 logger.critical("Raising TypeError:")
@@ -882,7 +884,7 @@ class SignalMessages(object):
                                mentions)
         if target_mentions is not None and len(target_mentions) == 0:
             error_message: str = "mentions cannot be empty"
-            logger.critical("Raising ValueError(%s).")
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Validate quote:
@@ -894,7 +896,7 @@ class SignalMessages(object):
         if sticker is not None:
             if not isinstance(sticker, SignalSticker):
                 logger.critical("Raising TypeError:")
-                raise __type_error__("sticker", "SignalSticker", sticker)
+                __type_error__("sticker", "SignalSticker", sticker)
 
         # Validate preview:
         preview_list: list[SignalPreview] = []
@@ -904,11 +906,11 @@ class SignalMessages(object):
                 __type_error__("previews", "Optional[Iterable[SignalPreview]]", previews)
             for i, preview in enumerate(previews):
                 if not isinstance(preview, SignalPreview):
-                    __type_error__('previews[%i]' % i, 'SignalPreview', preview)
+                    __type_error__(f'previews[{i}]', 'SignalPreview', preview)
                 if body.find(preview.url) == -1:
-                    error_message: str = ("preview URL: '%s' must appear in the body of message."
-                                          % preview.url)
-                    logger.critical("Raising ValueError(%s)." % error_message)
+                    error_message: str = (f"preview URL: '{preview.url}' must appear in the "
+                                          f"body of message.")
+                    logger.critical("Raising ValueError(%s).", error_message)
                     raise ValueError(error_message)
                 preview_list.append(preview)
 
@@ -916,15 +918,15 @@ class SignalMessages(object):
         if sticker is not None:
             if body is not None or attachments is not None:
                 error_message: str = "If body or attachments are defined, sticker must be None."
-                logger.critical("Raising ParameterError(%s).")
+                logger.critical("Raising ParameterError(%s).", error_message)
                 raise ParameterError(error_message)
             if mentions is not None:
                 error_message: str = "If sticker is defined, mentions must be None"
-                logger.critical("Raising ParameterError(%s).")
+                logger.critical("Raising ParameterError(%s).", error_message)
                 raise ParameterError(error_message)
             if quote is not None:
                 error_message: str = "If sticker is defined, quote must be None"
-                logger.critical("Raising ParameterError(%s).")
+                logger.critical("Raising ParameterError(%s).", error_message)
                 raise ParameterError(error_message)
 
         # Create the send message command object:
@@ -950,7 +952,7 @@ class SignalMessages(object):
             error_message: str = (
                 "'recipient_type' (which might be None) must be either 'contact' or 'group', "
                 "we should never get here.")
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Add body:
@@ -1020,8 +1022,8 @@ class SignalMessages(object):
         # Check for error:
         if error_occurred:
             return_value: list[tuple[bool, SignalContact | SignalGroup, str]] = []
-            error_message: str = "signal error while sending message: Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while sending message: "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             if recipient_type == RecipientTypes.CONTACT:
                 for recipient in target_recipients:
                     return_value.append((False, recipient, error_message))
@@ -1077,7 +1079,7 @@ class SignalMessages(object):
                     return_value.append((False, contact, result['type']))
             return tuple(return_value)
 
-        elif recipient_type == RecipientTypes.CONTACT:
+        if recipient_type == RecipientTypes.CONTACT:
             for result in results_list:
                 # Gather contact:
                 contact_id = result['recipientAddress']['number']
@@ -1112,6 +1114,7 @@ class SignalMessages(object):
                 else:
                     return_value.append((False, contact, result['type']))
             return tuple(return_value)
+        return tuple(return_value)
 
     ################################
     # Properties:
@@ -1126,8 +1129,16 @@ class SignalMessages(object):
 
     @property
     def num_received_unread(self) -> int:
+        """
+        Return the number of unread received messages
+        :return: int
+        """
         return len(self.get_received_unread())
 
     @property
     def num_sent_unread(self) -> int:
+        """
+        Return the number of unread sent messages
+        :return: int
+        """
         return len(self.get_sent_unread())

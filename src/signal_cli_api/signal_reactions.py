@@ -3,11 +3,12 @@
 File: signal_reactions.py
 Store and manage a list of SignalReactions.
 """
+# pylint: disable=R0902, R0913, W0511
 import logging
-from typing import Optional, Iterable, Iterator, Any
+from typing import Optional, Iterator, Any
 import socket
 
-from .signal_timestamp import SignalTimestamp
+# from .signal_timestamp import SignalTimestamp
 from .signal_common import __type_error__
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
@@ -18,7 +19,7 @@ from .signal_groups import SignalGroups
 from .signal_reaction import SignalReaction
 
 
-class SignalReactions(object):
+class SignalReactions:
     """
     Class to store reactions to a message.
     """
@@ -43,9 +44,6 @@ class SignalReactions(object):
         :param this_device: SignalDevice: The SignalDevice object for the device we're using.
         :param from_dict: Optional[dict[str, Any]]: The dict provided by __to_dict__().
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -95,7 +93,6 @@ class SignalReactions(object):
 
         if from_dict is not None:
             self.__from_dict__(from_dict)
-        return
 
     ############################
     # Overrides:
@@ -143,7 +140,7 @@ class SignalReactions(object):
 
         for reaction in self._reactions:
             reactions_dict['reactions'].append(reaction.__to_dict__())
-        logger.debug("Saved %i reactions to the dict." % len(reactions_dict['reactions']))
+        logger.debug("Saved %i reactions to the dict.", len(reactions_dict['reactions']))
         return reactions_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
@@ -156,13 +153,13 @@ class SignalReactions(object):
         logger.debug("Entered")
         self._reactions = []
         for reaction_dict in from_dict['reactions']:
-            reaction = SignalReaction(command_socket=self._command_socket, account_id=self._account_id,
-                                      config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                      devices=self._devices, this_device=self._this_device, from_dict=reaction_dict
-                                      )
+            reaction = SignalReaction(command_socket=self._command_socket,
+                                      account_id=self._account_id, config_path=self._config_path,
+                                      contacts=self._contacts, groups=self._groups,
+                                      devices=self._devices, this_device=self._this_device,
+                                      from_dict=reaction_dict )
             self._reactions.append(reaction)
-        logger.debug("Loaded %i reactions." % len(self._reactions))
-        return
+        logger.debug("Loaded %i reactions.", len(self._reactions))
 
     ####################
     # Methods:
@@ -183,7 +180,7 @@ class SignalReactions(object):
         # Check if the reaction already parsed:
         if reaction.is_parsed:
             error_message: str = "trying to parse a reaction that has already been parsed"
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
         # Try to find a previous reaction:
         previous_reaction = self.get_by_sender(reaction.sender)
@@ -222,8 +219,8 @@ class SignalReactions(object):
         # Search for reaction in the reactions, and if it exists, raise RuntimeError:
         reaction_found: bool = False
         for reaction in self._reactions:
-            logger.debug("new_reaction: %s" % str(new_reaction.__to_dict__()))
-            logger.debug("old_reaction: %s" % str(reaction.__to_dict__()))
+            logger.debug("new_reaction: %s", str(new_reaction.__to_dict__()))
+            logger.debug("old_reaction: %s", str(reaction.__to_dict__()))
             if reaction == new_reaction:
                 logger.debug("Reaction found.")
                 reaction_found = True
@@ -233,7 +230,6 @@ class SignalReactions(object):
             new_reaction.is_parsed = True
         # if new_reaction not in self._reactions:
         #     self._reactions.append(new_reaction)
-        return
 
     def __remove_reaction__(self, target_reaction: SignalReaction) -> None:
         """
@@ -244,7 +240,8 @@ class SignalReactions(object):
         :raises RuntimeError: If the reaction is not in the list.
         """
         # Setup logging:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__remove_reaction__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__remove_reaction__.__name__)
         # Type check param:
         if not isinstance(target_reaction, SignalReaction):
             logger.critical("Raising TypeError:")
@@ -252,11 +249,13 @@ class SignalReactions(object):
         # Remove the reaction:
         try:
             self._reactions.remove(target_reaction)
-        except ValueError:
-            raise RuntimeError("target_reaction not found in reactions.")
-        return
+        except ValueError as e:
+            raise RuntimeError("target_reaction not found in reactions.") from e
 
-    def __replace_reaction__(self, old_reaction: SignalReaction, new_reaction: SignalReaction) -> None:
+    def __replace_reaction__(self,
+                             old_reaction: SignalReaction,
+                             new_reaction: SignalReaction
+                             ) -> None:
         """
         Replace a reaction with another.
         :param old_reaction: SignalReaction: The reaction to replace.
@@ -268,7 +267,6 @@ class SignalReactions(object):
         """
         self.__remove_reaction__(old_reaction)
         self.__add_reaction__(new_reaction)
-        return
 
     def reaction_in(self, target_reaction: SignalReaction) -> bool:
         """

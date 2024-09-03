@@ -3,14 +3,15 @@
 File: signal_profile.py
 Store and maintain a signal profile.
 """
+# pylint: disable=R0902, R0912, R0913, R0915
 import logging
 from typing import TypeVar, Optional, Any, Final
 import os
 import json
 import socket
 
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, __parse_signal_response__, \
-    __check_response_for_error__
+from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
+                            __parse_signal_response__, __check_response_for_error__)
 from .signal_timestamp import SignalTimestamp
 from .signal_exceptions import InvalidDataFile
 
@@ -26,7 +27,7 @@ SUCCESS_MESSAGE: Final[str] = "SUCCESS"
 NON_FATAL_ERROR_CODES: Final[list[int]] = []
 
 
-class SignalProfile(object):
+class SignalProfile:
     """Class containing the profile for either a contact or the account."""
 
     def __init__(self,
@@ -52,9 +53,6 @@ class SignalProfile(object):
         :param is_account_profile: bool: Is this the profile for this account?
         :param do_load: bool: Try and load from disk.
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Check args:
@@ -96,7 +94,8 @@ class SignalProfile(object):
         self._contact_id: str = contact_id
         """The contact ID of this profile, needed for locating avatar."""
         self._profile_file_path: Optional[str]
-        """The full path to this profile if stored on disk. NOTE: Only the account profile is saved on disk."""
+        """The full path to this profile if stored on disk. NOTE: Only the account profile is
+        saved on disk."""
         if account_path is not None:
             self._profile_file_path = os.path.join(account_path, 'profile.json')
         else:
@@ -131,7 +130,6 @@ class SignalProfile(object):
         self.__find_avatar__()
         if self._is_account_profile:
             self.__save__()
-        return
 
     def __from_raw_profile__(self, raw_profile: dict[str, Any]) -> None:
         """
@@ -141,7 +139,7 @@ class SignalProfile(object):
         """
         self.given_name = raw_profile['givenName']
         self.family_name = raw_profile['familyName']
-        self.__set_name__()
+        self.__set_name_()
         self.about = raw_profile['about']
         self.emoji = raw_profile['aboutEmoji']
         self.coin_address = raw_profile['mobileCoinAddress']
@@ -150,7 +148,6 @@ class SignalProfile(object):
         else:
             self.last_update = SignalTimestamp(timestamp=raw_profile['lastUpdateTimestamp'])
         self.__find_avatar__()
-        return
 
     ######################
     # To / From Dict:
@@ -183,7 +180,7 @@ class SignalProfile(object):
         # Set properties:
         self.given_name = from_dict['givenName']
         self.family_name = from_dict['familyName']
-        self.__set_name__()
+        self.__set_name_()
         self.about = from_dict['about']
         self.emoji = from_dict['emoji']
         self.coin_address = from_dict['coinAddress']
@@ -193,7 +190,6 @@ class SignalProfile(object):
             self.last_update = SignalTimestamp(from_dict=from_dict['lastUpdate'])
         else:
             self.last_update = from_dict['lastUpdate']
-        return
 
     #####################################
     # Save / Load:
@@ -220,13 +216,13 @@ class SignalProfile(object):
         profile_json: str = json.dumps(profile_dict, indent=4)
         # Open the file:
         try:
-            file_handle = open(self._profile_file_path, 'w')
-            file_handle.write(profile_json)
-            file_handle.close()
+            with open(self._profile_file_path, 'w', encoding='utf-8') as file_handle:
+                file_handle.write(profile_json)
         except (OSError, FileNotFoundError, PermissionError) as e:
-            error_message: str = "Couldn't open '%s' for writing: %s" % (self._profile_file_path, str(e.args))
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
+            error_message: str = (f"Couldn't open '{self._profile_file_path}' for "
+                                  f"writing: {str(e.args)}")
+            logger.critical("Raising RuntimeError(%s).", error_message)
+            raise RuntimeError(error_message) from e
         return True
 
     def __load__(self) -> bool:
@@ -248,17 +244,17 @@ class SignalProfile(object):
             return False
         # Try to open file:
         try:
-            file_handle = open(self._profile_file_path, 'r')
-            profile_dict: dict[str, object] = json.loads(file_handle.read())
-            file_handle.close()
+            with open(self._profile_file_path, 'r', encoding='utf-8') as file_handle:
+                profile_dict: dict[str, object] = json.loads(file_handle.read())
         except (OSError, FileNotFoundError, PermissionError) as e:
-            error_message: str = "Couldn't open file '%s' for reading: %s" % (self._profile_file_path, str(e.args))
-            logger.critical("Raising RuntimeError(%s)." % error_message)
-            raise RuntimeError(error_message)
+            error_message: str = (f"Couldn't open file '{self._profile_file_path}' for "
+                                  f"reading: {str(e.args)}")
+            logger.critical("Raising RuntimeError(%s).", error_message)
+            raise RuntimeError(error_message) from e
         except json.JSONDecodeError as e:
-            error_message: str = "Couldn't load json from '%s': %s" % (self._profile_file_path, e.msg)
-            logger.critical("Raising InvalidDataFile(%s)." % error_message)
-            raise InvalidDataFile(error_message, e, self._profile_file_path)
+            error_message: str = f"Couldn't load json from '{self._profile_file_path}': {e.msg}"
+            logger.critical("Raising InvalidDataFile(%s).", error_message)
+            raise InvalidDataFile(error_message, e, self._profile_file_path) from e
         # Load from dict:
         self.__from_dict__(profile_dict)
         return True
@@ -278,10 +274,10 @@ class SignalProfile(object):
         if self.avatar is not None:
             if os.path.exists(self.avatar):
                 return True
-            else:
-                warning_message: str = "Current avatar points to non-existent file, searching for new avatar."
-                logger.warning(warning_message)
-                self.avatar = None
+            warning_message: str = ("Current avatar points to non-existent file, searching "
+                                    "for new avatar.")
+            logger.warning(warning_message)
+            self.avatar = None
 
         # Try profile avatar:
         avatar_filename = 'profile-' + self._contact_id
@@ -299,7 +295,7 @@ class SignalProfile(object):
         # Avatar was not found:
         return False
 
-    def __set_name__(self) -> None:
+    def __set_name_(self) -> None:
         """
         Set the name property from the given name and family name properties.
         :return: None
@@ -312,7 +308,6 @@ class SignalProfile(object):
             self.name = self.given_name
         elif self.family_name is not None:
             self.name = self.family_name
-        return
 
     def __update__(self, other: Self) -> None:
         """
@@ -333,7 +328,6 @@ class SignalProfile(object):
             self.last_update = other.last_update
         if self._is_account_profile:
             self.__save__()
-        return
 
     ###############################
     # Setters:
@@ -343,8 +337,8 @@ class SignalProfile(object):
         Set the given name for the account profile.
         :param value: str: The value to set the given name to.
         :returns: tuple[bool, str]: The first element is True if successfully set, False if not.
-            The second element is the string "SUCCESS" if successfully set, otherwise it will contain an error message
-            stating what went wrong.
+            The second element is the string "SUCCESS" if successfully set, otherwise it will
+            contain an error message stating what went wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If Signal returns an error.
         """
@@ -381,10 +375,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal error while setting profile given name. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while setting profile given name. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -397,7 +392,8 @@ class SignalProfile(object):
         Set the family name for the account profile.
         :param value: str: The value to set the family name to.
         :returns: tuple[bool, str]: The first element is True or False for success or failure.
-            The second element will be the string "SUCCESS" on success, or a message describing what went wrong.
+            The second element will be the string "SUCCESS" on success, or a message describing
+            what went wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If Signal returns an error.
         """
@@ -429,10 +425,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal error while setting profile family name. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while setting profile family name. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -445,7 +442,8 @@ class SignalProfile(object):
         Set the 'about' for the account profile.
         :param value: str: The value to set the 'about' to.
         :returns: tuple[bool, str]: The first element is True or False for success or failure.
-            The second element is either the string "SUCCESS" on success or a message stating what went wrong.
+            The second element is either the string "SUCCESS" on success or a message stating what
+            went wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If signal returns an error.
         """
@@ -478,10 +476,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal error while setting profile about. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while setting profile about. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -494,7 +493,8 @@ class SignalProfile(object):
         Set the emoji for the account profile.
         :param value: str: The value to set the emoji to.
         :returns: tuple[bool, str]: The first element is True or False for success or failure.
-            The second element is the string "SUCCESS" on success or a message stating what went wrong.
+            The second element is the string "SUCCESS" on success or a message stating what went
+            wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If signal returns an error.
         """
@@ -527,10 +527,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal returned an error while setting profile emoji. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal returned an error while setting profile emoji. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -543,7 +544,8 @@ class SignalProfile(object):
         Set the mobile coin address.
         :param value: str: The value to set the mobile coin address to.
         :returns: tuple[bool, str]: The first element is True or False for success or failure.
-            The second element is either the string "SUCCESS" if successful, or a message stating what went wrong.
+            The second element is either the string "SUCCESS" if successful, or a message stating
+            what went wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If signal returns an error.
         """
@@ -577,10 +579,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_error = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal error occurred while setting profile coin address. Code: %i, Message: %s" \
-                                 % (signal_code, signal_error)
+            error_message: str = (f"signal error occurred while setting profile coin address. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -593,7 +596,8 @@ class SignalProfile(object):
         Set the avatar for the account profile.
         :param value: str: The path to the image to set the avatar to.
         :returns: tuple[bool, str]: The first element is True or False for success or failure.
-            The second element is either the string "SUCCESS" on success or a message stating what went wrong.
+            The second element is either the string "SUCCESS" on success or a message stating
+            what went wrong.
         :raises TypeError: If value is not a string.
         :raises SignalError: If Signal returns an error.
         """
@@ -627,10 +631,11 @@ class SignalProfile(object):
         response_obj: dict[str, Any] = __parse_signal_response__(response_str)
 
         # Check for error:
-        error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, NON_FATAL_ERROR_CODES)
+        error_occurred, signal_code, signal_message = __check_response_for_error__(
+            response_obj, NON_FATAL_ERROR_CODES)
         if error_occurred:
-            error_message: str = "signal error while setting profile avatar. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while setting profile avatar. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 

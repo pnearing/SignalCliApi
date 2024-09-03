@@ -3,13 +3,15 @@
 File: signal_reaction.py
 Store and handle a reaction to a message.
 """
+# pylint: disable=R0902, R0912, R0913, R0914, W0511
 import logging
 from typing import TypeVar, Optional, Any
 import socket
 import json
 
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, RecipientTypes, \
-    __parse_signal_response__, __check_response_for_error__
+from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
+                            MessageTypes, RecipientTypes, __parse_signal_response__,
+                            __check_response_for_error__)
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
 from .signal_device import SignalDevice
@@ -53,11 +55,15 @@ class SignalReaction(SignalMessage):
         :param groups: SignalGroups: This accounts' SignalGroups object.
         :param devices: SignalDevices: This accounts' SignalDevices object.
         :param this_device: SignalDevice: The SignalDevice object for the device we're currently on.
-        :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided by __to_dict__().
-        :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided by signal.
-        :param sync_message: Optional[dict[str, Any]]: Load properties from a dict provided by the sync message.
-        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this reaction message.
-        :param emoji: Optional[str]: The unicode emoji.
+        :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided
+            by __to_dict__().
+        :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided
+            by signal.
+        :param sync_message: Optional[dict[str, Any]]: Load properties from a dict provided by
+            the sync message.
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this reaction
+            message.
+        :param emoji: Optional[str]: The Unicode emoji.
         :param target_author: Optional[SignalContact]: The author of the message reacted to.
         :param target_timestamp: Optional[SignalTimestamp]: The timestamp of the message reacted to.
         :param is_remove: bool: If True, this is a removal message.
@@ -100,8 +106,9 @@ class SignalReaction(SignalMessage):
         """Has this reaction been parsed?"""
 
         # Run super init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, contacts.get_self(), recipient, this_device, None, MessageTypes.REACTION)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, contacts.get_self(), recipient,
+                         this_device, None, MessageTypes.REACTION)
         if sync_message is not None:
             self.__from_sync_message__(sync_message)
         # Set body:
@@ -110,22 +117,22 @@ class SignalReaction(SignalMessage):
         super().mark_delivered(now)
         super().mark_read(now)
         super().mark_viewed(now)
-        return
 
     ###############################
     # Init:
     ###############################
     def __from_sync_message__(self, sync_message: dict[str, Any]) -> None:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_sync_message__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__from_sync_message__.__name__)
         logger.debug(sync_message)
         super().__from_raw_message__(sync_message)
         reaction_dict: dict[str, Any] = sync_message['syncMessage']['sentMessage']['reaction']
         self.emoji = reaction_dict['emoji']
-        _, self.target_author = self._contacts.__get_or_add__(number=reaction_dict['targetAuthorNumber'],
-                                                              uuid = reaction_dict['targetAuthorUuid'])
+        _, self.target_author = self._contacts.__get_or_add__(
+            number=reaction_dict['targetAuthorNumber'], uuid = reaction_dict['targetAuthorUuid']
+        )
         self.target_timestamp = SignalTimestamp(timestamp=reaction_dict['targetSentTimestamp'])
         self.is_remove = reaction_dict['isRemove']
-        return
 
     def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
         """
@@ -137,11 +144,11 @@ class SignalReaction(SignalMessage):
         reaction_dict: dict[str, Any] = raw_message['dataMessage']['reaction']
         # print(reactionDict)
         self.emoji = reaction_dict['emoji']
-        _, self.target_author = self._contacts.__get_or_add__(number=reaction_dict['targetAuthorNumber'],
-                                                              uuid=reaction_dict['targetAuthorUuid'])
+        _, self.target_author = self._contacts.__get_or_add__(
+            number=reaction_dict['targetAuthorNumber'], uuid=reaction_dict['targetAuthorUuid']
+        )
         self.target_timestamp = SignalTimestamp(timestamp=reaction_dict['targetSentTimestamp'])
         self.is_remove = reaction_dict['isRemove']
-        return
 
     ###############################
     # Overrides:
@@ -200,7 +207,9 @@ class SignalReaction(SignalMessage):
         self.emoji = from_dict['emoji']
         # Parse target author:
         if from_dict['targetAuthorId'] is not None:
-            _, self.target_author = self._contacts.__get_or_add__(contact_id=from_dict['targetAuthorId'])
+            _, self.target_author = self._contacts.__get_or_add__(
+                contact_id=from_dict['targetAuthorId']
+            )
         else:
             self.target_author = None
         # Parse target timestamp:
@@ -212,7 +221,6 @@ class SignalReaction(SignalMessage):
         self.is_change = from_dict['isChange']
         # Parse previous emoji:
         self.previous_emoji = from_dict['previousEmoji']
-        return
 
     ###########################
     # Send reaction:
@@ -220,8 +228,8 @@ class SignalReaction(SignalMessage):
     def send(self) -> tuple[bool, str]:
         """
         Send the reaction.
-        :returns: tuple[bool, str]: True/False for sent status, string for an error message if False, or "SUCCESS"
-            if True.
+        :returns: tuple[bool, str]: True/False for sent status, string for an error message if
+            False, or "SUCCESS" if True.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.send.__name__)
@@ -229,7 +237,7 @@ class SignalReaction(SignalMessage):
         # Check if this was already sent.
         if self.is_sent:
             error_message: str = "reaction already sent."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
 
         # Create reaction command object and json command string:
@@ -250,7 +258,7 @@ class SignalReaction(SignalMessage):
         elif self.recipient_type == RecipientTypes.GROUP:
             send_reaction_command_obj['params']['groupId'] = self.recipient.get_id()
         else:
-            raise ValueError("recipient type = %s" % str(self.recipient_type))
+            raise ValueError(f"recipient type = {str(self.recipient_type)}")
 
         # Create the JSON command string:
         json_command_str: str = json.dumps(send_reaction_command_obj) + '\n'
@@ -263,8 +271,8 @@ class SignalReaction(SignalMessage):
         # Check for error:
         error_occurred, error_code, error_message = __check_response_for_error__(response_obj, [])
         if error_occurred:
-            error_message: str = "signal error while sending reaction. Code: %i, Message: %s" \
-                                 % (error_code, error_message)
+            error_message: str = (f"signal error while sending reaction. "
+                                  f"Code: {error_code}, Message: {error_message}")
             return False, error_message
 
         # Parse Response:
@@ -278,8 +286,9 @@ class SignalReaction(SignalMessage):
     def remove(self) -> tuple[bool, str]:
         """
         Remove a reaction.
-        :return: tuple[bool, str]: The first element is a boolean indicating success or failure; The second element is
-            a string, either 'SUCCESS' on success, or an error message on failure.
+        :return: tuple[bool, str]: The first element is a boolean indicating success or failure;
+            The second element is a string, either 'SUCCESS' on success, or an error message
+            on failure.
         """
         # TODO: remove a reaction in signal.
         if self._has_been_removed:
@@ -291,70 +300,55 @@ class SignalReaction(SignalMessage):
     # Helpers:
     ###########################
     def __update_body__(self) -> None:
-        if (self.sender is not None and self.recipient is not None and self.target_timestamp is not None
-                and self.target_author is not None and self.recipient_type is not None):
+        if (self.sender is not None and self.recipient is not None and
+                self.target_timestamp is not None and self.target_author is not None and
+                self.recipient_type is not None):
             # Removed reaction:
             if self.is_remove:
                 if self.recipient_type == RecipientTypes.CONTACT:
-                    self.body = "%s removed the reaction %s from %s's message %i." % (
-                        self.sender.get_display_name(),
-                        self.emoji,
-                        self.target_author.get_display_name(),
-                        self.target_timestamp._timestamp
-                    )
+                    self.body = (f"{self.sender.get_display_name()} removed the "
+                                 f"reaction {self.emoji} "
+                                 f"from {self.target_author.get_display_name()}'s "
+                                 f"message {self.target_timestamp.get_timestamp()}.")
                 elif self.recipient_type == RecipientTypes.GROUP:
-                    self.body = "%s removed the reaction %s from %s's message %i in group %s" % (
-                        self.sender.get_display_name(),
-                        self.emoji,
-                        self.target_author.get_display_name(),
-                        self.target_timestamp._timestamp,
-                        self.recipient.get_display_name()
-                    )
+                    self.body = (f"{self.sender.get_display_name()} removed the "
+                                 f"reaction {self.emoji} "
+                                 f"from {self.target_author.get_display_name()}'s "
+                                 f"message {self.target_timestamp.get_timestamp()} "
+                                 f"in group {self.recipient.get_display_name()}")
                 else:
-                    raise ValueError("recipient_type invalid value: %s" % str(self.recipient_type))
+                    raise ValueError(f"recipient_type invalid value: {str(self.recipient_type)}")
             # Changed reaction:
             elif self.is_change:
                 if self.recipient_type == RecipientTypes.CONTACT:
-                    self.body = "%s changed their reaction to %s's message %i, from %s to %s" % (
-                        self.sender.get_display_name(),
-                        self.target_author.get_display_name(),
-                        self.target_timestamp._timestamp,
-                        self.previous_emoji,
-                        self.emoji
-                    )
+                    self.body = (f"{self.sender.get_display_name()} changed their "
+                                 f"reaction to {self.target_author.get_display_name()}'s "
+                                 f"message {self.target_timestamp.get_timestamp()}, "
+                                 f"from {self.previous_emoji} to {self.emoji}")
                 elif self.recipient_type == RecipientTypes.GROUP:
-                    self.body = "%s changed their reaction to %s's message %i in group %s, from %s to %s" % (
-                        self.sender.get_display_name(),
-                        self.target_author.get_display_name(),
-                        self.target_timestamp._timestamp,
-                        self.recipient.get_display_name(),
-                        self.previous_emoji,
-                        self.emoji
-                    )
+                    self.body = (f"{self.sender.get_display_name()} changed their reaction "
+                                 f"to {self.target_author.get_display_name()}'s "
+                                 f"message {self.target_timestamp.get_timestamp()} in "
+                                 f"group {self.recipient.get_display_name()}, "
+                                 f"from {self.previous_emoji} to {self.emoji}")
                 else:
-                    raise ValueError("recipient_type invalid value: %s" % str(self.recipient_type))
+                    raise ValueError(f"recipient_type invalid value: {str(self.recipient_type)}")
             else:
                 # Added new reaction:
                 if self.recipient_type == RecipientTypes.CONTACT:
-                    self.body = "%s reacted to %s's message with %s" % (
-                        self.sender.get_display_name(),
-                        self.target_author.get_display_name(),
-                        self.emoji
-                    )
+                    self.body = (f"{self.sender.get_display_name()} reacted "
+                                 f"to {self.target_author.get_display_name()}'s message "
+                                 f"with {self.emoji}")
                 elif self.recipient_type == RecipientTypes.GROUP:
-                    self.body = "%s reacted to %s's message %i in group %s with %s" % (
-                        self.sender.get_display_name(),
-                        self.target_author.get_display_name(),
-                        self.target_timestamp._timestamp,
-                        self.recipient.get_display_name(),
-                        self.emoji
-                    )
+                    self.body = (f"{self.sender.get_display_name()} reacted "
+                                 f"to {self.target_author.get_display_name()}'s "
+                                 f"message {self.target_timestamp.get_timestamp()} in "
+                                 f"group {self.recipient.get_display_name()} "
+                                 f"with {self.emoji}")
                 else:
-                    raise ValueError("recipient_type invalid value: %s" % str(self.recipient_type))
-
+                    raise ValueError(f"recipient_type invalid value: {str(self.recipient_type)}")
         else:
             self.body = 'Invalid reaction.'
-        return
 
     ###############################
     # Properties:
@@ -385,7 +379,6 @@ class SignalReaction(SignalMessage):
         self._is_change = value
         if old_value != value:
             self.__update_body__()
-        return
 
     @property
     def is_sent(self) -> bool:
@@ -394,4 +387,3 @@ class SignalReaction(SignalMessage):
         :return: bool: True the reaction has been sent, False it has not.
         """
         return self.timestamp is not None  # If we have a timestamp, then the reaction was sent.
-

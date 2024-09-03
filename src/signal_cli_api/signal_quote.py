@@ -3,6 +3,7 @@
 File: signal_quote.py
 Store and manage a signal quote.
 """
+# pylint: disable=R0902, R0903, R0912, R0913, R0914, R0915
 import logging
 from typing import Optional, Iterable, Any
 
@@ -18,7 +19,7 @@ from .signal_timestamp import SignalTimestamp
 from .signal_exceptions import ParameterError
 
 
-class SignalQuote(object):
+class SignalQuote:
     """
     Class to store a quote for a message.
     """
@@ -32,7 +33,7 @@ class SignalQuote(object):
                  author: Optional[SignalContact] = None,
                  text: Optional[str] = None,
                  attachments: Optional[Iterable[SignalAttachment] | SignalAttachment] = None,
-                 mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
+                 mentions: Optional[Iterable[SignalMention]| SignalMentions | SignalMention] = None,
                  conversation: Optional[SignalContact | SignalGroup] = None,
                  ) -> None:
         """
@@ -42,16 +43,16 @@ class SignalQuote(object):
         :param groups: SignalGroups: This accounts' SignalGroups object.
         :param from_dict: Optional[dict[str, Any]]: The dict created by __to_dict__().
         :param raw_quote: Optional[dict[str, Any]]: The dict provided by signal.
-        :param timestamp: Optional[SignalTimestamp]: The timestamp.# TODO: Figure out a better description.
+        :param timestamp: Optional[SignalTimestamp]: The timestamp of the quoted message.
         :param author: Optional[SignalContact]: The author of the quote.
         :param text: Optional[str]: The text of the quote.
-        :param attachments: Optional[Iterable[SignalAttachment] | SignalAttachment]: Any attachments of the quote.
-        :param mentions: Optional[Iterable[SignalMention] | SignalMention]: Any mentions in the quote.
-        :param conversation: Optional[SignalContact | SignalGroup]: The conversation this quote is in.
+        :param attachments: Optional[Iterable[SignalAttachment] | SignalAttachment]: Any
+            attachments of the quote.
+        :param mentions: Optional[Iterable[SignalMention] | SignalMention]: Any mentions in the
+            quote.
+        :param conversation: Optional[SignalContact | SignalGroup]: The conversation this quote
+            is in.
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
         # Check config_path:
@@ -95,11 +96,12 @@ class SignalQuote(object):
                 for i, attachment in enumerate(attachments):
                     if not isinstance(attachment, SignalAttachment):
                         logger.critical("Raising TypeError:")
-                        __type_error__("attachments[%i]" % i, "SignalAttachment", attachment)
+                        __type_error__(f"attachments[{i}]", "SignalAttachment", attachment)
                     attachment_list.append(attachment)
             else:
                 logger.critical("Raising TypeError:")
-                __type_error__("attachments", "Iterable[SignalAttachment] | SignalAttachment", attachments)
+                __type_error__("attachments", "Iterable[SignalAttachment] | SignalAttachment",
+                               attachments)
         # Check mentions:
         mention_list: list[SignalMention] = []
         if mentions is not None:
@@ -111,20 +113,22 @@ class SignalQuote(object):
                 for i, mention in enumerate(mentions):
                     if not isinstance(mention, SignalMention):
                         logger.critical("Raising TypeError:")
-                        __type_error__("mentions[%i]" % i, "SignalMention", mention)
+                        __type_error__(f"mentions[{i}]", "SignalMention", mention)
                     mention_list.append(mention)
             else:
-                __type_error__("mentions", "Iterable[SignalMention] | SignalMentions | SignalMention", mentions)
+                __type_error__("mentions", "Iterable[SignalMention] | SignalMentions "
+                                           "| SignalMention", mentions)
         # Check conversation:
         if conversation is not None:
-            if not isinstance(conversation, SignalContact) and not isinstance(conversation, SignalGroup):
+            if (not isinstance(conversation, SignalContact) and
+                    not isinstance(conversation, SignalGroup)):
                 logger.critical("Raising TypeError:")
                 __type_error__("conversation", "SignalContact | SignalGroup", conversation)
 
         # Parameter check:
         if conversation is None and raw_quote is not None:
             error_message: str = "'conversation' must be defined if using 'raw_quote'"
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Set internal vars:
@@ -171,7 +175,6 @@ class SignalQuote(object):
                 self.conversation_type = ConversationTypes.CONTACT
             else:
                 self.conversation_type = ConversationTypes.GROUP
-        return
 
     #################
     # Init:
@@ -182,25 +185,27 @@ class SignalQuote(object):
         :param raw_quote: dict[str, Any]: The dict to load from.
         :return: None
         """
-        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_quote__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' +
+        #                                            self.__from_raw_quote__.__name__)
         # logger.debug("'raw_quote': %s" % str(raw_quote))
         # Load timestamp
         self.timestamp = SignalTimestamp(timestamp=raw_quote['id'])
         # Load author
         author_number: str = raw_quote['authorNumber']
         author_uuid: str = raw_quote['authorUuid']
-        added, self.author = self._contacts.__get_or_add__(number=author_number, uuid=author_uuid,)
+        _, self.author = self._contacts.__get_or_add__(number=author_number, uuid=author_uuid,)
         # Load text
         self.text = raw_quote['text']
         # Load attachments
         self.attachments = []
         raw_attachments: list[dict[str, Any]] = raw_quote['attachments']
         for raw_attachment in raw_attachments:
-            self.attachments.append(SignalAttachment(config_path=self._config_path, raw_attachment=raw_attachment))
+            self.attachments.append(SignalAttachment(config_path=self._config_path,
+                                                     raw_attachment=raw_attachment))
         # Load Mentions:
         if 'mentions' in raw_quote.keys():
-            self.mentions = SignalMentions(contacts=self._contacts, raw_mentions=raw_quote['mentions'])
-        return
+            self.mentions = SignalMentions(contacts=self._contacts,
+                                           raw_mentions=raw_quote['mentions'])
 
     #################
     # To / From dict:
@@ -254,7 +259,8 @@ class SignalQuote(object):
         # Set attachments:
         self.attachments = []
         for attachment_dict in from_dict['attachments']:
-            self.attachments.append(SignalAttachment(config_path=self._config_path, from_dict=attachment_dict))
+            self.attachments.append(SignalAttachment(config_path=self._config_path,
+                                                     from_dict=attachment_dict))
         # Set mentions:
         self.mentions = None
         if from_dict['mentions'] is not None:
@@ -264,10 +270,10 @@ class SignalQuote(object):
         # Set conversation:
         self.conversation = None
         if self.conversation_type == ConversationTypes.CONTACT:
-            _, self.conversation = self._contacts.__get_or_add__(contact_id=from_dict['conversation'])
+            _, self.conversation = self._contacts.__get_or_add__(
+                contact_id=from_dict['conversation'])
         elif self.conversation_type == ConversationTypes.GROUP:
             _, self.conversation = self._groups.__get_or_add__(group_id=from_dict['conversation'])
-        return
 
     ##########################
     # Methods:

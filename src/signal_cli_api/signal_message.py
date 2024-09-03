@@ -3,6 +3,7 @@
 File: signal_message.py
 Store and handle a base message.
 """
+# pylint: disable=R0902, R0912, R0913, R0914, R0915
 from typing import TypeVar, Optional, Any
 import socket
 import logging
@@ -19,7 +20,7 @@ from .signal_timestamp import SignalTimestamp
 Self = TypeVar("Self", bound="SignalMessage")
 
 
-class SignalMessage(object):
+class SignalMessage:
     """
     Base class for a message.
     """
@@ -58,8 +59,6 @@ class SignalMessage(object):
         :param message_type: Int = TYPE_NOT_SET: The type of message this is.
         :returns: None
         """
-        # Super:
-        object.__init__(self)
 
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -168,7 +167,6 @@ class SignalMessage(object):
                 self._recipient_type = RecipientTypes.CONTACT
             elif isinstance(self.recipient, SignalGroup):
                 self._recipient_type = RecipientTypes.GROUP
-        return
 
     #######################
     # Init:
@@ -203,7 +201,6 @@ class SignalMessage(object):
             self._contacts.__save__()
         # Parse Timestamp:
         self._timestamp = SignalTimestamp(timestamp=raw_message['timestamp'])
-        return
 
     #########################
     # Overrides:
@@ -308,7 +305,6 @@ class SignalMessage(object):
             self._time_viewed = SignalTimestamp(from_dict=from_dict['timeViewed'])
         else:
             self._time_viewed = None
-        return
 
     ###############################
     # Methods:
@@ -393,14 +389,26 @@ class SignalMessage(object):
 ############################################
     @property
     def sender(self) -> SignalContact:
+        """
+        The sender of the message
+        :return: SignalContact
+        """
         return self._sender
 
     @property
     def recipient(self) -> SignalContact | SignalGroup:
+        """
+        The recipient of the message
+        :return: SignalContact | SignalGroup
+        """
         return self._recipient
 
     @property
     def recipient_type(self) -> Optional[RecipientTypes]:
+        """
+        The type of the recipient.
+        :return: Optional[RecipientTypes]
+        """
         return self._recipient_type
 
     @recipient_type.setter
@@ -408,14 +416,21 @@ class SignalMessage(object):
         if not isinstance(value, RecipientTypes):
             __type_error__('value', 'RecipientTypes', value)
         self._recipient_type = value
-        return
 
     @property
     def device(self) -> SignalDevice:
+        """
+        The device the message was sent from.
+        :return: SignalDevice
+        """
         return self._device
 
     @property
     def timestamp(self) -> SignalTimestamp:
+        """
+        The timestamp of the message.
+        :return: SignalTimestamp
+        """
         return self._timestamp
 
     @timestamp.setter
@@ -423,32 +438,59 @@ class SignalMessage(object):
         if not isinstance(value, SignalTimestamp):
             __type_error__('value', 'SignalTimestamp', value)
         self._timestamp = value
-        return
 
     @property
     def message_type(self) -> MessageTypes:
+        """
+        The type of message
+        :return: MessageTypes
+        """
         return self._message_type
 
     @property
     def is_delivered(self) -> bool:
+        """
+        Has this message been delivered?
+        :return: bool
+        """
         return self._is_delivered
 
     @property
     def time_delivered(self) -> Optional[SignalTimestamp]:
+        """
+        The time this message was delivered
+        :return: Optional[SignalTimestamp]
+        """
         return self._time_delivered
 
     @property
     def is_read(self) -> bool:
+        """
+        Has this message been read?
+        :return: bool
+        """
         return self._is_read
 
     @property
     def time_read(self) -> Optional[SignalTimestamp]:
+        """
+        The time the message was read.
+        :return: Optional[SignalTimestamp]
+        """
         return self._time_read
 
     @property
     def is_viewed(self) -> bool:
+        """
+        Has this message been viewed?
+        :return: bool
+        """
         return self._is_viewed
 
     @property
     def time_viewed(self) -> Optional[SignalTimestamp]:
+        """
+        The time the message was viewed.
+        :return: Optional[SignalTimestamp]
+        """
         return self._time_viewed

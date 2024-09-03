@@ -3,6 +3,7 @@
 File: signal_preview.py
 Store and handle a preview.
 """
+# pylint: disable=R0903, R0912, R0913, R0915, R1732
 import logging
 from typing import Optional, Any
 import urllib.request
@@ -10,7 +11,6 @@ import urllib.error
 import hashlib
 import os
 import shutil
-import sys
 from .signal_attachment import SignalAttachment
 from .signal_common import __type_error__
 from .signal_exceptions import ParameterError
@@ -24,7 +24,7 @@ except ModuleNotFoundError:
     CAN_PREVIEW = False
 
 
-class SignalPreview(object):
+class SignalPreview:
     """Class containing a preview of a link."""
 
     def __init__(self,
@@ -43,21 +43,20 @@ class SignalPreview(object):
         :param from_dict: dict[str, Any]: Load properties from a dict created by __to_dict__().
         :param raw_preview: dict[str, Any]: Load properties from a dict provided by signal.
         :param generate_preview: bool: Should we generate a preview?
-            True requires linkpreview to be installed; If linkpreview is not installed, setting this to True will cause
-            a RuntimeError to be raised.
-            This is ignored if 'from_dict', or 'raw_preview' are defined.
+            True requires linkpreview to be installed; If linkpreview is not installed, setting
+            this to True will cause a RuntimeError to be raised. This is ignored if 'from_dict',
+            or 'raw_preview' are defined.
         :param url: Optional[str]: The URL this preview, well, previews.
         :param title: Optional[str]: The title.
         :param description: Optional[str]: The description.
-        :param image: Optional[SignalAttachment | str]: The preview image, either an SignalAttachment object pointing to a local
-            file, or a str witch is the full path to the image file.
+        :param image: Optional[SignalAttachment | str]: The preview image, either an
+            SignalAttachment object pointing to a local file, or a str witch is the full path to
+            the image file.
         :raises RuntimeError: If generate_preview is True and linkpreview is not installed.
-        :raises RuntimeError: If we're not able to make the directory where we store the preview images we generate.
+        :raises RuntimeError: If we're not able to make the directory where we store the preview
+            images we generate.
         :raises ParameterError: If generate_preview is True and 'url' is not defined.
         """
-        # Super:
-        super().__init__()
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -90,18 +89,19 @@ class SignalPreview(object):
             logger.critical("Raising TypeError:")
             __type_error__("description", "str", description)
         # Check image:
-        if image is not None and not isinstance(image, SignalAttachment) and not isinstance(image, str):
+        if (image is not None and not isinstance(image, SignalAttachment) and
+                not isinstance(image, str)):
             logger.critical("Raising TypeError:")
             __type_error__("image", "SignalAttachment | str", image)
 
         # Parameter checks:
         if generate_preview and url is None:
             error_message: str = "if 'generate_preview' is True, then 'url' must be defined."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
         if from_dict is not None and raw_preview is not None:
             error_message: str = "'from_dict' and 'raw_preview' cannot be used together."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Set internal Vars:
@@ -128,8 +128,9 @@ class SignalPreview(object):
             try:
                 os.mkdir(self._preview_path)
             except (OSError, FileNotFoundError, PermissionError) as e:
-                error_message: str = "Failed to create preview directory '%s': %s" % (self._preview_path, str(e.args))
-                raise RuntimeError(error_message)
+                error_message: str = (f"Failed to create preview directory "
+                                      f"'{self._preview_path}': {str(e.args)}")
+                raise RuntimeError(error_message) from e
 
         # Parse from_dict:
         if from_dict is not None:
@@ -143,9 +144,8 @@ class SignalPreview(object):
                 self.__generate_preview__()
             else:
                 error_message: str = "'linkpreview' is not installed, cannot generate preview."
-                logger.critical("Raising RuntimeError(%s)." % error_message)
+                logger.critical("Raising RuntimeError(%s).", error_message)
                 raise RuntimeError(error_message)
-        return
 
     ####################
     # Init:
@@ -163,7 +163,6 @@ class SignalPreview(object):
         if raw_preview['image'] is not None:
             raw_attachment: dict[str, object] = raw_preview['image']
             self.image = SignalAttachment(self._config_path, raw_attachment=raw_attachment)
-        return
 
     def __generate_preview__(self) -> None:
         """
@@ -171,7 +170,8 @@ class SignalPreview(object):
         :return: None
         """
         # Setup logging:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__generate_preview__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__generate_preview__.__name__)
         # Generate preview:
         logger.debug("Generating preview with linkpreview...")
         preview = link_preview(self.url)
@@ -195,30 +195,33 @@ class SignalPreview(object):
         try:
             response = urllib.request.urlopen(preview.image)
         except urllib.error.HTTPError as e:
-            warning_message: str = "HTTPError while opening image URL: %s: %s" % (preview.image, str(e.args))
+            warning_message: str = (f"HTTPError while opening image "
+                                    f"URL: {preview.image}: {str(e.args)}")
             logger.warning(warning_message)
             self.image = None
             return
         except urllib.error.URLError as e:
-            warning_message: str = "URLError while opening image URL: %s: %s" % (preview.image, str(e.args))
+            warning_message: str = (f"URLError while opening image "
+                                    f"URL: {preview.image}: {str(e.args)}")
             logger.warning(warning_message)
             self.image = None
             return
 
         # Try to open the destination file:
         try:
-            fileHandle = open(preview_image_file_path, 'wb')
+            file_handle = open(preview_image_file_path, 'wb')
         except (OSError, FileNotFoundError, PermissionError) as e:
-            warning_message: str = "Failed to open '%s' with mode 'wb': %s" % (preview_image_file_path, str(e.args))
+            warning_message: str = (f"Failed to open '{preview_image_file_path}' with mode "
+                                    f"'wb': {str(e.args)}")
             logger.warning(warning_message)
             self.image = None
             return
         # Copy the data to the file:
-        shutil.copyfileobj(response, fileHandle)
-        fileHandle.close()
+        shutil.copyfileobj(response, file_handle)
+        file_handle.close()
         # Create the attachment:
-        self.image = SignalAttachment(config_path=self._config_path, local_path=preview_image_file_path)
-        return
+        self.image = SignalAttachment(config_path=self._config_path,
+                                      local_path=preview_image_file_path)
 
     ######################
     # To / From Dict:
@@ -251,4 +254,3 @@ class SignalPreview(object):
         if from_dict['image'] is not None:
             image_dict: dict[str, Any] = from_dict['image']
             self.image = SignalAttachment(config_path=self._config_path, from_dict=image_dict)
-        return
