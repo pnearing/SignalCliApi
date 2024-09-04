@@ -3,6 +3,7 @@
 File: signal_story_message.py
 Store and handle a story message.
 """
+# pylint: disable=R0913, R0914, W0511
 import logging
 from typing import Optional, Any
 import socket
@@ -55,12 +56,14 @@ class SignalStoryMessage(SignalMessage):
         :param from_dict: Optional[dict[str, Any]]: A dict provided by __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: A dict provided by Signal.
         :param sender: Optional[SignalContact]: The sender of this message.
-        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this message. # TODO: Check if this is needed.
+        # TODO: Check if this is needed:
+        :param recipient: Optional[SignalContact | SignalGroup]: The recipient of this message.
         :param device: Optional[SignalDevice]: The device sending this message.
         :param timestamp: Optional[SignalTimestamp]: The timestamp of this message.
         :param allows_replies: bool: Does this message allow replies? Defaults to True.
         :param preview: Optional[SignalPreview]: Any URL preview this message contains.
-        :param attachment: Optional[SignalAttachment | SignalTextAttachment]: Any attachment to this message.
+        :param attachment: Optional[SignalAttachment | SignalTextAttachment]: Any attachment to
+            this message.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -80,7 +83,8 @@ class SignalStoryMessage(SignalMessage):
         if attachment is not None:
             if not isinstance(attachment, (SignalAttachment, SignalTextAttachment)):
                 logger.critical("Raising TypeError:")
-                __type_error__("attachment", "Optional[SignalAttachment | SignalTextAttachment]", attachment)
+                __type_error__("attachment", "Optional[SignalAttachment | SignalTextAttachment]",
+                               attachment)
 
         # Set external properties:
         # Allows replies:
@@ -100,9 +104,9 @@ class SignalStoryMessage(SignalMessage):
             else:
                 self.attachment_type = AttachmentTypes.TEXT
         # Run super init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, MessageTypes.STORY)
-        return
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, sender, recipient, device, timestamp,
+                         MessageTypes.STORY)
 
     ###########################
     # Init:
@@ -122,13 +126,14 @@ class SignalStoryMessage(SignalMessage):
                                                raw_attachment=raw_story_message['fileAttachment'])
             self.attachment_type = AttachmentTypes.FILE
         elif 'textAttachment' in raw_story_message.keys():
-            self.attachment = SignalTextAttachment(raw_attachment=raw_story_message['textAttachment'])
+            self.attachment = SignalTextAttachment(
+                raw_attachment=raw_story_message['textAttachment'])
             self.attachment_type = AttachmentTypes.TEXT
         # Preview:
         self.preview = None
         if 'preview' in raw_story_message.keys():
-            self.preview = SignalPreview(config_path=self._config_path, raw_preview=raw_story_message['preview'])
-        return
+            self.preview = SignalPreview(config_path=self._config_path,
+                                         raw_preview=raw_story_message['preview'])
 
     ###########################
     # To / From Dict:
@@ -162,17 +167,18 @@ class SignalStoryMessage(SignalMessage):
         self.allows_replies = from_dict['allowsReplies']
         self.preview = None
         if from_dict['preview'] is not None:
-            self.preview = SignalPreview(config_path=self._config_path, from_dict=from_dict['preview'])
+            self.preview = SignalPreview(config_path=self._config_path,
+                                         from_dict=from_dict['preview'])
         self.attachment_type = AttachmentTypes(from_dict['attachmentType'])
         self.attachment = None
         if from_dict['attachment'] is not None:
             if self.attachment_type == AttachmentTypes.FILE:
-                self.attachment = SignalAttachment(config_path=self._config_path, from_dict=from_dict['attachment'])
+                self.attachment = SignalAttachment(config_path=self._config_path,
+                                                   from_dict=from_dict['attachment'])
             elif self.attachment_type == AttachmentTypes.TEXT:
                 self.attachment = SignalTextAttachment(from_dict=from_dict['attachment'])
             else:
-                raise ValueError("Invalid attachment type in StoryMessage: %s" % self.attachment_type)
-        return
+                raise ValueError(f"Invalid attachment type in StoryMessage: {self.attachment_type}")
 
     # TODO: reply to this message.
     # TODO: react to this message.

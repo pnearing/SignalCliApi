@@ -3,12 +3,13 @@
 File: signal_text_attachment.py
 Store a signal Text Attachment.
 """
+# pylint: disable=R0903
 from typing import Optional, Any
 
-from .signal_common import __type_error__
+# from .signal_common import __type_error__
 
 
-class SignalTextAttachment(object):
+class SignalTextAttachment:
     """
     Class to store a 'text attachment' from story messages.
     """
@@ -26,8 +27,6 @@ class SignalTextAttachment(object):
         :param from_dict: Optional[dict[str, Any]]: Load from a dict created by __to_dict__().
         :param raw_attachment: Optional[dict[str, Any]]: Load from a dict provided by Signal.
         """
-        # Super:
-        super().__init__()
         # Set external properties
         # Set text:
         self.text: str = ''
@@ -51,7 +50,6 @@ class SignalTextAttachment(object):
         # Parse raw attachment
         elif raw_attachment is not None:
             self.__from_raw_attachment__(raw_attachment)
-        return
 
     ####################
     # Init:
@@ -67,7 +65,6 @@ class SignalTextAttachment(object):
         self.text_background_color = raw_attachment['textBackgroundColor']
         self.text_foreground_color = raw_attachment['textForegroundColor']
         self.background_color = raw_attachment['backgroundColor']
-        return
 
     ####################
     # To / From dict:
@@ -77,14 +74,14 @@ class SignalTextAttachment(object):
         Create a JSON friendly dict.
         :return: dict[str, Any]: The dict to pass to __from_dict__().
         """
-        textAttachmentDict: dict[str, Any] = {
+        text_attachment_dict: dict[str, Any] = {
             'text': self.text,
             'style': self.style,
             'textBackgroundColor': self.text_background_color,
             'textForegroundColor': self.text_foreground_color,
             'backgroundColor': self.background_color,
         }
-        return textAttachmentDict
+        return text_attachment_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:
         """
@@ -97,4 +94,3 @@ class SignalTextAttachment(object):
         self.text_background_color = from_dict['textBackgroundColor']
         self.text_foreground_color = from_dict['textForegroundColor']
         self.background_color = from_dict['backgroundColor']
-        return

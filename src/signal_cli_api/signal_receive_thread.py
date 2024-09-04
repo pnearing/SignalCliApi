@@ -11,9 +11,10 @@ import json
 
 from .signal_account import SignalAccount
 from .signal_call_message import SignalCallMessage
-from .signal_common import __socket_create__, __socket_connect__, __socket_close__, __socket_receive_blocking__, \
-    __socket_send__, __type_error__, SyncTypes, __parse_signal_response__, __check_response_for_error__, \
-    TypingStates, __socket_receive_non_blocking__, RecipientTypes
+from .signal_common import (__socket_create__, __socket_connect__, __socket_close__,
+                            __socket_receive_blocking__, __socket_send__, __type_error__,
+                            SyncTypes, __parse_signal_response__, __check_response_for_error__,
+                            TypingStates, __socket_receive_non_blocking__, RecipientTypes)
 from . import run_callback
 from .run_callback import __run_callback__, __type_check_callback__
 from .signal_group_update import SignalGroupUpdate
@@ -54,29 +55,37 @@ class SignalReceiveThread(threading.Thread):
         """
         Create the reception thread.
         Callbacks must have the signature of:
-            callback(account: SignalAccount, message: SignalMessage, *additional_params) where the first element passed is the
-            SignalAccount object for the message received, and the second element is the message that was received.
-        The return value of callback can be True, False, or None. If the specific callback returns a boolean, it is
-            returned; If the specific callback returns None, then the return value of the all messages callback is
-            returned.  If True is returned, Reception is stopped. If anything else is returned, then reception
-            continues.
-        :param server_address: tuple[str, int] | str: The server address to connect the reception socket to.
+            callback(account: SignalAccount, message: SignalMessage, *additional_params) where the
+            first element passed is the SignalAccount object for the message received, and the
+            second element is the message that was received.
+            The return value of callback can be True, False, or None. If the specific callback
+            returns a boolean, it is returned; If the specific callback returns None, then the
+            return value of the all messages callback is returned.  If True is returned,
+            Reception is stopped. If anything else is returned, then reception continues.
+        :param server_address: tuple[str, int] | str: The server address to connect the
+            reception socket to.
         :param command_socket: socket.socket: The socket to run commands through.
         :param config_path: str: The full path to the signal-cli config directory.
         :param sticker_packs: SignalStickerPacks: The loaded SignalStickerPacks object.
         :param account: SignalAccount: The account to receive for.
-        :param all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for ALL messages.
-        :param received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for received
-            messages.
-        :param receipt_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for message receipts.
-        :param sync_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for sync messages.
-        :param typing_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for typing change
-            messages.
-        :param story_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for story messages.
-        :param payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for payment messages.
-        :param reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for reaction
-            messages.
-        :param call_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for call messages.
+        :param all_messages_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for
+            ALL messages.
+        :param received_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback
+            for received messages.
+        :param receipt_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback
+            for message receipts.
+        :param sync_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback for
+            sync messages.
+        :param typing_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback
+            for typing change messages.
+        :param story_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for
+            story messages.
+        :param payment_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback
+            for payment messages.
+        :param reaction_message_callback: Optional[tuple[Callable, Optional[list[Any]]]]: Callback
+            for reaction messages.
+        :param call_message_callback:Optional[tuple[Callable, Optional[list[Any]]]]: Callback for
+            call messages.
         :param suppress_callback_error: bool: Should we supress callback errors? Defaults to False.
         :param do_expunge: bool: True, we should automatically expunge expired messages.
         """

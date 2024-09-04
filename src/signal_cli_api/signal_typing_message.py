@@ -3,6 +3,7 @@
 File: signal_typing_message.py
 Store and handle a typing message.
 """
+# pylint: disable=R0913, R0914
 import logging
 from typing import Optional, Any
 import socket
@@ -45,7 +46,8 @@ class SignalTypingMessage(SignalMessage):
         :param contacts: SignalContacts: This accounts' SignalContacts object.
         :param groups: SignalGroups: This accounts' SignalGroups object.
         :param devices: SignalDevices: This accounts' SignalDevices object.
-        :param this_device: SignalDevice: The SignalDevice object that represents the device we're on.
+        :param this_device: SignalDevice: The SignalDevice object that represents the device
+            we're on.
         :param from_dict: Optional[dict[str, Any]]: The dict created to __to_dict__().
         :param raw_message: Optional[dict[str, Any]]: A dict provided by Signal.
         :param sender: Optional[SignalContact]: The sender of this message.
@@ -76,8 +78,9 @@ class SignalTypingMessage(SignalMessage):
         """The SignalTimestamp of the action change."""
 
         # Run super:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, MessageTypes.TYPING)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, sender, recipient, device, timestamp,
+                         MessageTypes.TYPING)
 
         # update body:
         self.__update_body__()
@@ -87,7 +90,6 @@ class SignalTypingMessage(SignalMessage):
             self.mark_delivered(self.timestamp)
             self.mark_read(self.timestamp)
             self.mark_viewed(self.timestamp)
-        return
 
     def __from_raw_message__(self, raw_message: dict[str, Any]) -> None:
         """
@@ -108,7 +110,6 @@ class SignalTypingMessage(SignalMessage):
             group = self._groups.get_by_id(typing_dict['groupId'])
             if group is not None:
                 self._recipient = group
-        return
 
     def __to_dict__(self) -> dict[str, Any]:
         """
@@ -134,7 +135,6 @@ class SignalTypingMessage(SignalMessage):
         self.time_changed = None
         if from_dict['timeChanged'] is not None:
             self.time_changed = SignalTimestamp(from_dict=from_dict['timeChanged'])
-        return
 
     def __get_action_string__(self) -> str:
         """
@@ -143,34 +143,34 @@ class SignalTypingMessage(SignalMessage):
         """
         if self.action == TypingStates.STARTED:
             return 'started'
-        elif self.action == TypingStates.STOPPED:
+        if self.action == TypingStates.STOPPED:
             return 'stopped'
-        else:
-            return 'not set'
+        return 'not set'
 
     def __update_body__(self) -> None:
         """
         Update the body based on the current action.
         :return: None
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__update_body__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__update_body__.__name__)
         if self.sender is not None and self.action is not None and self.time_changed is not None:
             if self.recipient is not None and self.recipient_type is not None:
                 if self.recipient_type == RecipientTypes.CONTACT:
-                    self.body = "At %s, %s %s typing." % (
-                        self.time_changed.get_display_time(), self.sender.get_display_name(),
-                        self.__get_action_string__())
+                    self.body = (f"At {self.time_changed.get_display_time()}, "
+                                 f"{self.sender.get_display_name()} {self.__get_action_string__()} "
+                                 f"typing.")
                 elif self.recipient_type == RecipientTypes.GROUP:
-                    self.body = "At %s, %s %s typing in group %s." % (
-                        self.time_changed.get_display_time(), self.sender.get_display_name(),
-                        self.__get_action_string__(), self.recipient.get_display_name())
+                    self.body = (f"At {self.time_changed.get_display_time()}, "
+                                 f"{self.sender.get_display_name()} "
+                                 f"{self.__get_action_string__()} typing in "
+                                 f"group {self.recipient.get_display_name()}.")
                 else:
-                    error_message: str = "invalid recipient_type: %s" % str(self.recipient_type)
-                    logger.critical("Raising ValueError(%s)." % error_message)
+                    error_message: str = f"invalid recipient_type: {self.recipient_type}"
+                    logger.critical("Raising ValueError(%s).", error_message)
                     raise ValueError(error_message)
         else:
             self.body = "Invalid typing message."
-        return
 
 #################################################
 # Properties:
@@ -196,4 +196,3 @@ class SignalTypingMessage(SignalMessage):
             logger.critical("Raising TypeError:")
             __type_error__('value', 'TypingStates | int', value)
         self._action = TypingStates(value)
-        return

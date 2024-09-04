@@ -3,6 +3,7 @@
 File: signal_received_message.py
 Store and handle an incoming message.
 """
+# pylint: disable=R0902, R0913, R0914, W0511
 import logging
 from typing import TypeVar, Optional, Iterable, Any
 import socket
@@ -11,8 +12,9 @@ from datetime import timedelta, datetime
 import pytz
 
 from .signal_attachment import SignalAttachment
-from .signal_common import __type_error__, __socket_receive_blocking__, __socket_send__, MessageTypes, RecipientTypes, \
-    ReceiptTypes, __parse_signal_response__, __check_response_for_error__
+from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
+                            MessageTypes, RecipientTypes, ReceiptTypes, __parse_signal_response__,
+                            __check_response_for_error__)
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
 from .signal_device import SignalDevice
@@ -86,8 +88,10 @@ class SignalReceivedMessage(SignalMessage):
         self.mentions: SignalMentions = SignalMentions(contacts=contacts)
         """Any mentions in this message."""
         # Set reactions:
-        self.reactions: SignalReactions = SignalReactions(command_socket=command_socket, account_id=account_id,
-                                                          config_path=config_path, contacts=contacts, groups=groups,
+        self.reactions: SignalReactions = SignalReactions(command_socket=command_socket,
+                                                          account_id=account_id,
+                                                          config_path=config_path,
+                                                          contacts=contacts, groups=groups,
                                                           devices=devices, this_device=this_device)
         """The reactions to this message."""
         # Set sticker:
@@ -124,8 +128,8 @@ class SignalReceivedMessage(SignalMessage):
         # sticker, etc.
         self.is_group_invite = self.__check_invite__()
         if self.is_group_invite:
-            self.body = "Group invite from: %s to group: %s" % (self.sender.get_display_name(),
-                                                                self.recipient.get_display_name())
+            self.body = (f"Group invite from: {self.sender.get_display_name()} to "
+                         f"group: {self.recipient.get_display_name()}")
         self.is_expiration_update = self.__check_expiry_update__()
         if self.is_expiration_update:
             # Set the recipient expiration:
@@ -141,11 +145,10 @@ class SignalReceivedMessage(SignalMessage):
                 sender = self.sender.get_display_name()
             # Set the body:
             if self.expiration is None:
-                self.body = "%s disabled disappearing messages." % sender
+                self.body = "{sender} disabled disappearing messages."
             else:
-                self.body = "%s set the disappearing message timer to: %s" % (sender,
-                                                                              str(self.expiration))
-        return
+                self.body = (f"{sender} set the disappearing message timer "
+                             f"to: {str(self.expiration)}")
 
     ######################
     # Init:
@@ -201,11 +204,9 @@ class SignalReceivedMessage(SignalMessage):
         # Parse preview:
         self.previews = []
         if 'previews' in data_message.keys():
-            for rawPreview in data_message['previews']:
-                preview = SignalPreview(config_path=self._config_path, raw_preview=rawPreview)
+            for raw_preview in data_message['previews']:
+                preview = SignalPreview(config_path=self._config_path, raw_preview=raw_preview)
                 self.previews.append(preview)
-
-        return
 
     #####################
     # To / From Dict:
@@ -272,16 +273,18 @@ class SignalReceivedMessage(SignalMessage):
         if from_dict['attachments'] is not None:
             self.attachments = []
             for attachment_dict in from_dict['attachments']:
-                attachment = SignalAttachment(config_path=self._config_path, from_dict=attachment_dict)
+                attachment = SignalAttachment(config_path=self._config_path,
+                                              from_dict=attachment_dict)
                 self.attachments.append(attachment)
         # Load mentions:
         self.mentions = SignalMentions(contacts=self._contacts, from_dict=from_dict['mentions'])
         # Load reactions:
-        self.reactions = SignalReactions(command_socket=self._command_socket, account_id=self._account_id,
-                                         config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                         devices=self._devices, this_device=self._this_device,
-                                         from_dict=from_dict['reactions']
-                                         )
+        self.reactions = SignalReactions(command_socket=self._command_socket,
+                                         account_id=self._account_id,
+                                         config_path=self._config_path, contacts=self._contacts,
+                                         groups=self._groups, devices=self._devices,
+                                         this_device=self._this_device,
+                                         from_dict=from_dict['reactions'])
         # Load sticker:
         self.sticker = None
         if from_dict['sticker'] is not None:
@@ -293,8 +296,8 @@ class SignalReceivedMessage(SignalMessage):
         # Load quote
         self.quote = None
         if from_dict['quote'] is not None:
-            self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts, groups=self._groups,
-                                     from_dict=from_dict['quote'])
+            self.quote = SignalQuote(config_path=self._config_path, contacts=self._contacts,
+                                     groups=self._groups, from_dict=from_dict['quote'])
         # Load expiration:
         # self.is_expired = from_dict['isExpired']
         self.expiration = None
@@ -311,8 +314,8 @@ class SignalReceivedMessage(SignalMessage):
         self.previews = []
         if from_dict['previews'] is not None:
             for preview_dict in from_dict['previews']:
-                self.previews.append(SignalPreview(config_path=self._config_path, from_dict=preview_dict))
-        return
+                self.previews.append(SignalPreview(config_path=self._config_path,
+                                                   from_dict=preview_dict))
 
     #####################
     # Helpers:
@@ -320,10 +323,11 @@ class SignalReceivedMessage(SignalMessage):
     def __send_receipt__(self, receipt_type: ReceiptTypes) -> tuple[bool, SignalTimestamp | str]:
         """
         Send a receipt using signal.
-        :param receipt_type: ReceiptTypes: The type of receipt to send; Either ReceiptTypes.READ or ReceiptTypes.VIEWED.
-        :return: tuple[bool, str | SignalTimestamp]: The first element is True or False for success or failure.
-            The second element is either the SignalTimestamp object of the receipts' 'when' on success, or an error message,
-            stating what went wrong.
+        :param receipt_type: ReceiptTypes: The type of receipt to send; Either ReceiptTypes.READ
+            or ReceiptTypes.VIEWED.
+        :return: tuple[bool, str | SignalTimestamp]: The first element is True or False for
+            success or failure. The second element is either the SignalTimestamp object of the
+            receipts' 'when' on success, or an error message, stating what went wrong.
         :raises RuntimeError: On invalid receipt type.
         :raises CommunicationsError: On error communicating with signal.
         :raises InvalidServerResponse: On error loading signal JSON.
@@ -338,8 +342,8 @@ class SignalReceivedMessage(SignalMessage):
         elif receipt_type == ReceiptTypes.VIEWED:
             type_string = 'viewed'
         else:
-            error_message: str = "Can't send this type of receipt: %s." % str(receipt_type)
-            logger.critical("Raising RuntimeError(%s).")
+            error_message: str = f"Can't send this type of receipt: {str(receipt_type)}."
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
 
         # Create send receipt command object and json command string.
@@ -364,8 +368,8 @@ class SignalReceivedMessage(SignalMessage):
         # Check for error:
         error_occurred, signal_code, signal_message = __check_response_for_error__(response_obj, [])
         if error_occurred:
-            error_message: str = "signal error while sending receipt. Code: %i, Message: %s" \
-                                 % (signal_code, signal_message)
+            error_message: str = (f"signal error while sending receipt. "
+                                  f"Code: {signal_code}, Message: {signal_message}")
             logger.warning(error_message)
             return False, error_message
 
@@ -375,8 +379,8 @@ class SignalReceivedMessage(SignalMessage):
         # Parse results:
         for result in result_obj['results']:
             if result['type'] != 'SUCCESS':
-                warning_message: str = ("While sending result['type'] != 'SUCCESS'. result['type']"
-                                        "== %s" % result['type'])
+                warning_message: str = (f"While sending result['type'] != 'SUCCESS'. result['type']"
+                                        f"== {result['type']}")
                 logger.warning(warning_message)
             else:
                 recipient: dict[str, str] = result['recipientAddress']
@@ -397,11 +401,11 @@ class SignalReceivedMessage(SignalMessage):
             self.expiration_timestamp = SignalTimestamp(datetime_obj=expiry_datetime)
         else:
             self.expiration_timestamp = None
-        return
 
     def __check_invite__(self) -> bool:
         """
-        Check if this is a group invite, it's an invitation if it's a group message without a body, a sticker, etc.
+        Check if this is a group invite, it's an invitation if it's a group message without a body,
+            a sticker, etc.
         :returns: bool: True if this is an invitation.
         """
         if self.recipient_type == RecipientTypes.GROUP and self.body is None:
@@ -413,7 +417,7 @@ class SignalReceivedMessage(SignalMessage):
 
     def __check_expiry_update__(self) -> bool:
         """
-        Check if this an expiry update message, if it is, it's a message with no body, no sticker,
+        Check if this an expiry update message, if it is, it's a message with no 'body', no sticker,
         etc., and a different expiration time than the current recipient has.
         :return: bool: True if this is an expiration update.
         """
@@ -428,15 +432,6 @@ class SignalReceivedMessage(SignalMessage):
     #####################
     # Methods:
     #####################
-    def mark_delivered(self, when: Optional[SignalTimestamp] = None) -> None:
-        """
-        Mark the message as delivered.
-        :param when: Optional[SignalTimestamp]: When the message was delivered, if None NOW is used.
-        :returns: None
-        :raises: TypeError: If when is not a SignalTimestamp object, raised by super()
-        """
-        return super().mark_delivered(when)
-
     def mark_read(self, when: SignalTimestamp = None, send_receipt: bool = True) -> None:
         """
         Mark the message as read.
@@ -457,8 +452,8 @@ class SignalReceivedMessage(SignalMessage):
         if send_receipt:
             is_success, results = self.__send_receipt__(ReceiptTypes.READ)
             if not is_success:
-                error_message: str = "failed to send read receipt: %s" % results
-                logger.critical("Raising RuntimeError(%s)." % error_message)
+                error_message: str = f"failed to send read receipt: {results}"
+                logger.critical("Raising RuntimeError(%s).", error_message)
                 raise RuntimeError(error_message)
             time_read = results
         else:
@@ -466,7 +461,6 @@ class SignalReceivedMessage(SignalMessage):
         # Set expiry and run super()
         self.__set_expiry__(time_read)
         super().mark_read(time_read)
-        return
 
     def mark_viewed(self, when: SignalTimestamp = None, send_receipt: bool = True) -> None:
         """
@@ -487,8 +481,8 @@ class SignalReceivedMessage(SignalMessage):
         if send_receipt:
             is_success, results = self.__send_receipt__(ReceiptTypes.VIEWED)
             if not is_success:
-                error_message: str = "failed to send viewed receipt: %s" % results
-                logger.critical("Raising RuntimeError(%s)." % error_message)
+                error_message: str = f"failed to send viewed receipt: {results}"
+                logger.critical("Raising RuntimeError(%s).", error_message)
                 raise RuntimeError(error_message)
             time_viewed = results
         else:
@@ -496,7 +490,6 @@ class SignalReceivedMessage(SignalMessage):
         # set the expiry and run the super().
         self.__set_expiry__(time_viewed)
         super().mark_viewed(time_viewed)
-        return
 
     def get_quote(self) -> SignalQuote:
         """
@@ -516,8 +509,8 @@ class SignalReceivedMessage(SignalMessage):
                                 groups=self._groups, timestamp=self.timestamp, author=self.sender,
                                 text=self.body, mentions=self.mentions, conversation=self.recipient)
         else:
-            error_message: str = "invalid recipient_type: %s" % str(self.recipient_type)
-            logger.critical("Raising ValueError(%s)." % error_message)
+            error_message: str = f"invalid recipient_type: {str(self.recipient_type)}"
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
         return quote
 
@@ -547,12 +540,12 @@ class SignalReceivedMessage(SignalMessage):
         # Type check emoji:
         if not isinstance(emoji, str):
             logger.critical("Raising TypeError:")
-            __type_error__('emoji', "str, len = 1|2", emoji)
+            __type_error__('emoji', "str, len = 1->4", emoji)
 
         # Value check emoji:
         if 1 <= len(emoji) <= 4:
             error_message: str = "emoji must be str of len 1->4"
-            logger.critical("Raising ValueError(%s)." % error_message)
+            logger.critical("Raising ValueError(%s).", error_message)
             raise ValueError(error_message)
 
         # Create reaction
@@ -584,7 +577,7 @@ class SignalReceivedMessage(SignalMessage):
         parsed: bool = self.reactions.__parse__(reaction)
         if not parsed:
             error_message: str = "failed to parse reaction."
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
 
         # Return Success:
@@ -593,7 +586,7 @@ class SignalReceivedMessage(SignalMessage):
     # TODO: Reply to this message, create a sent message with this as an attached quote.
     def reply(self,
               body: Optional[str] = None,
-              attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment | \
+              attachments: Optional[Iterable[SignalAttachment | str] | SignalAttachment |
                                     str] = None,
               mentions: Optional[Iterable[SignalMention] | SignalMentions | SignalMention] = None,
               sticker: Optional[SignalSticker] = None,
@@ -629,6 +622,6 @@ class SignalReceivedMessage(SignalMessage):
         :return:
         """
         if self.expiration_timestamp is not None:
-            if self.expiration_timestamp.datetime_obj <= pytz.utc.localize(datetime.utcnow()):
+            if self.expiration_timestamp.datetime_obj <= pytz.utc.localize(datetime.now(pytz.UTC)):
                 return True
         return False

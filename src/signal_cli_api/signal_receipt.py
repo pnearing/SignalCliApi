@@ -3,11 +3,12 @@
 File: signal_receipt.py
 Store and handle a signal receipt message.
 """
+# pylint: disable=R0913
 import logging
-from typing import Optional, Iterable, Any
+from typing import Optional, Any
 import socket
 
-from .signal_common import __type_error__, MessageTypes, ReceiptTypes
+from .signal_common import MessageTypes, ReceiptTypes
 from .signal_contact import SignalContact
 from .signal_contacts import SignalContacts
 from .signal_device import SignalDevice
@@ -71,8 +72,9 @@ class SignalReceipt(SignalMessage):
         self.body: str = ''
         """The body of the message."""
         # Run super init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, sender, recipient, device, timestamp, MessageTypes.RECEIPT)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, sender, recipient, device, timestamp,
+                         MessageTypes.RECEIPT)
 
         # Mark this receipt as read, viewed and delivered:
         if self.timestamp is not None:
@@ -80,8 +82,7 @@ class SignalReceipt(SignalMessage):
             super().mark_read(self.timestamp)
             super().mark_viewed(self.timestamp)
         # Update the body:
-        self.__updateBody__()
-        return
+        self.__update_body__()
 
     ##########################
     # Init:
@@ -93,7 +94,8 @@ class SignalReceipt(SignalMessage):
         :return: None
         :raises RuntimeError: On an unknown receipt type sent by signal.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_message__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__from_raw_message__.__name__)
         super().__from_raw_message__(raw_message)
         receipt_message: dict[str, Any] = raw_message['receiptMessage']
         # Load when:
@@ -107,14 +109,13 @@ class SignalReceipt(SignalMessage):
             self.receipt_type = ReceiptTypes.VIEWED
         else:
 
-            error_message: str = "Unknown receipt type... receiptMessage= %s" % str(receipt_message)
-            logger.critical("Raising RuntimeError(%s)." % error_message)
+            error_message: str = f"Unknown receipt type... receiptMessage={str(receipt_message)}"
+            logger.critical("Raising RuntimeError(%s).", error_message)
             raise RuntimeError(error_message)
         # Load target timestamps:
         self.timestamps = []
         for target_timestamp in receipt_message['timestamps']:
             self.timestamps.append(SignalTimestamp(timestamp=target_timestamp))
-        return
 
     ##########################
     # To / From Dict:
@@ -152,14 +153,13 @@ class SignalReceipt(SignalMessage):
         self.receipt_type = ReceiptTypes(from_dict['receiptType'])
         # Load target timestamps:
         self.timestamps = []
-        for timestampDict in from_dict['timestamps']:
-            self.timestamps.append(SignalTimestamp(from_dict=timestampDict))
-        return
+        for timestamp_dict in from_dict['timestamps']:
+            self.timestamps.append(SignalTimestamp(from_dict=timestamp_dict))
 
     #########################
     # Helpers:
     #########################
-    def __updateBody__(self) -> None:
+    def __update_body__(self) -> None:
         """
         Update the body of the message.
         :return: None
@@ -167,23 +167,16 @@ class SignalReceipt(SignalMessage):
         timestamp_strs: list[str] = [timestamp.get_display_time() for timestamp in self.timestamps]
         timestamps_str: str = ', '.join(timestamp_strs)
         if self.receipt_type == ReceiptTypes.DELIVER:
-            self.body = "The messages: %s have been delivered to: %s 's device: %s" % (
-                timestamps_str,
-                self.sender.get_display_name(),
-                self.device.get_display_name(),
-            )
+            self.body = (f"The messages: {timestamps_str} have been delivered "
+                         f"to: {self.sender.get_display_name()}'s "
+                         f"device: {self.device.get_display_name()}")
         elif self.receipt_type == ReceiptTypes.READ:
-            self.body = "The messages: %s have been read by: %s on device: %s" % (
-                timestamps_str,
-                self.sender.get_display_name(),
-                self.device.get_display_name(),
-            )
+            self.body = (f"The messages: {timestamps_str} have been read "
+                         f"by: {self.sender.get_display_name()} on "
+                         f"device: {self.device.get_display_name()}")
         elif self.receipt_type == ReceiptTypes.VIEWED:
-            self.body = "The messages: %s have been viewed by: %s on device: %s" % (
-                timestamps_str,
-                self.sender.get_display_name(),
-                self.device.get_display_name(),
-            )
+            self.body = (f"The messages: {timestamps_str} have been viewed "
+                         f"by: {self.sender.get_display_name()} on "
+                         f"device: {self.device.get_display_name()}")
         else:
             self.body = "Invalid receipt."
-        return

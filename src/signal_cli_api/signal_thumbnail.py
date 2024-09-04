@@ -3,6 +3,7 @@
 File signal_thumbnail.py
 Store and handle a signal thumbnail.
 """
+# pylint: disable=R0902, R0903, R0915
 import logging
 import mimetypes
 from typing import Optional, Any
@@ -13,7 +14,7 @@ from .signal_common import __type_error__, __find_xdgopen__
 from .signal_timestamp import SignalTimestamp
 
 
-class SignalThumbnail(object):
+class SignalThumbnail:
     """Class to store a thumbnail."""
     def __init__(self,
                  config_path: str,
@@ -28,9 +29,6 @@ class SignalThumbnail(object):
         :param raw_thumbnail: Optional[dict[str, Any]]: The raw dict provided by signal.
         :param local_path: Optional[str]: The local path of the thumbnail.
         """
-        # Super:
-        object.__init__(self)
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
@@ -54,18 +52,20 @@ class SignalThumbnail(object):
             if parameter is not None:
                 not_nones += 1
         if not_nones == 0:
-            error_message: str = "One of 'config_path', 'from_dict', or 'local_path' must be defined."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            error_message: str = ("One of 'config_path', 'from_dict', or 'local_path' "
+                                  "must be defined.")
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
-        elif not_nones >= 2:
-            error_message: str = "Only one of 'config_path', 'from_dict', and 'local_path', can be defined at once."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+        if not_nones >= 2:
+            error_message: str = ("Only one of 'config_path', 'from_dict', and 'local_path', "
+                                  "can be defined at once.")
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Value checks:
         if local_path is not None and not os.path.exists(local_path):
-            error_message: str = "'local_path': %s, does not exist." % local_path
-            logger.critical("Raising FileNotFoundError(%s)." % error_message)
+            error_message: str = f"'local_path': {local_path}, does not exist."
+            logger.critical("Raising FileNotFoundError(%s).", error_message)
             raise FileNotFoundError(error_message)
 
         # Set internal vars:
@@ -109,7 +109,6 @@ class SignalThumbnail(object):
             self.exists = os.path.exists(local_path)
             self.size = os.path.getsize(local_path)
             self.filename = os.path.split(local_path)[-1]
-        return
 
     ###################
     # Init:
@@ -164,7 +163,6 @@ class SignalThumbnail(object):
         elif self.id is not None:
             self.local_path = os.path.join(self._config_path, 'attachments', self.id)
             self.exists = os.path.exists(self.local_path)
-        return
 
     ############################
     # To / From dict:
@@ -203,7 +201,6 @@ class SignalThumbnail(object):
         self.exists = False
         if self.local_path is not None:
             self.exists = os.path.exists(self.local_path)
-        return
 
     ############################
     # Methods:

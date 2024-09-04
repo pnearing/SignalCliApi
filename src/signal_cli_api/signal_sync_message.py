@@ -3,6 +3,7 @@
 File: signal_sync_message.py
 Store and handle Sync Messages.
 """
+# pylint: disable=R0912, R0913
 import logging
 from typing import Optional, Any
 import socket
@@ -45,8 +46,10 @@ class SignalSyncMessage(SignalMessage):
         :param devices: SignalDevices: This accounts' SignalDevices object.
         :param this_device: SignalDevice: The device object representing the device we're on.
         :param sticker_packs: SignalStickerPacks: The loaded sticker packs.
-        :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided by __to_dict__().
-        :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided by Signal.
+        :param from_dict: Optional[dict[str, Any]]: Load properties from a dict provided
+            by __to_dict__().
+        :param raw_message: Optional[dict[str, Any]]: Load properties from a dict provided by
+            Signal.
         """
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
@@ -77,13 +80,13 @@ class SignalSyncMessage(SignalMessage):
         self.blocked_groups: list[str] = []
         """Blocked groups sync list."""
         # Run super Init:
-        super().__init__(command_socket, account_id, config_path, contacts, groups, devices, this_device, from_dict,
-                         raw_message, None, None, None, None, MessageTypes.SYNC)
+        super().__init__(command_socket, account_id, config_path, contacts, groups, devices,
+                         this_device, from_dict, raw_message, None, None, None, None,
+                         MessageTypes.SYNC)
         # Mark viewed delivered and read:
         super().mark_delivered(self.timestamp)
         super().mark_read(self.timestamp)
         super().mark_viewed(self.timestamp)
-        return
 
     ######################
     # Init:
@@ -96,7 +99,8 @@ class SignalSyncMessage(SignalMessage):
         :raises NotImplemented: On unrecognized sync type.
         """
         # Setup logging:
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__from_raw_message__.__name__)
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__from_raw_message__.__name__)
         # Run super:
         super().__from_raw_message__(raw_message)
         # Fetch sync message data:
@@ -120,16 +124,17 @@ class SignalSyncMessage(SignalMessage):
                 self.sync_type = SyncTypes.SENT_MESSAGES
             self.raw_sent_message = raw_message
         # Blocked Numbers / Groups:
-        elif 'blockedNumbers' in raw_sync_message.keys() or 'blockedGroupsIds' in raw_sync_message.keys():
+        elif ('blockedNumbers' in raw_sync_message.keys() or
+              'blockedGroupsIds' in raw_sync_message.keys()):
             self.sync_type = SyncTypes.BLOCKS
             self.blocked_contacts = []
             if 'blockedNumbers' in raw_sync_message.keys():
-                for contactId in raw_sync_message['blockedNumbers']:
-                    self.blocked_contacts.append(contactId)
+                for contact_id in raw_sync_message['blockedNumbers']:
+                    self.blocked_contacts.append(contact_id)
             self.blocked_groups = []
             if 'blockedGroupIds' in raw_sync_message.keys():
-                for groupId in raw_sync_message['blockedGroupIds']:
-                    self.blocked_groups.append(groupId)
+                for group_id in raw_sync_message['blockedGroupIds']:
+                    self.blocked_groups.append(group_id)
         elif 'type' in raw_sync_message.keys():
             # Group sync:
             if raw_sync_message['type'] == "GROUPS_SYNC":
@@ -140,17 +145,16 @@ class SignalSyncMessage(SignalMessage):
                 self.sync_type = SyncTypes.CONTACTS
                 # The rest is handled by SignalContacts.
             else:
-                error_message: str = "unhandled sync 'type': '%s'." % raw_sync_message['type']
-                logger.critical("Raising NotImplemented(%s)")
-                logger.debug("raw_sync_message['type'] = %s" % raw_sync_message['type'])
-                logger.debug("str(raw_sync_message) = %s" % str(raw_sync_message))
+                error_message: str = f"unhandled sync 'type': '{raw_sync_message['type']}'."
+                logger.critical("Raising NotImplemented(%s)", error_message)
+                logger.debug("raw_sync_message['type'] = %s", raw_sync_message['type'])
+                logger.debug("str(raw_sync_message) = %s", str(raw_sync_message))
                 raise NotImplementedError(error_message)
         else:
             logger.critical("Unhandled sync type.")
-            logger.debug("raw_sync_message = %s" % str(raw_sync_message))
+            logger.debug("raw_sync_message = %s", str(raw_sync_message))
             logger.critical("Raising NotImplementedError.")
             raise NotImplementedError("Unhandled sync type.")
-        return
 
     ###########################
     # To / From Dict:
@@ -191,14 +195,12 @@ class SignalSyncMessage(SignalMessage):
         # Load read messages:
         self.read_messages = []
         for (contact_id, timestamp_dict) in from_dict['readMessages']:
-            added, contact = self._contacts.__get_or_add__(contact_id=contact_id)
+            _, contact = self._contacts.__get_or_add__(contact_id=contact_id)
             timestamp = SignalTimestamp(from_dict=timestamp_dict)
             self.read_messages.append((contact, timestamp))
         # Set blocked groups and contacts:
         self.blocked_contacts = from_dict['blockedContacts']
         self.blocked_groups = from_dict['blockedGroups']
-
-        return
 
 ################################################
 # Properties:
@@ -223,4 +225,3 @@ class SignalSyncMessage(SignalMessage):
             logger.critical("Raising TypeError:")
             __type_error__('value', 'SyncTypes | int', value)
         self._sync_type = SyncTypes(value)
-        return

@@ -3,10 +3,10 @@
 File signal_timestamp.py
 Store and manage a timestamp.
 """
+# pylint: disable=E0401, R0904, R0911
 import logging
-from typing import TypeVar, Optional, IO, Any
+from typing import TypeVar, Optional, Any
 import datetime
-import sys
 import pytz
 from tzlocal import get_localzone
 
@@ -17,7 +17,7 @@ Self = TypeVar("Self", bound="SignalTimestamp")
 DEBUG: bool = False
 
 
-class SignalTimestamp(object):
+class SignalTimestamp:
     """Time stamp object."""
 
     def __init__(self,
@@ -26,16 +26,14 @@ class SignalTimestamp(object):
                  datetime_obj: Optional[datetime.datetime] = None,
                  now: bool = False,
                  ) -> None:
-        # Super:
-        object.__init__(self)
-
         # Setup logging:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__init__.__name__)
 
         # Verify args:
         if timestamp is None and from_dict is None and datetime_obj is None and not now:
-            error_message = "'timestamp', 'from_dict', 'date_time' must be defined, or 'now' must be True."
-            logger.critical("Raising ParameterError(%s)." % error_message)
+            error_message = ("'timestamp', 'from_dict', 'date_time' must be defined, or 'now' "
+                             "must be True.")
+            logger.critical("Raising ParameterError(%s).", error_message)
             raise ParameterError(error_message)
 
         # Type check args:
@@ -70,7 +68,6 @@ class SignalTimestamp(object):
         # Set timestamp as NOW:
         elif now:
             self.__from_now__()
-        return
 
     ##########################
     # Init functions:
@@ -93,7 +90,6 @@ class SignalTimestamp(object):
         """
         self._datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(from_dict['timestamp']))
         self._timestamp = int(from_dict['timestamp'] * 1000)
-        return
 
     def __from_now__(self) -> None:
         """
@@ -103,7 +99,6 @@ class SignalTimestamp(object):
         self._datetime = pytz.utc.localize(datetime.datetime.utcnow())
         seconds = int(self._datetime.timestamp())
         self._timestamp = seconds * 1000
-        return
 
     def __from_date_time__(self, date_time: datetime.datetime) -> None:
         """
@@ -117,7 +112,6 @@ class SignalTimestamp(object):
             self._datetime = date_time
         seconds = self._datetime.timestamp()
         self._timestamp = int(seconds * 1000)
-        return
 
     def __set_date_time__(self) -> None:
         """
@@ -128,7 +122,6 @@ class SignalTimestamp(object):
         microseconds = int((((self._timestamp / 1000) - seconds) * 1000) * 1000)
         self._datetime = pytz.utc.localize(datetime.datetime.fromtimestamp(seconds))
         self._datetime = self._datetime.replace(microsecond=microseconds)
-        return
 
     ##########################################
     # Object functions/ methods:
@@ -152,8 +145,7 @@ class SignalTimestamp(object):
         Represent as a string.
         :return: str: A formatted string with timestamp int, and datetime in iso format.
         """
-        return_str: str = "%s<%i>" % (self._datetime.isoformat(), self._timestamp)
-        return return_str
+        return f"{self._datetime.isoformat()}<{self._timestamp}>"
 
     def __eq__(self, other: Self | int) -> bool:
         """
@@ -162,13 +154,13 @@ class SignalTimestamp(object):
         :return: bool
         :raises TypeError: If other is not a SignalTimestamp or int.
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__eq__.__name__)
         if isinstance(other, SignalTimestamp):
             return self._datetime == other._datetime
-        elif isinstance(other, int):
+        if isinstance(other, int):
             return self._timestamp == other
         error_message: str = "Can only compare equality to SignalTimestamp or int."
-        logging.critical("Raising TypeError(%s)." % error_message)
+        logging.critical("Raising TypeError(%s).", error_message)
         raise TypeError(error_message)
 
     def __lt__(self, other: Self | int) -> bool:
@@ -180,20 +172,20 @@ class SignalTimestamp(object):
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__lt__.__name__)
         if isinstance(other, SignalTimestamp):
             return self._datetime < other._datetime
-        elif isinstance(other, int):
+        if isinstance(other, int):
             return self._timestamp < other
         error_message: str = "Can only compare less than to SignalTimestamp or int."
-        logger.critical("Raising TypeError(%s)." % error_message)
+        logger.critical("Raising TypeError(%s).", error_message)
         raise TypeError(error_message)
 
     def __gt__(self, other: Self | int) -> bool:
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__gt__.__name__)
         if isinstance(other, SignalTimestamp):
             return self._datetime > other._datetime
-        elif isinstance(other, int):
+        if isinstance(other, int):
             return self._timestamp > other
         error_message: str = "Can only compare greater than to SignalTimestamp or int."
-        logger.critical("Raising TypeError(%s)." % error_message)
+        logger.critical("Raising TypeError(%s).", error_message)
         raise TypeError(error_message)
 
     ##########################
@@ -221,27 +213,27 @@ class SignalTimestamp(object):
         t_delta = self._datetime - pytz.utc.localize(datetime.datetime.utcnow())
         if t_delta.total_seconds() == 0:
             return STRINGS['lessThanASecond'] + '.'
-        elif 0 < t_delta.total_seconds() < 2:
+        if 0 < t_delta.total_seconds() < 2:
             return str(t_delta.total_seconds()) + ' ' + STRINGS['secondAgo'] + '.'
         if 2 <= t_delta.total_seconds() < 60:
             return str(t_delta.total_seconds()) + ' ' + STRINGS['secondsAgo'] + '.'
-        elif 60 <= t_delta.total_seconds() < 61:
+        if 60 <= t_delta.total_seconds() < 61:
             return str(self.get_minutes_ago()) + ' ' + STRINGS['minuteAgo'] + '.'
-        elif 61 <= t_delta.total_seconds() < 3600:
+        if 61 <= t_delta.total_seconds() < 3600:
             return str(self.get_minutes_ago()) + ' ' + STRINGS['minutesAgo'] + '.'
-        elif 3600 <= t_delta.total_seconds() < 7200:
+        if 3600 <= t_delta.total_seconds() < 7200:
             return str(self.get_hours_ago()) + ' ' + STRINGS['hourAgo'] + '.'
-        elif 7200 <= t_delta.total_seconds() < 86400:
+        if 7200 <= t_delta.total_seconds() < 86400:
             return str(self.get_hours_ago()) + ' ' + STRINGS['hoursAgo'] + '.'
-        elif 86400 <= t_delta.total_seconds() < 172800:
+        if 86400 <= t_delta.total_seconds() < 172800:
             return str(self.get_days_ago()) + ' ' + STRINGS['dayAgo'] + '.'
-        elif 172800 <= t_delta.total_seconds() < 604800:
+        if 172800 <= t_delta.total_seconds() < 604800:
             return str(self.get_days_ago()) + ' ' + STRINGS['daysAgo'] + '.'
 
         if local_time:
             return self.get_local_time(include_micros=False).isoformat()
-        else:
-            return self.get_datetime(include_micros=False).isoformat()
+
+        return self.get_datetime(include_micros=False).isoformat()
 
     def get_local_time(self, include_micros: bool = True) -> datetime.datetime:
         """
@@ -308,9 +300,9 @@ class SignalTimestamp(object):
         :return: datetime.time: The time portion.
         """
         if include_micros:
-            return datetime.time(self.hour, self.minute, self.second, self.microsecond, tzinfo=self.tz_info)
-        else:
-            return datetime.time(self.hour, self.minute, self.second, tzinfo=self.tz_info)
+            return datetime.time(self.hour, self.minute, self.second, self.microsecond,
+                                 tzinfo=self.tz_info)
+        return datetime.time(self.hour, self.minute, self.second, tzinfo=self.tz_info)
 
     def get_datetime(self, include_micros: bool) -> datetime.datetime:
         """
@@ -319,51 +311,90 @@ class SignalTimestamp(object):
         :return: datetime.datetime: The new datetime object.
         """
         if include_micros:
-            return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute, self.second,
-                                     self.microsecond, self.tz_info)
-        else:
-            return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute, self.second,
-                                     tzinfo=self.tz_info)
+            return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute,
+                                     self.second, self.microsecond, self.tz_info)
+        return datetime.datetime(self.year, self.month, self.day, self.hour, self.minute,
+                                 self.second, tzinfo=self.tz_info)
 
 #################################
 # Properties:
 #################################
     @property
     def timestamp(self) -> int:
+        """
+        The signal timestamp value.
+        :returns: int
+        """
         return self._timestamp
 
     @property
     def datetime_obj(self) -> datetime.datetime:
+        """
+        The timestamp as a datetime object.
+        :return: datetime
+        """
         return self._datetime
 
     @property
     def year(self) -> int:
+        """
+        The year of this timestamp.
+        :returns: int
+        """
         return self._datetime.year
 
     @property
-    def month(self):
+    def month(self) -> int:
+        """
+        The month of this timestamp.
+        :returns: int
+        """
         return self._datetime.month
 
     @property
-    def day(self):
+    def day(self) -> int:
+        """
+        The day of the month for this timestamp.
+        :returns: int
+        """
         return self._datetime.day
 
     @property
-    def hour(self):
+    def hour(self) -> int:
+        """
+        The hour of this timestamp.
+        :returns: int
+        """
         return self._datetime.hour
 
     @property
-    def minute(self):
+    def minute(self) -> int:
+        """
+        The minute of this timestamp.
+        :returns: int
+        """
         return self._datetime.minute
 
     @property
-    def second(self):
+    def second(self) -> int:
+        """
+        The second of this timestamp.
+        :returns: int
+        """
         return self._datetime.second
 
     @property
-    def microsecond(self):
+    def microsecond(self) -> int:
+        """
+        The microseconds of this message.
+        :returns: int
+        """
         return self._datetime.microsecond
 
     @property
-    def tz_info(self):
+    def tz_info(self) -> pytz.tzinfo:
+        """
+        The timezone for this timestamp.
+        :returns: pytz.tzinfo
+        """
         return self._datetime.tzinfo
