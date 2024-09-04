@@ -32,4 +32,3 @@ from .signal_text_attachment import SignalTextAttachment
 from .signal_thumbnail import SignalThumbnail
 from .signal_timestamp import SignalTimestamp
 from .signal_typing_message import SignalTypingMessage
-
