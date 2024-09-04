@@ -3,7 +3,7 @@
 File: signal_received_message.py
 Store and handle an incoming message.
 """
-# pylint: disable=R0902, R0913, R0914, W0511
+# pylint: disable=R0902, R0913, R0914, W0511, E0401
 import logging
 from typing import TypeVar, Optional, Iterable, Any
 import socket

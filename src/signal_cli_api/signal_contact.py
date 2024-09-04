@@ -441,7 +441,6 @@ class SignalContact(SignalRecipient):
             logger.critical("Raising TypeError:")
             __type_error__('time_seen', 'SignalTimestamp', time_seen)
         if self.last_seen is not None:
-            if time_seen > self.last_seen:
-                self.last_seen = time_seen
+            self.last_seen = max(time_seen, self.last_seen)
         else:
             self.last_seen = time_seen

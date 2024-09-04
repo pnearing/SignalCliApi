@@ -3,7 +3,7 @@
 File: signal_sent_message.py
     Store and maintain a sent message.
 """
-# pylint: disable=R0902, R0912, R0913, R0914, R0915, W0511
+# pylint: disable=R0902, R0912, R0913, R0914, R0915, W0511, E0401
 import logging
 from typing import TypeVar, Optional, Iterable, Any
 import socket
