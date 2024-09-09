@@ -5,7 +5,7 @@ import logging
 import json
 import os
 import socket
-from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call
+from subprocess import Popen, PIPE, CalledProcessError, check_output, check_call, TimeoutExpired
 from time import sleep
 from typing import Optional, Callable, Any, NoReturn
 
@@ -457,9 +457,12 @@ class SignalCli:
             __run_callback__(self._callback, "stopping signal-cli")
             self._signal_process.terminate()  # Kill the process (Sends SigTerm)
             logger.debug("Flushing pipes.")
-            stdout, stderr = self._signal_process.communicate(timeout=1.0)  # Flush the pipes.
-            logger.debug("STDOUT: %s", str(stdout))
-            logger.debug("STDERR: %s", str(stderr))
+            try:
+                stdout, stderr = self._signal_process.communicate(timeout=1.0)  # Flush the pipes.
+                logger.debug("STDOUT: %s", str(stdout))
+                logger.debug("STDERR: %s", str(stderr))
+            except TimeoutExpired:
+                pass
             self._signal_process = None  # Clear the process.
             logger.info("signal-cli stopped.")
             __run_callback__(self._callback, "signal-cli stopped")
