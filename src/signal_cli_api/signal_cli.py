@@ -434,6 +434,16 @@ class SignalCli:
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.stop_signal.__name__)
 
+
+        # Stop any running threads:
+        for thread in self._receive_threads.values():
+            if thread is not None:
+                thread.stop()
+                thread.join(1)
+        if self._link_thread is not None:
+            self._link_thread.cancel()
+            self._link_thread.join(1)
+
         # Close the sockets:
         logger.debug("Closing sockets.")
         __run_callback__(self._callback, "closing sockets")
@@ -447,7 +457,7 @@ class SignalCli:
             __run_callback__(self._callback, "stopping signal-cli")
             self._signal_process.terminate()  # Kill the process (Sends SigTerm)
             logger.debug("Flushing pipes.")
-            stdout, stderr = self._signal_process.communicate()  # Flush the pipes.
+            stdout, stderr = self._signal_process.communicate(timeout=1.0)  # Flush the pipes.
             logger.debug("STDOUT: %s", str(stdout))
             logger.debug("STDERR: %s", str(stderr))
             self._signal_process = None  # Clear the process.

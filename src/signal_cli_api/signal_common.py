@@ -12,7 +12,7 @@ import socket
 import select
 import re
 import logging
-from enum import IntEnum, auto, Enum, IntFlag
+from enum import IntEnum, auto, IntFlag, StrEnum
 from .signal_exceptions import (CommunicationsError, SignalError, InvalidServerResponse)
 
 ########################################
@@ -124,7 +124,7 @@ def valid_message_filter(message_filter: int) -> bool:
     return True
 
 
-class LinkAccountCallbackStates(Enum):
+class LinkAccountCallbackStates(StrEnum):
     """
     The link message state messages.
     """
@@ -543,7 +543,7 @@ def __socket_receive_blocking__(sock: socket.socket) -> str:
     try:
         while True:
             readable, _, erred = select.select([sock], [], [sock], 0.5)
-            if len(erred) > 0:
+            if len(erred) > 0 and not _CLOSING_SOCKET:
                 logger.critical("GOT ERRORS DURING SELECT.")
             if len(readable) > 0:
                 message = b''
@@ -581,7 +581,7 @@ def __socket_receive_non_blocking__(sock: socket.socket, wait_time: float = 0.1)
     logger: logging.Logger = logging.getLogger(logger_name)
     try:
         readable, _, erred = select.select([sock], [], [sock], wait_time)
-        if len(erred) > 0:
+        if len(erred) > 0 and not _CLOSING_SOCKET:
             logger.critical("GOT ERRORS WHILE SELECTING SOCKET.")
         if len(readable) > 0:
             message = b''
