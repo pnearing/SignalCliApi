@@ -270,6 +270,7 @@ class SignalLinkThread(threading.Thread):
                     return_value = self.__call_callback__(
                         LinkAccountCallbackStates.LINK_WAITING, None)
                     if return_value is True:
+                        logger.debug("user canceled")
                         self.cancel()
                         return
                 first_loop = False
