@@ -2,7 +2,7 @@
     File: __init__.py
     Description: A python3 interface to signal-cli.
 """
-__version__: str = '0.5.8.3'
+__version__: str = '0.5.8.4'
 __author__: str = 'Peter Nearing'
 __email__: str = 'me@peternearing.ca'
 

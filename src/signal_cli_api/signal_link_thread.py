@@ -316,7 +316,10 @@ class SignalLinkThread(threading.Thread):
         Cancel a currently running link.
         :return: None.
         """
+        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.cancel.__name__)
+        logger.info("Canceling link.")
         self._is_cancelled = True
+        logger.debug("set _is_canceled.")
         __socket_close__(self._link_socket)
         self.__call_callback__(LinkAccountCallbackStates.LINK_CANCELED, None)
 
