@@ -876,7 +876,8 @@ class SignalCli:
         :return: None.
         """
         if self._link_thread is not None:
-            raise LinkInProgress()
+            if not self._link_thread.is_canceled or not self._link_thread.is_complete:
+                raise LinkInProgress()
 
         self._link_thread = SignalLinkThread(
             server_address=self._server_address,
