@@ -487,7 +487,7 @@ class SignalAccount:
 
         # Store and check version:
         self.version = raw_account['version']
-        if self.version not in self.supportedAccountFileVersions:  # Current 5, 6, and 8. Missed 7.
+        if self.version not in self.supportedAccountFileVersions:  # Current 5, 6, 8, and 9.
             error_message = (f"Account detail file '{self._account_file_path}' is of"
                              f"version {raw_account['version']}."
                              f"Supported versions {str(self.supportedAccountFileVersions)}.")
@@ -503,6 +503,8 @@ class SignalAccount:
             self.__load_version_6__(raw_account)
         elif self.version == 8:
             self.__load_version_8__(raw_account)
+        elif self.version == 9:
+            self.__load_version_9__(raw_account)
 
     ##########################
     # Methods:
