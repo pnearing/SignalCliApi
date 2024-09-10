@@ -290,6 +290,7 @@ class SignalLinkThread(threading.Thread):
                 self.__call_callback__(LinkAccountCallbackStates.LINK_EXISTS_ERROR, signal_message)
             elif signal_code == -2:
                 logger.debug("Calling unknown error callback.")
+                logger.debug("signal error message = %s", signal_message)
                 self.__call_callback__(LinkAccountCallbackStates.LINK_UNKNOWN_ERROR, signal_message)
             elif signal_code == -3:
                 logger.debug("Calling timeout error callback.")

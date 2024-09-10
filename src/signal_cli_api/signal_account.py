@@ -27,7 +27,7 @@ from .signal_exceptions import InvalidDataFile, UnsupportedVersion
 
 class SignalAccount:
     """Class to store an account."""
-    supportedAccountFileVersions: tuple[int, int] = (5, 6, 8)
+    supportedAccountFileVersions: tuple[int, int] = (5, 6, 8, 9)
     """Supported account detail file versions."""
 
     def __init__(self,
@@ -232,6 +232,15 @@ class SignalAccount:
         """I don't know."""
         self.pni_account_data: Optional[dict[str, int | str]] = None
         """I don't know."""
+        # Version 9 info:
+        self.timestamp: Optional[SignalTimestamp] = None
+        """I don't know."""
+        self.username_link_entropy: Optional[str] = None
+        """I don't know"""
+        self.username_link_server_id: Optional[str] = None
+        """I don't know."""
+
+        # Receiving properties:
         self._is_receiving: bool = False
         """Whether this account is current receiving messages."""
 
@@ -418,6 +427,35 @@ class SignalAccount:
             self.profile_key = raw_account['profileKey']
         except KeyError as e:
             error_message: str = "KeyError while loading version 8 data: {str(e.args)}."
+            logger.critical("Raising InvalidDataFile(%s). File: %s", error_message,
+                            self._account_file_path)
+            raise InvalidDataFile(error_message, e, self._account_file_path) from e
+        logger.debug("Data loaded.")
+
+    def __load_version_9__(self, raw_account: dict[str, Any]) -> None:
+        logger: logging.Logger = logging.getLogger(__name__ + '.' +
+                                                   self.__load_version_9__.__name__)
+        logger.debug("Loading version 9 data...")
+        try:
+            self.timestamp = SignalTimestamp(timestamp=raw_account['timestamp'])
+            self.service_environment = raw_account['serviceEnvironment']
+            self.registered = raw_account['registered']
+            self.number = raw_account['number']
+            self.username = raw_account['username']
+            self.encrypted_device_name = raw_account['encryptedDeviceName']
+            self.device_id = raw_account['deviceId']
+            self.is_multi_device = raw_account['isMultiDevice']
+            self.password = raw_account['password']
+            self.aci_account_data = raw_account['aciAccountData']
+            self.pni_account_data = raw_account['pniAccountData']
+            self.registration_lock_pin = raw_account['registrationLockPin']
+            self.pin_master_key = raw_account['pinMasterKey']
+            self.storage_key = raw_account['storageKey']
+            self.profile_key = raw_account['profileKey']
+            self.username_link_entropy = raw_account['usernameLinkEntropy']
+            self.username_link_server_id = raw_account['usernameLinkServerId']
+        except KeyError as e:
+            error_message: str = "KeyError while loading version 9 data: {str(e.args)}."
             logger.critical("Raising InvalidDataFile(%s). File: %s", error_message,
                             self._account_file_path)
             raise InvalidDataFile(error_message, e, self._account_file_path) from e
