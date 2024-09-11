@@ -171,6 +171,10 @@ class SignalContact(SignalRecipient):
         if self.devices is None:
             self.devices = SignalDevices(sync_socket=self._sync_socket, account_id=self.get_id())
 
+        # Mark this contact as seen if none exists:
+        if self.last_seen is None:
+            self.__seen__()
+
         # Validate that this is a valid contact:
         if self.number is None and self.uuid is None:
             raise RuntimeError("Invalid contact created, has no number and no uuid.")
@@ -432,16 +436,19 @@ class SignalContact(SignalRecipient):
     ############################
     # Methods:
     ############################
-    def __seen__(self, time_seen: SignalTimestamp) -> None:
+    def __seen__(self, time_seen: SignalTimestamp = None) -> None:
         """
         Update the last time this contact has been seen.
         :param time_seen: SignalTimestamp: The time this contact was seen at.
         :raises: TypeError: If time_seen is not a SignalTimestamp object.
         """
         logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__seen__.__name__)
-        if not isinstance(time_seen, SignalTimestamp):
+        if time_seen is not None and not isinstance(time_seen, SignalTimestamp):
             logger.critical("Raising TypeError:")
             __type_error__('time_seen', 'SignalTimestamp', time_seen)
+        if time_seen is None:
+            time_seen = SignalTimestamp(now=True)
+
         if self.last_seen is not None:
             self.last_seen = max(time_seen, self.last_seen)
         else:
