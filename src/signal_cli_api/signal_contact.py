@@ -203,6 +203,8 @@ class SignalContact(SignalRecipient):
         if self.name is None and self.profile.name != '':
             self.set_name(self.profile.name)
             self.name = self.profile.name
+        # Set the seen property to now:
+        self.last_seen = SignalTimestamp(now=True)
 
     ##########################
     # Overrides:

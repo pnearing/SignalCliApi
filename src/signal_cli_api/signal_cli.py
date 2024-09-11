@@ -773,7 +773,8 @@ class SignalCli:
                       ) -> SignalReceiveThread:
         """
         Start receiving messages for the given account.
-        NOTE: Callback signature is (account: SignalAccount, message: SignalMessage)
+        NOTE: Callback signature is (account: SignalAccount, message: SignalMessage), if the
+            callback returns True, then reception is stopped.
         :param account: SignalAccount: The account to receive messages for.
         :param all_messages_callback: Optional[Callable]: Callback for all messages received.
         :param received_message_callback: Optional[Callable]: Callback for normal received messages.
