@@ -131,9 +131,12 @@ class SignalContacts:
     def __drop_duplicates__(self):
         orig_contacts = self._contacts.copy()
         for orig_contact in orig_contacts:
-            for contact in orig_contacts:
+            for contact in self._contacts.copy():
                 if contact == orig_contact:
-                    self._contacts.remove(contact)
+                    try:
+                        self._contacts.remove(contact)
+                    except ValueError:
+                        pass
 
 
 
