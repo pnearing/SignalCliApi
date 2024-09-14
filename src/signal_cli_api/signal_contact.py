@@ -123,6 +123,8 @@ class SignalContact(SignalRecipient):
         """The phone number of the contact."""
         self.uuid: Optional[str] = uuid
         """The UUID of the contact."""
+        self.username: Optional[str] = None
+        """The username of the contact."""
         self.profile: Optional[SignalProfile] = None
         """The profile of the contact."""
         self.devices: Optional[SignalDevices] = None
@@ -196,6 +198,7 @@ class SignalContact(SignalRecipient):
             self.name = raw_contact['name']
         self.number = raw_contact['number']
         self.uuid = raw_contact['uuid']
+        self.username = raw_contact['username']
         self.is_blocked = raw_contact['isBlocked']
         self.color = raw_contact['color']
         if raw_contact['messageExpirationTime'] == 0:
@@ -249,6 +252,7 @@ class SignalContact(SignalRecipient):
             'name': self.name,
             'number': self.number,
             'uuid': self.uuid,
+            'username': self.username,
             'profile': None,
             'devices': None,
             'isBlocked': self.is_blocked,
@@ -288,6 +292,7 @@ class SignalContact(SignalRecipient):
         self.name = from_dict['name']
         self.number = from_dict['number']
         self.uuid = from_dict['uuid']
+        self.username = from_dict['username']
         self.is_blocked = from_dict['isBlocked']
         self.is_typing = from_dict['isTyping']
         self.expiration = None
@@ -347,11 +352,13 @@ class SignalContact(SignalRecipient):
         """
         if not proper_self and self.is_self:
             return SELF_CONTACT_NAME
-        if self.name is not None and self.name != '' and self.name != UNKNOWN_CONTACT_NAME and \
-                self.name != 'Note-To-Self':
-            return self.name
+        if self.name is not None and self.name != '':
+            if self.name != UNKNOWN_CONTACT_NAME and self.name != SELF_CONTACT_NAME:
+                return self.name
         if self.profile is not None and self.profile.name != '':
             return self.profile.name
+        if self.username is not None and self.username != '':
+            return self.username
         if self.number is not None:
             return self.number
         return UNKNOWN_CONTACT_NAME

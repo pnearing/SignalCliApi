@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "SignalCliAPi"
-version = "0.5.10.8"
+version = "0.5.10.9"
 authors = [
         { name="Peter Nearing", email="me@peternearing.ca" }
 ]
