@@ -188,6 +188,8 @@ class SignalContact(SignalRecipient):
         :param raw_contact: dict[str, Any]: The dict provided by signal.
         :return: None
         """
+        logger = logging.getLogger(self.__from_raw_contact__.__name__)
+        logger.debug(raw_contact)
         if raw_contact['name'] == '':
             self.name = None
         else:
