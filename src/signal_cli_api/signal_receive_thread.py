@@ -508,7 +508,6 @@ class SignalReceiveThread(threading.Thread):
                     break
                 raise e
             if response_str is None:
-                print("\a")
                 continue
             # Delay processing until messages are finished sending:
             if self._account.messages.sending:
