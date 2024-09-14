@@ -223,9 +223,9 @@ class SignalContact(SignalRecipient):
             if self.uuid == other.uuid or self.number == other.number:
                 self.__update__(other)
                 return True
-        if super().__eq__(other):
-            self.__update__(other)
-            return True
+        # if super().__eq__(other):
+        #     self.__update__(other)
+        #     return True
         return False
 
     def __str__(self) -> str:
