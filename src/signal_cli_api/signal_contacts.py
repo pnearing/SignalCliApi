@@ -123,8 +123,19 @@ class SignalContacts:
         else:
             logger.debug("self-contact found, ensuring name is '%s'", SELF_CONTACT_NAME)
             self_contact.set_name(SELF_CONTACT_NAME)
+        # Merge duplicate contacts:
+        self.__drop_duplicates__()
         self.__save__()
         logger.info("Initialization complete.")
+
+    def __drop_duplicates__(self):
+        orig_contacts = self._contacts.copy()
+        for orig_contact in orig_contacts:
+            for contact in orig_contacts:
+                if contact == orig_contact:
+                    self._contacts.remove(contact)
+
+
 
     ##########################
     # Overrides:
