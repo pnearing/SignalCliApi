@@ -501,8 +501,7 @@ class SignalReceiveThread(threading.Thread):
         # START RECEIVE LOOP:
         while self._receiving:
             try:
-                response_str: Optional[str] = __socket_receive_non_blocking__(self._receive_socket,
-                                                                              0.01)
+                response_str: Optional[str] = __socket_receive_blocking__(self._receive_socket)
             except CommunicationsError as e:
                 if self._receiving is False:
                     break

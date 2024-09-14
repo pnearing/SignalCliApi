@@ -133,7 +133,7 @@ class SignalReactions:
         Create a JSON friendly dict.
         :return: dict[str, Any]: The dict to provide to __from_dict__().
         """
-        logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__to_dict__.__name__)
+        # logger: logging.Logger = logging.getLogger(__name__ + '.' + self.__to_dict__.__name__)
         reactions_dict: dict[str, Any] = {
             'reactions': []
         }
