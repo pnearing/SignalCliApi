@@ -10,8 +10,6 @@ from typing import TypeVar, Optional, Any
 import socket
 import json
 
-from signal_cli_api import SignalContact
-
 from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
                             __parse_signal_response__, __check_response_for_error__,
                             UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates, RecipientTypes)
