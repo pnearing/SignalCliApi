@@ -10,6 +10,8 @@ from typing import TypeVar, Optional, Any
 import socket
 import json
 
+from signal_cli_api import SignalContact
+
 from .signal_common import (__type_error__, __socket_receive_blocking__, __socket_send__,
                             __parse_signal_response__, __check_response_for_error__,
                             UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME, TypingStates, RecipientTypes)
@@ -219,13 +221,13 @@ class SignalContact(SignalRecipient):
         :param other: The other object.
         :return: bool: the equality result.
         """
-        if super().__eq__(other):
-            self.__update__(other)
-            return True
         if isinstance(other, SignalContact):
             if self.uuid == other.uuid or self.number == other.number:
                 self.__update__(other)
                 return True
+        if super().__eq__(other):
+            self.__update__(other)
+            return True
         return False
 
     def __str__(self) -> str:

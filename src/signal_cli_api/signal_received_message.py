@@ -622,6 +622,6 @@ class SignalReceivedMessage(SignalMessage):
         :return:
         """
         if self.expiration_timestamp is not None:
-            if self.expiration_timestamp.datetime_obj <= pytz.utc.localize(datetime.now(pytz.UTC)):
+            if self.expiration_timestamp.datetime_obj <= datetime.now(pytz.UTC):
                 return True
         return False
