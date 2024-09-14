@@ -125,6 +125,18 @@ class SignalContact(SignalRecipient):
         """The UUID of the contact."""
         self.username: Optional[str] = None
         """The username of the contact."""
+        self.nick_name: Optional[str] = None
+        """The nickname of the contact."""
+        self.nick_given_name: Optional[str] = None
+        """The nick given name of the contact."""
+        self.nick_family_name: Optional[str] = None
+        """The nick family name of the contact."""
+        self.is_hidden: bool = False
+        """Whether this contact is hidden."""
+        self.note: Optional[str] = None
+        """The note of the contact."""
+        self.profile_sharing: bool = False
+        """Whether this contact is profile sharing."""
         self.profile: Optional[SignalProfile] = None
         """The profile of the contact."""
         self.devices: Optional[SignalDevices] = None
@@ -199,6 +211,15 @@ class SignalContact(SignalRecipient):
         self.number = raw_contact['number']
         self.uuid = raw_contact['uuid']
         self.username = raw_contact['username']
+
+
+        self.nick_name = raw_contact['nickName']
+        self.nick_given_name = raw_contact['nickGivenName']
+        self.nick_family_name = raw_contact['nickFamilyName']
+        self.is_hidden = raw_contact['isHidden']
+        self.note = raw_contact['note']
+        self.profile_sharing = raw_contact['profileSharing']
+
         self.is_blocked = raw_contact['isBlocked']
         self.color = raw_contact['color']
         if raw_contact['messageExpirationTime'] == 0:
@@ -253,6 +274,12 @@ class SignalContact(SignalRecipient):
             'number': self.number,
             'uuid': self.uuid,
             'username': self.username,
+            'nick_name': self.nick_name,
+            'nick_given_name': self.nick_given_name,
+            'nick_family_name': self.nick_family_name,
+            'is_hidden': self.is_hidden,
+            'note': self.note,
+            'profile_sharing': self.profile_sharing,
             'profile': None,
             'devices': None,
             'isBlocked': self.is_blocked,
@@ -293,6 +320,12 @@ class SignalContact(SignalRecipient):
         self.number = from_dict['number']
         self.uuid = from_dict['uuid']
         self.username = from_dict['username']
+        self.nick_name = from_dict['nick_name']
+        self.nick_given_name = from_dict['nick_given_name']
+        self.nick_family_name = from_dict['nick_family_name']
+        self.is_hidden = from_dict['is_hidden']
+        self.note = from_dict['note']
+        self.profile_sharing = from_dict['profile_sharing']
         self.is_blocked = from_dict['isBlocked']
         self.is_typing = from_dict['isTyping']
         self.expiration = None
