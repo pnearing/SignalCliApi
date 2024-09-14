@@ -140,7 +140,7 @@ class SignalReactions:
 
         for reaction in self._reactions:
             reactions_dict['reactions'].append(reaction.__to_dict__())
-        logger.debug("Saved %i reactions to the dict.", len(reactions_dict['reactions']))
+        # logger.debug("Saved %i reactions to the dict.", len(reactions_dict['reactions']))
         return reactions_dict
 
     def __from_dict__(self, from_dict: dict[str, Any]) -> None:

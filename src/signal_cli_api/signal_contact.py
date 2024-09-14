@@ -386,7 +386,7 @@ class SignalContact(SignalRecipient):
         if not proper_self and self.is_self:
             return SELF_CONTACT_NAME
         if self.name is not None and self.name != '':
-            if self.name != UNKNOWN_CONTACT_NAME and self.name != SELF_CONTACT_NAME:
+            if self.name not in (UNKNOWN_CONTACT_NAME, SELF_CONTACT_NAME):
                 return self.name
         if self.profile is not None and self.profile.name != '':
             return self.profile.name
