@@ -246,12 +246,13 @@ class SignalContact(SignalRecipient):
         :return: bool: the equality result.
         """
         if isinstance(other, SignalContact):
-            if self.uuid == other.uuid or self.number == other.number:
-                self.__update__(other)
+            if self.uuid == other.uuid or self.number == other.number or \
+                    self.username == other.username:
+                # self.__update__(other)
                 return True
-        if super().__eq__(other):
-            self.__update__(other)
-            return True
+        # if super().__eq__(other):
+        #     self.__update__(other)
+        #     return True
         return False
 
     def __str__(self) -> str:

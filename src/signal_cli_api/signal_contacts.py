@@ -132,7 +132,7 @@ class SignalContacts:
         orig_contacts = self._contacts.copy()
         for orig_contact in orig_contacts:
             for contact in self._contacts.copy():
-                if contact == orig_contact:
+                if contact.recipient_id == orig_contact.recipient_id:
                     try:
                         self._contacts.remove(contact)
                     except ValueError:
